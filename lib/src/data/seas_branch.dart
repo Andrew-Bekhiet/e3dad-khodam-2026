@@ -6,8 +6,8 @@ import 'package:e3dad_khodam_2026/src/domain/place_kind.dart';
 /// The "بحار" (seas) root category and its leaf children.
 final class SeasBranch {
   static const GeoPosition _seasPosition = GeoPosition(
-    latitude: 37.5,
-    longitude: 10.0,
+    latitude: 36.5,
+    longitude: 19.0,
   );
   static const GeoPosition _mediterraneanSeaPosition = GeoPosition(
     latitude: 34.5,

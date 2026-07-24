@@ -6,8 +6,8 @@ import 'package:e3dad_khodam_2026/src/domain/place_kind.dart';
 /// The "جزر" (islands) root category and its leaf children.
 final class IslandsBranch {
   static const GeoPosition _islandsPosition = GeoPosition(
-    latitude: 37.5,
-    longitude: 26.0,
+    latitude: 36.5,
+    longitude: 34.0,
   );
   static const GeoPosition _cretePosition = GeoPosition(
     latitude: 35.2401,

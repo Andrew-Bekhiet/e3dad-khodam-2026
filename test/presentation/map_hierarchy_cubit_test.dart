@@ -17,7 +17,7 @@ void main() {
   // return at the root cross; mirrors MapHierarchyCubit's own private
   // `_rootBounds`/`_fitPadding` constants.
   const rootCamera = FitBoundsCameraTarget(
-    bounds: GeoBounds(south: 30.89, west: 10.00, north: 43.57, east: 26.00),
+    bounds: GeoBounds(south: 28.5, west: 15.0, north: 46.5, east: 37.0),
     padding: EdgeInsets.only(top: 100, left: 84, right: 84, bottom: 56),
   );
 

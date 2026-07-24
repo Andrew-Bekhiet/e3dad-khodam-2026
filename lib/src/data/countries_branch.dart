@@ -7,8 +7,8 @@ import 'package:e3dad_khodam_2026/src/domain/place_kind.dart';
 /// countries, then the cities within Asia Minor, Greece, and Italy.
 final class CountriesBranch {
   static const GeoPosition _countriesPosition = GeoPosition(
-    latitude: 30.89,
-    longitude: 18.0,
+    latitude: 31.0,
+    longitude: 26.0,
   );
   static const GeoPosition _asiaMinorPosition = GeoPosition(
     latitude: 38.6,

@@ -10,8 +10,8 @@ import 'package:e3dad_khodam_2026/src/domain/place_kind.dart';
 /// limit.
 final class ContinentsBranch {
   static const GeoPosition _continentsPosition = GeoPosition(
-    latitude: 43.57,
-    longitude: 18,
+    latitude: 44.0,
+    longitude: 26.0,
   );
   static const GeoPosition _asiaPosition = GeoPosition(
     latitude: 38.5,

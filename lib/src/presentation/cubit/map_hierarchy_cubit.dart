@@ -15,10 +15,10 @@ final class MapHierarchyCubit extends Cubit<MapHierarchyState> {
   /// whenever the root is showing so the cross always reads as a cross
   /// regardless of which markers happen to be visible.
   static const GeoBounds _rootBounds = GeoBounds(
-    south: 30.89,
-    west: 10,
-    north: 43.57,
-    east: 26,
+    south: 28.5,
+    west: 15.0,
+    north: 46.5,
+    east: 37.0,
   );
 
   /// Screen-space inset applied whenever the camera fits a set of

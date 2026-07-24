@@ -33,7 +33,7 @@ final class MarkerVisual {
     shadowOffsetDy: 2,
     shadowOpacity: 0.30,
     boxWidth: 110,
-    labelSegmentHeight: 24,
+    labelSegmentHeight: 23,
     labelFontSize: 15,
     labelFontWeight: FontWeight.w700,
     labelColor: Color(0xFF1A1A1A),
@@ -54,7 +54,7 @@ final class MarkerVisual {
     shadowOffsetDy: 2,
     shadowOpacity: 0.22,
     boxWidth: 150,
-    labelSegmentHeight: 22,
+    labelSegmentHeight: 21,
     labelFontSize: 13,
     labelFontWeight: FontWeight.w600,
     labelColor: Color(0xFF1A1A1A),
@@ -75,7 +75,7 @@ final class MarkerVisual {
     shadowOffsetDy: 2,
     shadowOpacity: 0.22,
     boxWidth: 150,
-    labelSegmentHeight: 22,
+    labelSegmentHeight: 21,
     labelFontSize: 13,
     labelFontWeight: FontWeight.w600,
     labelColor: Color(0xFF1A1A1A),
@@ -96,7 +96,7 @@ final class MarkerVisual {
     shadowOffsetDy: 1,
     shadowOpacity: 0.18,
     boxWidth: 150,
-    labelSegmentHeight: 22,
+    labelSegmentHeight: 21,
     labelFontSize: 13,
     labelFontWeight: FontWeight.w600,
     labelColor: Color(0xFF1A1A1A),
@@ -117,7 +117,7 @@ final class MarkerVisual {
     shadowOffsetDy: 1,
     shadowOpacity: 0.18,
     boxWidth: 150,
-    labelSegmentHeight: 22,
+    labelSegmentHeight: 21,
     labelFontSize: 13,
     labelFontWeight: FontWeight.w600,
     labelColor: Color(0xFF1A1A1A),
@@ -138,7 +138,7 @@ final class MarkerVisual {
     shadowOffsetDy: 0,
     shadowOpacity: 0,
     boxWidth: 90,
-    labelSegmentHeight: 16,
+    labelSegmentHeight: 14,
     labelFontSize: 11,
     labelFontWeight: FontWeight.w500,
     labelColor: Color(0xFF2B2B2B),
@@ -193,6 +193,9 @@ final class MarkerVisual {
   final double boxWidth;
 
   /// Fixed height reserved below the shape (and gap) for the label.
+  /// Derived, not guessed: `ceil(labelFontSize * MarkerLabelPill.lineHeight)`,
+  /// plus `2 * MarkerLabelPill._pillVerticalPadding` (2 * 2 = 4) when
+  /// [showLabelPill] is true. Bare city labels skip the padding term.
   final double labelSegmentHeight;
 
   /// Label font size in logical pixels (spec §4).

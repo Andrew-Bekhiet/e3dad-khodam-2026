@@ -18,6 +18,13 @@ final class MarkerLabelPill extends StatelessWidget {
   static const Offset _cityShadowOffset = Offset(0, 1);
   static const int _maxLines = 1;
 
+  /// Line-height multiplier applied to every label's [TextStyle.height],
+  /// so the rendered text box is exactly `fontSize * lineHeight` — a
+  /// fixed number `MarkerVisual.labelSegmentHeight` can reserve space
+  /// for deterministically, instead of guessing at font-metric-dependent
+  /// natural line height (which Cairo renders ~1px taller than guessed).
+  static const double lineHeight = 1.25;
+
   /// The place or category name to display.
   final String text;
 
@@ -55,6 +62,7 @@ final class MarkerLabelPill extends StatelessWidget {
         style: TextStyle(
           fontSize: fontSize,
           fontWeight: fontWeight,
+          height: lineHeight,
           color: textColor,
           shadows: const [
             Shadow(
@@ -91,6 +99,7 @@ final class MarkerLabelPill extends StatelessWidget {
           style: TextStyle(
             fontSize: fontSize,
             fontWeight: fontWeight,
+            height: lineHeight,
             color: textColor,
           ),
         ),

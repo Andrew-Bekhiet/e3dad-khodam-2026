@@ -23,11 +23,15 @@ final class MapHierarchyCubit extends Cubit<MapHierarchyState> {
 
   /// Screen-space inset applied whenever the camera fits a set of
   /// markers, for every drill/back fit (root included) — the larger top
-  /// value clears the app bar and breadcrumb region.
+  /// value clears the app bar and breadcrumb region. Left/right are wide
+  /// enough to keep a level-1 label pill (150px wide, so 75px half-width)
+  /// fully on screen even when its marker sits exactly at the fit
+  /// envelope's edge, which the extreme child in any fitted set always
+  /// does.
   static const EdgeInsets _fitPadding = EdgeInsets.only(
     top: 100,
-    left: 32,
-    right: 32,
+    left: 84,
+    right: 84,
     bottom: 56,
   );
 

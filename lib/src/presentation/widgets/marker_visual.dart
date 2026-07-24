@@ -2,18 +2,6 @@ import 'package:e3dad_khodam_2026/src/domain/map_node.dart';
 import 'package:e3dad_khodam_2026/src/domain/place_kind.dart';
 import 'package:flutter/material.dart';
 
-/// The shape a [MarkerVisual] paints its top segment as.
-enum MarkerShape {
-  /// A plain filled circle (optionally ringed, for category markers).
-  circle,
-
-  /// A filled rounded-corner square.
-  roundedSquare,
-
-  /// A rotated square rendered as a diamond.
-  diamond,
-}
-
 /// The fixed, per-node-kind painting recipe for `MapNodeMarker`: size,
 /// shape, color, icon and shadow, taken from the design spec's marker
 /// table (§2). Every instance is a compile-time constant, since none of
@@ -31,7 +19,7 @@ final class MarkerVisual {
     ringWidth: 2,
     shadowBlur: 8,
     shadowOffsetDy: 2,
-    shadowOpacity: 0.30,
+    shadowOpacity: 0.3,
     boxWidth: 110,
     labelSegmentHeight: 23,
     labelFontSize: 15,
@@ -246,4 +234,16 @@ final class MarkerVisual {
       PlaceKind.city => _city,
     },
   };
+}
+
+/// The shape a [MarkerVisual] paints its top segment as.
+enum MarkerShape {
+  /// A plain filled circle (optionally ringed, for category markers).
+  circle,
+
+  /// A filled rounded-corner square.
+  roundedSquare,
+
+  /// A rotated square rendered as a diamond.
+  diamond,
 }

@@ -41,6 +41,7 @@ final class MapNodeMarker extends StatelessWidget {
   /// segment + gap + label, matching exactly what [build] paints.
   static Size layoutSize(MapNode node) {
     final visual = MarkerVisual.forNode(node);
+
     return Size(
       visual.boxWidth,
       visual.topSegmentSize + _labelGap + visual.labelSegmentHeight,
@@ -60,6 +61,7 @@ final class MapNodeMarker extends StatelessWidget {
     final visual = MarkerVisual.forNode(node);
     final totalHeight =
         visual.topSegmentSize + _labelGap + visual.labelSegmentHeight;
+
     return Alignment(0, 1 - (visual.topSegmentSize / totalHeight));
   }
 
@@ -128,7 +130,7 @@ final class MapNodeMarker extends StatelessWidget {
       tween: Tween(begin: _opacityBegin, end: _opacityEnd),
       duration: _enterDuration,
       curve: Curves.easeOut,
-      builder: (context, t, child) => Opacity(
+      builder: (_, t, child) => Opacity(
         opacity: t,
         child: Transform.scale(
           scale: _enterScaleBegin + (_enterScaleEnd - _enterScaleBegin) * t,
@@ -165,6 +167,7 @@ final class MapNodeMarker extends StatelessWidget {
     if (!node.isExpandable) {
       return IgnorePointer(child: content);
     }
+
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,

@@ -8,7 +8,7 @@ import 'package:e3dad_khodam_2026/src/domain/place_kind.dart';
 final class CountriesBranch {
   static const GeoPosition _countriesPosition = GeoPosition(
     latitude: 30.89,
-    longitude: 18.00,
+    longitude: 18.0,
   );
   static const GeoPosition _asiaMinorPosition = GeoPosition(
     latitude: 38.6,

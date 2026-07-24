@@ -19,7 +19,9 @@ final class GeoBounds extends Equatable {
 
   /// The midpoint between the box's edges.
   GeoPosition get center => GeoPosition(
+    // ignore: no_magic_number
     latitude: (south + north) / 2,
+    // ignore: no_magic_number
     longitude: (west + east) / 2,
   );
 
@@ -46,6 +48,7 @@ final class GeoBounds extends Equatable {
     }
     final latitudes = positionList.map((position) => position.latitude);
     final longitudes = positionList.map((position) => position.longitude);
+
     return GeoBounds(
       south: latitudes.min,
       north: latitudes.max,

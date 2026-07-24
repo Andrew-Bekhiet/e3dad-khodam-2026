@@ -35,6 +35,7 @@ final class NonGeographicSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+
     return SafeArea(
       top: false,
       child: Padding(

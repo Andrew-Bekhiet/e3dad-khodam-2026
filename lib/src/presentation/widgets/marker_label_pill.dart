@@ -74,6 +74,7 @@ final class MarkerLabelPill extends StatelessWidget {
         ),
       );
     }
+
     return DecoratedBox(
       decoration: BoxDecoration(
         color: _pillColor,

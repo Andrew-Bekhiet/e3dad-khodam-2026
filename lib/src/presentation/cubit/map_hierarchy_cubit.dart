@@ -16,9 +16,9 @@ final class MapHierarchyCubit extends Cubit<MapHierarchyState> {
   /// regardless of which markers happen to be visible.
   static const GeoBounds _rootBounds = GeoBounds(
     south: 30.89,
-    west: 10.00,
+    west: 10,
     north: 43.57,
-    east: 26.00,
+    east: 26,
   );
 
   /// Screen-space inset applied whenever the camera fits a set of
@@ -128,6 +128,7 @@ final class MapHierarchyCubit extends Cubit<MapHierarchyState> {
     final bounds = GeoBounds.containing(nodes.map((node) => node.position));
     final isDegenerate =
         bounds.north == bounds.south || bounds.east == bounds.west;
+
     return isDegenerate ? bounds.padded(_degenerateBoundsPadding) : bounds;
   }
 }

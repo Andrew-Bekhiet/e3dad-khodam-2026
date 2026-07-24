@@ -24,6 +24,7 @@ final class JourneyMapTree extends Equatable {
     for (final root in roots) {
       _index(root, const [], nodesById, pathsById);
     }
+
     return JourneyMapTree._(roots, nodesById, pathsById);
   }
 

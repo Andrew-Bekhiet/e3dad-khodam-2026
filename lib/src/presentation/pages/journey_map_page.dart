@@ -33,12 +33,12 @@ final class JourneyMapPage extends StatelessWidget {
         final breadcrumbText = _breadcrumbText(
           state.breadcrumb.map((node) => node.label).toList(growable: false),
         );
+
         return PopScope(
           canPop: state.isAtRoot,
-          onPopInvokedWithResult: (didPop, result) {
-            if (didPop) {
-              return;
-            }
+          onPopInvokedWithResult: (didPop, _) {
+            if (didPop) return;
+
             context.read<MapHierarchyCubit>().goBack();
           },
           child: Scaffold(
@@ -91,7 +91,7 @@ final class JourneyMapPage extends StatelessWidget {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (context) => NonGeographicSheet(groups: groups),
+      builder: (_) => NonGeographicSheet(groups: groups),
     );
   }
 }

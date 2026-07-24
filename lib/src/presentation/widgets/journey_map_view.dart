@@ -30,7 +30,7 @@ final class JourneyMapView extends StatelessWidget {
             position: node.position,
             size: MapNodeMarker.layoutSize(node),
             alignment: MapNodeMarker.anchorAlignment(node),
-            builder: (context) => MapNodeMarker(
+            builder: (_) => MapNodeMarker(
               node: node,
               onTap: () => cubit.drillDown(node.id),
             ),
@@ -41,6 +41,7 @@ final class JourneyMapView extends StatelessWidget {
       maxZoom: _maxZoom,
       cameraAnimationDuration: state.cameraAnimationDuration,
     );
+
     return surfaceBuilder(spec);
   }
 }

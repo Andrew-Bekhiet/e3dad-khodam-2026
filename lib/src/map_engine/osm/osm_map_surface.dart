@@ -59,6 +59,7 @@ class _OsmMapSurfaceState extends State<OsmMapSurface>
   @override
   Widget build(BuildContext context) {
     final initialCamera = _InitialCamera.resolve(widget.spec.camera);
+
     return FlutterMap(
       mapController: _mapController,
       options: MapOptions(
@@ -178,6 +179,7 @@ class _OsmMapSurfaceState extends State<OsmMapSurface>
       bounds: bounds.toLatLngBounds(),
       padding: padding,
     ).fit(camera);
+
     return (center: fitted.center, zoom: fitted.zoom);
   }
 }

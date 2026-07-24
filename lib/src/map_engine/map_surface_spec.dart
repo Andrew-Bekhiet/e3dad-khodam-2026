@@ -21,8 +21,20 @@ final class MapSurfaceSpec extends Equatable {
   /// The most zoomed-in level the surface should allow.
   final double maxZoom;
 
+  /// How long the surface should take to animate to [camera] when it
+  /// changes. The surface itself has no notion of "drilling down" vs.
+  /// "going back", so whoever produces this spec (the navigation cubit)
+  /// picks the duration per transition.
+  final Duration cameraAnimationDuration;
+
   @override
-  List<Object?> get props => [markers, camera, minZoom, maxZoom];
+  List<Object?> get props => [
+    markers,
+    camera,
+    minZoom,
+    maxZoom,
+    cameraAnimationDuration,
+  ];
 
   /// Creates a map surface spec.
   const MapSurfaceSpec({
@@ -30,5 +42,6 @@ final class MapSurfaceSpec extends Equatable {
     required this.camera,
     required this.minZoom,
     required this.maxZoom,
+    required this.cameraAnimationDuration,
   });
 }

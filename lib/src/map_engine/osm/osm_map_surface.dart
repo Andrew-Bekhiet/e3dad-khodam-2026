@@ -26,12 +26,20 @@ final class OsmMapSurface extends StatefulWidget {
 
 class _OsmMapSurfaceState extends State<OsmMapSurface>
     with SingleTickerProviderStateMixin {
-  static const Duration _cameraAnimationDuration = Duration(milliseconds: 600);
+  static const Curve _cameraCurve = Curves.easeInOutCubic;
   static const String _tileUrlTemplate =
       'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
   static const String _userAgentPackageName =
       'dev.andrewbekhiet.e3dad_khodam_2026';
-  static const String _attributionText = '© OpenStreetMap contributors';
+  static const String _attributionSourceText = 'OpenStreetMap contributors';
+  static const double _attributionFontSize = 10.0;
+  static const Color _attributionTextColor = Color(0xFF333333);
+  static const TextStyle _attributionTextStyle = TextStyle(
+    fontSize: _attributionFontSize,
+    fontWeight: FontWeight.w400,
+    color: _attributionTextColor,
+    fontFamily: 'Roboto',
+  );
   static const LatLng _fallbackCenter = LatLng(0.0, 0.0);
   static const double _fallbackZoom = 0.0;
 
@@ -44,7 +52,7 @@ class _OsmMapSurfaceState extends State<OsmMapSurface>
     super.initState();
     _cameraAnimationController = AnimationController(
       vsync: this,
-      duration: _cameraAnimationDuration,
+      duration: widget.spec.cameraAnimationDuration,
     )..addListener(_applyCameraAnimationTick);
   }
 
@@ -66,7 +74,14 @@ class _OsmMapSurfaceState extends State<OsmMapSurface>
           userAgentPackageName: _userAgentPackageName,
         ),
         MarkerLayer(markers: _toMarkers(widget.spec.markers)),
-        const SimpleAttributionWidget(source: Text(_attributionText)),
+        const RichAttributionWidget(
+          attributions: [
+            TextSourceAttribution(
+              _attributionSourceText,
+              textStyle: _attributionTextStyle,
+            ),
+          ],
+        ),
       ],
     );
   }
@@ -78,7 +93,10 @@ class _OsmMapSurfaceState extends State<OsmMapSurface>
     if (camera == oldWidget.spec.camera) {
       return;
     }
-    _startCameraAnimation(to: camera);
+    _startCameraAnimation(
+      to: camera,
+      duration: widget.spec.cameraAnimationDuration,
+    );
   }
 
   @override
@@ -99,7 +117,10 @@ class _OsmMapSurfaceState extends State<OsmMapSurface>
     child: Builder(builder: spec.builder),
   );
 
-  void _startCameraAnimation({required MapCameraTarget to}) {
+  void _startCameraAnimation({
+    required MapCameraTarget to,
+    required Duration duration,
+  }) {
     final currentCamera = _mapController.camera;
     final target = switch (to) {
       CenterZoomCameraTarget(:final center, :final zoom) => (
@@ -119,6 +140,7 @@ class _OsmMapSurfaceState extends State<OsmMapSurface>
       endZoom: target.zoom,
     );
     _cameraAnimationController
+      ..duration = duration
       ..reset()
       ..forward();
   }
@@ -128,7 +150,10 @@ class _OsmMapSurfaceState extends State<OsmMapSurface>
     if (plan == null) {
       return;
     }
-    final progress = _cameraAnimationController.value;
+    final progress = CurvedAnimation(
+      parent: _cameraAnimationController,
+      curve: _cameraCurve,
+    ).value;
     final center = LatLng(
       _lerpDouble(plan.startCenter.latitude, plan.endCenter.latitude, progress),
       _lerpDouble(

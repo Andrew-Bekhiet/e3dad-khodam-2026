@@ -10,8 +10,8 @@ import 'package:e3dad_khodam_2026/src/domain/place_kind.dart';
 /// limit.
 final class ContinentsBranch {
   static const GeoPosition _continentsPosition = GeoPosition(
-    latitude: 47.5,
-    longitude: 18.0,
+    latitude: 43.57,
+    longitude: 18.00,
   );
   static const GeoPosition _asiaPosition = GeoPosition(
     latitude: 38.5,
@@ -26,8 +26,8 @@ final class ContinentsBranch {
     longitude: 15.0,
   );
 
-  /// The root category node, positioned as the top arm of the cross.
-  /// Coordinates are provisional pending final design sign-off.
+  /// The root category node, positioned as the top arm of the cross. This
+  /// is a mnemonic cross anchor, not the real location of anything.
   static const CategoryNode node = CategoryNode(
     id: 'continents',
     label: 'قارات',

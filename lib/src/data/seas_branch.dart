@@ -6,8 +6,8 @@ import 'package:e3dad_khodam_2026/src/domain/place_kind.dart';
 /// The "بحار" (seas) root category and its leaf children.
 final class SeasBranch {
   static const GeoPosition _seasPosition = GeoPosition(
-    latitude: 39.5,
-    longitude: 5.5,
+    latitude: 37.50,
+    longitude: 10.00,
   );
   static const GeoPosition _mediterraneanSeaPosition = GeoPosition(
     latitude: 34.5,
@@ -23,7 +23,7 @@ final class SeasBranch {
   );
 
   /// The root category node, positioned as the left arm of the cross.
-  /// Coordinates are provisional pending final design sign-off.
+  /// This is a mnemonic cross anchor, not the real location of anything.
   static const CategoryNode node = CategoryNode(
     id: 'seas',
     label: 'بحار',

@@ -6,8 +6,8 @@ import 'package:e3dad_khodam_2026/src/domain/place_kind.dart';
 /// The "جزر" (islands) root category and its leaf children.
 final class IslandsBranch {
   static const GeoPosition _islandsPosition = GeoPosition(
-    latitude: 36.5,
-    longitude: 34.5,
+    latitude: 37.50,
+    longitude: 26.00,
   );
   static const GeoPosition _cretePosition = GeoPosition(
     latitude: 35.2401,
@@ -23,7 +23,7 @@ final class IslandsBranch {
   );
 
   /// The root category node, positioned as the right arm of the cross.
-  /// Coordinates are provisional pending final design sign-off.
+  /// This is a mnemonic cross anchor, not the real location of anything.
   static const CategoryNode node = CategoryNode(
     id: 'islands',
     label: 'جزر',

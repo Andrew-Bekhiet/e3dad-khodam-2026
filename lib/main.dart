@@ -1,18 +1,13 @@
-import 'package:flutter/material.dart';
+import 'package:e3dad_khodam_2026/src/app/e3dad_khodam_app.dart';
+import 'package:e3dad_khodam_2026/src/data/static_journey_map_repository.dart';
+import 'package:e3dad_khodam_2026/src/map_engine/osm/osm_map_surface.dart';
+import 'package:flutter/widgets.dart';
 
 void main() {
-  runApp(const App());
-}
-
-/// Root widget of the application.
-class App extends StatelessWidget {
-  /// Creates the root widget of the application.
-  const App({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const MaterialApp(
-      home: Scaffold(),
-    );
-  }
+  runApp(
+    const E3dadKhodamApp(
+      repository: StaticJourneyMapRepository(),
+      mapSurfaceBuilder: OsmMapSurface.new,
+    ),
+  );
 }

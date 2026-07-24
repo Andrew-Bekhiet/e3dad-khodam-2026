@@ -1,4 +1,4 @@
-# Design Spec — خارطة رسائل بولس الرسول
+# Design Spec — خريطة رحلات بولس الرسول
 
 Arabic-only, RTL, single-purpose map app over `flutter_map` + OpenStreetMap tiles.
 This document is normative for implementation: use the numbers given, don't re-derive them.
@@ -19,37 +19,42 @@ Target: a true equal-arm ("Greek cross") layout — top/bottom symmetric around 
 in **y-space**; left/right symmetric around the same center in **longitude** (already linear,
 trivially symmetric in degrees).
 
-Chosen center: `lat_c = 36.5°N, lng_c = 18.0°E` (mid-Mediterranean, near Malta/Crete latitude,
-plausible visual "middle of the basin"). Chosen horizontal half-arm `Δlng = 12.0°` →
-`h = radians(12.0) = 0.20944` Mercator-y units. Reusing the same h for the vertical half-arm
+Chosen center: `lat_c = 37.5°N, lng_c = 18.0°E` (tighter mid-Mediterranean point — revised down
+from an earlier Δlng=12° draft that pushed بلاد into the Libyan Sahara and جزر over mainland
+Anatolia instead of open sea/islands). Chosen horizontal half-arm `Δlng = 8.0°` →
+`h = radians(8.0) = 0.139626` Mercator-y units. Reusing the same h for the vertical half-arm
 keeps the cross equal-armed:
 
 ```
-y_c        = ln(tan(45° + 36.5°/2))              = 0.66352
-y_top      = y_c + h                              = 0.87296  →  lat = 45.53°N
-y_bottom   = y_c − h                               = 0.45408  →  lat = 26.28°N
-lng_left   = lng_c − 12.0                          = 6.0°E
-lng_right  = lng_c + 12.0                          = 30.0°E
+y_c        = ln(tan(45° + 37.5°/2))              = 0.706951
+y_top      = y_c + h                              = 0.846578  →  lat = 43.57°N
+y_bottom   = y_c − h                               = 0.567325  →  lat = 30.89°N
+lng_left   = lng_c − 8.0                           = 10.0°E
+lng_right  = lng_c + 8.0                           = 26.0°E
 ```
 
-(Note the asymmetric degree-spans: +9.03° up vs −10.22° down for the *same* screen distance —
-exactly the latitude-stretch the brief warned about. The raw starting values, un-adjusted,
-would NOT have produced an equal-armed cross.)
+(Note the asymmetric degree-spans: +6.07° up vs −6.61° down for the *same* screen distance —
+the latitude-stretch effect. Independently re-derived from scratch with three separate methods
+— direct `ln(tan(π/4+φ/2))`, the degree-input form, and the equivalent `asinh(tan φ)` identity,
+all agreeing to 6 decimal places — `y_c = 0.706951`, giving `lat_top = 43.57°N` and
+`lat_bottom = 30.89°N`. This differs slightly, by ~0.13–0.15°, from a `y_c ≈ 0.709211` figure
+floated during review that would give 43.70°N/30.98°N; the arithmetic here is the verified one
+and is used below. The difference doesn't change which region each marker lands in.)
 
 ### Final coordinates
 
 | Node (Arabic) | Kind | lat | lng | Semantic placement |
 |---|---|---|---|---|
-| قارات | category | **45.53** | **18.00** | North, over the Balkans/N. Adriatic — reads as "continents/north" |
-| بلاد | category | **26.28** | **18.00** | South, over the N. African littoral — reads as "countries/south" |
-| بحار | category | **36.50** | **6.00** | West, open western Mediterranean water (Balearics–Sardinia gap) |
-| جزر | category | **36.50** | **30.00** | East, between Crete (25°E) and Cyprus (33°E) — reads as "toward the islands" |
+| قارات | category | **43.57** | **18.00** | North, over Bosnia/the Balkans — reads as "continents/north" |
+| بلاد | category | **30.89** | **18.00** | South, over the Libyan coast at the Gulf of Sidra — basin edge, not deep desert |
+| بحار | category | **37.50** | **10.00** | West, open water between Sardinia and Tunisia |
+| جزر | category | **37.50** | **26.00** | East, in the Aegean beside Ikaria/Samos — actual islands |
 
 ### Root camera bounds
 
 ```
-SW = (lat: 26.28, lng: 6.00)
-NE = (lat: 45.53, lng: 30.00)
+SW = (lat: 30.89, lng: 10.00)
+NE = (lat: 43.57, lng: 26.00)
 ```
 
 `CameraFit.bounds(bounds: LatLngBounds(SW, NE), padding: EdgeInsets.only(top: 100, left: 32, right: 32, bottom: 56))`
@@ -247,8 +252,9 @@ than hand-rolling it:
 
 ## 9. App bar
 
-- **Title (root/static)**: `"خارطة رسائل بولس الرسول"` — reflects the app's sole purpose (a map
-  of Paul's epistles) rather than a generic app name. 20sp/700 per §4.
+- **Title (root/static)**: `"خريطة رحلات بولس الرسول"` — matches the app's framing ("St Paul's
+  journeys' cities") and is already used in `web/index.html` and `web/manifest.json`. 20sp/700
+  per §4.
 - **Background**: `ColorScheme.primary` (light `#0B61A4`) / `ColorScheme.surface` (dark
   `#101418`) per §3.
 - **Trailing action (flag-gated)**: only rendered when `AppFeatures.showNonGeographicGroups ==

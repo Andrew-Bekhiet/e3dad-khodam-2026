@@ -49,6 +49,10 @@ final class MapHierarchyCubit extends Cubit<MapHierarchyState> {
   /// used for the initial/root state.
   static const Duration _goBackDuration = Duration(milliseconds: 400);
 
+  /// Duration for a slideshow step ([forward]/[backward]), used for both
+  /// directions since neither reads as more "familiar" than the other.
+  static const Duration _traverseDuration = Duration(milliseconds: 450);
+
   /// Fixed camera target for the root cross; never recomputed since the
   /// four category anchors are compile-time constants.
   static const MapCameraTarget _rootCamera = FitBoundsCameraTarget(
@@ -74,13 +78,47 @@ final class MapHierarchyCubit extends Cubit<MapHierarchyState> {
     if (node == null || !node.isExpandable) {
       return;
     }
+
+    emit(_focusState(node, _drillDownDuration));
+  }
+
+  /// Goes to next sibling node, or to next parent node if at the end of the
+  /// current level.
+  /// Goes back to original overview if at the end of the hierarchy.
+  void forward() {
+    _traverse(1);
+  }
+
+  /// Moves to previous sibling node, or to previous parent node if at the
+  /// start of the current level.
+  /// Goes back to original overview if at the start of the hierarchy.
+  void backward() {
+    _traverse(-1);
+  }
+
+  /// Steps [step] positions through the depth-first walk of every node,
+  /// with the overview as one extra position at both ends of the cycle —
+  /// so this composes with manual [drillDown]/[goBack]: it always
+  /// continues from [MapHierarchyState.focusedNode], however that was
+  /// reached. Only ever called with ±1 by [forward]/[backward], but the
+  /// bounds check below keeps any step size correct.
+  void _traverse(int step) {
+    final flat = _tree.depthFirstNodes;
+    final current = state.focusedNode;
+    final MapNode? target;
+    if (current == null) {
+      target = step > 0 ? flat.first : flat.last;
+    } else {
+      final index = flat.indexWhere((node) => node.id == current.id);
+      final next = index + step;
+      target = (next < 0 || next >= flat.length) ? null : flat[next];
+    }
+
     emit(
-      MapHierarchyState(
-        visibleNodes: node.children,
-        breadcrumb: _tree.pathTo(nodeId),
-        camera: _cameraFor(node.children),
-        cameraAnimationDuration: _drillDownDuration,
-      ),
+      switch (target) {
+        null => _rootState(_tree, _traverseDuration),
+        final node => _focusState(node, _traverseDuration),
+      },
     );
   }
 
@@ -107,6 +145,22 @@ final class MapHierarchyCubit extends Cubit<MapHierarchyState> {
 
   /// Returns straight to the root cross.
   void reset() => emit(_rootState(_tree, _goBackDuration));
+
+  /// The state produced by focusing directly on [node]: its children when
+  /// [node] is expandable (what drilling into it means), or just [node]
+  /// itself when it's a leaf city — so the slideshow can stop on a leaf
+  /// without a parent already showing it. Shared by [drillDown] and
+  /// [_traverse].
+  MapHierarchyState _focusState(MapNode node, Duration duration) {
+    final visibleNodes = node.isExpandable ? node.children : [node];
+
+    return MapHierarchyState(
+      visibleNodes: visibleNodes,
+      breadcrumb: _tree.pathTo(node.id),
+      camera: _cameraFor(visibleNodes),
+      cameraAnimationDuration: duration,
+    );
+  }
 
   static MapHierarchyState _rootState(JourneyMapTree tree, Duration duration) =>
       MapHierarchyState(

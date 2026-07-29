@@ -2,6 +2,7 @@ import 'package:e3dad_khodam_2026/src/app/app_features.dart';
 import 'package:e3dad_khodam_2026/src/app/app_strings.dart';
 import 'package:e3dad_khodam_2026/src/domain/journey_map_repository.dart';
 import 'package:e3dad_khodam_2026/src/presentation/cubit/map_hierarchy_cubit.dart';
+import 'package:e3dad_khodam_2026/src/presentation/cubit/map_hierarchy_state.dart';
 import 'package:e3dad_khodam_2026/src/presentation/widgets/journey_map_view.dart';
 import 'package:e3dad_khodam_2026/src/presentation/widgets/non_geographic_sheet.dart';
 import 'package:flutter/material.dart';
@@ -27,9 +28,10 @@ final class JourneyMapPage extends StatelessWidget {
   Widget build(BuildContext context) => BlocProvider(
     create: (context) =>
         MapHierarchyCubit(context.read<JourneyMapRepository>()),
-    child: Builder(
-      builder: (context) {
-        final state = context.watch<MapHierarchyCubit>().state;
+    child: BlocBuilder<MapHierarchyCubit, MapHierarchyState>(
+      builder: (context, state) {
+        final cubit = context.read<MapHierarchyCubit>();
+
         final breadcrumbText = _breadcrumbText(
           state.breadcrumb.map((node) => node.label).toList(growable: false),
         );
@@ -39,7 +41,7 @@ final class JourneyMapPage extends StatelessWidget {
           onPopInvokedWithResult: (didPop, _) {
             if (didPop) return;
 
-            context.read<MapHierarchyCubit>().goBack();
+            cubit.goBack();
           },
           child: Scaffold(
             appBar: AppBar(
@@ -48,8 +50,7 @@ final class JourneyMapPage extends StatelessWidget {
                   : IconButton(
                       icon: const Icon(Icons.arrow_back),
                       tooltip: AppStrings.backButtonTooltip,
-                      onPressed: () =>
-                          context.read<MapHierarchyCubit>().goBack(),
+                      onPressed: cubit.goBack,
                     ),
               title: AnimatedSwitcher(
                 duration: _titleSwitchDuration,
@@ -75,7 +76,32 @@ final class JourneyMapPage extends StatelessWidget {
                   ),
               ],
             ),
-            body: const JourneyMapView(),
+            body: Stack(
+              fit: StackFit.expand,
+              alignment: AlignmentDirectional.center,
+              children: [
+                const JourneyMapView(),
+                PositionedDirectional(
+                  end: 16,
+                  bottom: 16,
+                  child: SafeArea(
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.arrow_left),
+                          onPressed: cubit.backward,
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.arrow_right),
+                          onPressed: cubit.forward,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         );
       },

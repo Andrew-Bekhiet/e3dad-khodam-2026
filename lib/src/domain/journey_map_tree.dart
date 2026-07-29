@@ -13,6 +13,14 @@ final class JourneyMapTree extends Equatable {
 
   final Map<String, MapNode> _nodesById;
   final Map<String, List<MapNode>> _pathsById;
+  final List<MapNode> _depthFirstNodes;
+
+  /// Every node in the tree, in depth-first pre-order: each root, then
+  /// its entire subtree left to right, before moving to the next root —
+  /// the order a linear "walk every node" navigation (e.g. a slideshow)
+  /// should visit them in. Captured once during construction, not
+  /// recomputed on access.
+  List<MapNode> get depthFirstNodes => _depthFirstNodes;
 
   @override
   List<Object?> get props => [roots];
@@ -21,28 +29,42 @@ final class JourneyMapTree extends Equatable {
   factory JourneyMapTree(List<MapNode> roots) {
     final nodesById = <String, MapNode>{};
     final pathsById = <String, List<MapNode>>{};
+    final depthFirstNodes = <MapNode>[];
     for (final root in roots) {
-      _index(root, const [], nodesById, pathsById);
+      _index(root, const [], nodesById, pathsById, depthFirstNodes);
     }
 
-    return JourneyMapTree._(roots, nodesById, pathsById);
+    return JourneyMapTree._(
+      roots,
+      nodesById,
+      pathsById,
+      List.unmodifiable(depthFirstNodes),
+    );
   }
 
-  const JourneyMapTree._(this.roots, this._nodesById, this._pathsById);
+  const JourneyMapTree._(
+    this.roots,
+    this._nodesById,
+    this._pathsById,
+    this._depthFirstNodes,
+  );
 
   /// Recursively records [node] and its ancestor chain into the two
-  /// indexes; [ancestors] excludes [node] itself.
+  /// indexes, and appends it to [depthFirstNodes]; [ancestors] excludes
+  /// [node] itself.
   static void _index(
     MapNode node,
     List<MapNode> ancestors,
     Map<String, MapNode> nodesById,
     Map<String, List<MapNode>> pathsById,
+    List<MapNode> depthFirstNodes,
   ) {
     final path = [...ancestors, node];
     nodesById[node.id] = node;
     pathsById[node.id] = path;
+    depthFirstNodes.add(node);
     for (final child in node.children) {
-      _index(child, path, nodesById, pathsById);
+      _index(child, path, nodesById, pathsById, depthFirstNodes);
     }
   }
 

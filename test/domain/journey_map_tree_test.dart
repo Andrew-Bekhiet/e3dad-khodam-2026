@@ -108,4 +108,42 @@ void main() {
       expect(position.longitude, inInclusiveRange(5.0, 40.0));
     }
   });
+
+  test('JourneyMapTree_depthFirstNodes_matchesExactPreOrderSequence', () {
+    final ids = tree.depthFirstNodes.map((node) => node.id).toList();
+
+    // Also pins length (23), first id ('continents') and last id
+    // ('malta'), since a full-sequence match implies all three.
+    expect(ids, [
+      'continents',
+      'asia',
+      'africa',
+      'europe',
+      'countries',
+      'asia_minor',
+      'galatia',
+      'ephesus',
+      'colossae',
+      'greece',
+      'philippi',
+      'corinth',
+      'thessalonica',
+      'italy',
+      'rome',
+      'seas',
+      'mediterranean_sea',
+      'aegean_sea',
+      'adriatic_sea',
+      'islands',
+      'crete',
+      'cyprus',
+      'malta',
+    ]);
+  });
+
+  test('JourneyMapTree_depthFirstNodes_hasNoDuplicateNodes', () {
+    final ids = tree.depthFirstNodes.map((node) => node.id).toList();
+
+    expect(ids.toSet().length, ids.length);
+  });
 }

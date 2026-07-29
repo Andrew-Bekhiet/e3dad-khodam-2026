@@ -176,4 +176,111 @@ void main() {
       ),
     ],
   );
+
+  blocTest<MapHierarchyCubit, MapHierarchyState>(
+    'MapHierarchyCubit_forwardFromOverview_focusesFirstDfsNode',
+    build: () => MapHierarchyCubit(repository),
+    act: (cubit) => cubit.forward(),
+    expect: () => [
+      isA<MapHierarchyState>()
+          .having(
+            (state) => state.focusedNode?.id,
+            'focused node id',
+            'continents',
+          )
+          .having(
+            (state) => state.visibleNodes.map((node) => node.id).toList(),
+            'visible node ids',
+            ['asia', 'africa', 'europe'],
+          )
+          .having(
+            (state) => state.breadcrumb.map((node) => node.id).toList(),
+            'breadcrumb ids',
+            ['continents'],
+          ),
+    ],
+  );
+
+  blocTest<MapHierarchyCubit, MapHierarchyState>(
+    'MapHierarchyCubit_forwardFromExpandedParent_stepsIntoFirstLeafChild',
+    build: () => MapHierarchyCubit(repository),
+    act: (cubit) {
+      cubit.drillDown('countries');
+      cubit.drillDown('asia_minor');
+      cubit.forward();
+    },
+    skip: 2,
+    expect: () => [
+      isA<MapHierarchyState>()
+          .having(
+            (state) => state.visibleNodes.map((node) => node.id).toList(),
+            'visible node ids',
+            ['galatia'],
+          )
+          .having(
+            (state) => state.breadcrumb.map((node) => node.id).toList(),
+            'breadcrumb ids',
+            ['countries', 'asia_minor', 'galatia'],
+          ),
+    ],
+  );
+
+  blocTest<MapHierarchyCubit, MapHierarchyState>(
+    'MapHierarchyCubit_backwardFromOverview_focusesLastDfsNode',
+    build: () => MapHierarchyCubit(repository),
+    act: (cubit) => cubit.backward(),
+    expect: () => [
+      isA<MapHierarchyState>()
+          .having((state) => state.focusedNode?.id, 'focused node id', 'malta')
+          .having(
+            (state) => state.visibleNodes.map((node) => node.id).toList(),
+            'visible node ids',
+            ['malta'],
+          ),
+    ],
+  );
+
+  blocTest<MapHierarchyCubit, MapHierarchyState>(
+    'MapHierarchyCubit_backwardFromFirstDfsNode_wrapsToOverview',
+    build: () => MapHierarchyCubit(repository),
+    act: (cubit) {
+      cubit.drillDown('continents');
+      cubit.backward();
+    },
+    skip: 1,
+    expect: () => [
+      isA<MapHierarchyState>()
+          .having((state) => state.isAtRoot, 'isAtRoot', isTrue)
+          .having((state) => state.breadcrumb, 'breadcrumb', isEmpty),
+    ],
+  );
+
+  blocTest<MapHierarchyCubit, MapHierarchyState>(
+    'MapHierarchyCubit_forwardThenBackward_returnsToSameState',
+    build: () => MapHierarchyCubit(repository),
+    act: (cubit) {
+      cubit.drillDown('countries');
+      cubit.forward();
+      cubit.backward();
+    },
+    skip: 2,
+    expect: () => [
+      isA<MapHierarchyState>()
+          .having(
+            (state) => state.focusedNode?.id,
+            'focused node id',
+            'countries',
+          )
+          .having(
+            (state) => state.visibleNodes.map((node) => node.id).toList(),
+            'visible node ids',
+            ['asia_minor', 'greece', 'italy'],
+          )
+          .having(
+            (state) => state.breadcrumb.map((node) => node.id).toList(),
+            'breadcrumb ids',
+            ['countries'],
+          ),
+    ],
+  );
 }

@@ -7,5 +7,5 @@ import 'package:flutter/widgets.dart';
 /// a single `Widget`-returning method is banned by `avoid_returning_widgets`
 /// (which exempts only `@override`), and a one-method interface is
 /// functionally a function anyway — implementations are supplied as
-/// constructor tear-offs, e.g. `OsmMapSurface.new`.
+/// constructor tear-offs, e.g. `MapboxMapSurface.new`.
 typedef MapSurfaceBuilder = Widget Function(MapSurfaceSpec spec);

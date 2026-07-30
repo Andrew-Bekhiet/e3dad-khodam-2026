@@ -10,7 +10,7 @@ part 'fit_bounds_camera_target.dart';
 /// so a map-surface widget can diff camera changes across rebuilds and
 /// animate accordingly.
 ///
-/// Sealed so `OsmMapSurface` can switch exhaustively over its variants.
+/// Sealed so `MapboxMapSurface` can switch exhaustively over its variants.
 /// Split across `part` files (one class per file) since Dart requires a
 /// sealed type's direct subtypes to live in the same library.
 sealed class MapCameraTarget extends Equatable {

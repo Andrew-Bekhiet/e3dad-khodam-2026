@@ -1,6 +1,7 @@
 # Design Spec — خريطة رحلات بولس الرسول
 
-Arabic-only, RTL, single-purpose map app over `flutter_map` + OpenStreetMap tiles.
+Arabic-only, RTL, single-purpose map app over `flutter_map` + a custom Mapbox Studio basemap
+style (`anderwbekhiet/cms775jc8003x01sd2mmyeczh`), served as raster tiles.
 This document is normative for implementation: use the numbers given, don't re-derive them.
 
 ---
@@ -92,11 +93,13 @@ blur 2 @ 15%). Justification: text halos/outlines render inconsistently with Ara
 (diacritics, joining forms make stroked outlines look muddy); a solid pill is the same technique
 Google/Apple Maps use and stays legible over any tile color without per-tile-color logic. Pill
 color is fixed white regardless of app theme brightness (see §3) since tiles are always light.
-City labels skip the pill — dark grey text directly on the tile with a soft 1dp text shadow —
-deliberately the quietest element so the busy leaf level doesn't compete with the still-visible
-parent marker.
+City labels skip the pill — dark text directly on the tile inside a **white halo** (5 white
+`Shadow`s: blur 3 at the four ±1.5dp diagonals plus one centered) — still the quietest element
+so the busy leaf level doesn't compete with the still-visible parent marker, but sized and
+haloed to stay readable over the basemap's own labels and coastlines. A halo, not a stroked
+outline: the Arabic-script objection above is about strokes, which a blurred glow avoids.
 
-Label text color: `#1A1A1A` on the pill (all non-city kinds); `#2B2B2B` with shadow for city.
+Label text color: `#1A1A1A` on the pill (all non-city kinds); `#14243A` in the halo for city.
 
 ---
 
@@ -105,7 +108,7 @@ Label text color: `#1A1A1A` on the pill (all non-city kinds); `#2B2B2B` with sha
 Material 3 seed: **`#1B6CA8`** (Mediterranean blue) — `ColorScheme.fromSeed(seedColor: Color(0xFF1B6CA8))`.
 
 **Design decision:** marker fill colors are fixed and do NOT change between light/dark app
-theme — the OSM basemap is always light-colored (no dark tile layer in scope), so markers keep
+theme — the Mapbox basemap style is always light-colored (no dark style in scope), so markers keep
 one fixed, tile-legible palette. Only the surrounding chrome (app bar, breadcrumb, sheet,
 scaffold background) follows the M3 `ColorScheme` and switches with brightness. This is a
 deliberate deviation from a literal "colors per kind in light and dark" reading — flagged here
@@ -149,7 +152,7 @@ this app's three chrome surfaces (app bar, breadcrumb, sheet).
 |---|---|---|
 | category marker label | 15sp | 700 (Bold) |
 | level-1 marker label (continent/country/sea/island) | 13sp | 600 (SemiBold) |
-| city (leaf) marker label | 11sp | 500 (Medium) |
+| city (leaf) marker label | 14sp | 700 (Bold) |
 | app bar title (root, static title) | 20sp | 700 (Bold) |
 | breadcrumb (app bar title when depth > 0) | 16sp | 600 (SemiBold) |
 | bottom sheet title | 16sp | 700 (Bold) |
@@ -157,7 +160,7 @@ this app's three chrome surfaces (app bar, breadcrumb, sheet).
 | bottom sheet group header | 13sp | 600 (SemiBold), `onSurfaceVariant` color |
 
 Register `FontFamily: 'Cairo'` in `pubspec.yaml`; set as `ThemeData.fontFamily` app-wide, except
-the OSM attribution string (§8), which stays in the system/Latin font.
+the basemap attribution string (§8), which stays in the system/Latin font.
 
 ---
 
@@ -228,25 +231,27 @@ breadcrumb, and between breadcrumb depths, so the app bar doesn't hard-cut.
     mirroring transform between `Directionality` and `FlutterMap`.
   - Marker shapes: circles/discs are symmetric by construction. Any future directional glyph
     must use `matchTextDirection: true` or, better, be avoided on the map layer.
-  - OSM attribution (§8) — force `textDirection: TextDirection.ltr` explicitly; it's a legal
+  - Basemap attribution (§8) — force `textDirection: TextDirection.ltr` explicitly; it's a legal
     English string and must not be bidi-reordered despite its RTL ambient container.
 
 ---
 
-## 8. OSM attribution
+## 8. Basemap attribution
 
-Required by OSM's tile usage policy. Use flutter_map's built-in `RichAttributionWidget` rather
-than hand-rolling it:
+Required by Mapbox's terms of service (which also cover the OpenStreetMap data behind the
+style). Use flutter_map's built-in `RichAttributionWidget` rather than hand-rolling it:
 
-- **Text**: exactly `"© OpenStreetMap contributors"`.
+- **Text**: two entries, `"© Mapbox"` and `"© OpenStreetMap"`.
 - **Placement**: bottom-right corner of the map viewport, 8dp margin — the flutter_map default
   and standard slippy-map convention; kept regardless of app RTL since it's a map-layer element,
   not app chrome, so it doesn't follow reading direction.
 - **Style**: 10sp/400 (Regular), color `#333333`, **system/default font — not Cairo** (Latin
   legal string). White pill background, 60–70% opacity, 4dp/2dp padding, 4dp radius — small,
   unobtrusive, still legible over dark water tiles.
-- Tappable, linking to `https://www.openstreetmap.org/copyright` (via `TextSourceAttribution`
-  with `onTap`).
+- Not tappable for now: linking out (`TextSourceAttribution.onTap`) needs a URL launcher, and
+  no such dependency is in scope. The text alone satisfies the required credit; wire
+  `https://www.mapbox.com/about/maps/` and `https://www.openstreetmap.org/copyright` when a
+  launcher is added.
 
 ---
 

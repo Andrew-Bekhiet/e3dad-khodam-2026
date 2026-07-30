@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 /// A marker's label text — either on a solid white pill (used by every
 /// kind except city, per spec §2: a stroked/outlined text halo renders
 /// inconsistently with Arabic diacritics and joining forms) or bare on
-/// the tile with a soft shadow (city markers, deliberately the quietest
-/// element at the busiest, most crowded level).
+/// the tile inside a white halo (city markers — the quietest element at
+/// the busiest, most crowded level, but still legible over the basemap).
 final class MarkerLabelPill extends StatelessWidget {
   static const Color _pillColor = Color(0xE6FFFFFF);
   static const double _pillHorizontalPadding = 8.0;
@@ -13,10 +13,41 @@ final class MarkerLabelPill extends StatelessWidget {
   static const double _pillShadowBlur = 2.0;
   static const Color _pillShadowColor = Color(0x26000000);
   static const Offset _pillShadowOffset = Offset(0, 1);
-  static const double _cityShadowBlur = 1.0;
-  static const Color _cityShadowColor = Color(0x59000000);
-  static const Offset _cityShadowOffset = Offset(0, 1);
   static const int _maxLines = 1;
+
+  /// Halo painted behind bare (city) labels: an opaque white glow offset
+  /// to all four diagonals plus one centered, so the text reads against
+  /// busy basemap features (roads, coastlines, the style's own labels)
+  /// without the weight of a pill. Unlike a stroked outline — rejected
+  /// in spec §2 — a halo leaves Arabic diacritics and joining forms
+  /// untouched. No dark drop shadow is mixed in: later shadows paint
+  /// over earlier ones, so the white would simply bury it.
+  static const double _haloBlur = 3.0;
+  static const Color _haloColor = Color(0xFFFFFFFF);
+  static const double _haloSpread = 1.5;
+  static const List<Shadow> _cityLabelShadows = [
+    Shadow(
+      blurRadius: _haloBlur,
+      color: _haloColor,
+      offset: Offset(-_haloSpread, -_haloSpread),
+    ),
+    Shadow(
+      blurRadius: _haloBlur,
+      color: _haloColor,
+      offset: Offset(_haloSpread, -_haloSpread),
+    ),
+    Shadow(
+      blurRadius: _haloBlur,
+      color: _haloColor,
+      offset: Offset(-_haloSpread, _haloSpread),
+    ),
+    Shadow(
+      blurRadius: _haloBlur,
+      color: _haloColor,
+      offset: Offset(_haloSpread, _haloSpread),
+    ),
+    Shadow(blurRadius: _haloBlur, color: _haloColor),
+  ];
 
   /// Line-height multiplier applied to every label's [TextStyle.height],
   /// so the rendered text box is exactly `fontSize * lineHeight` — a
@@ -38,7 +69,7 @@ final class MarkerLabelPill extends StatelessWidget {
   final Color textColor;
 
   /// Whether to paint the white pill background; false renders bare
-  /// text with a text shadow instead (city markers only).
+  /// haloed text instead (city markers only).
   final bool showBackground;
 
   /// Creates a marker label.
@@ -64,13 +95,7 @@ final class MarkerLabelPill extends StatelessWidget {
           fontWeight: fontWeight,
           height: lineHeight,
           color: textColor,
-          shadows: const [
-            Shadow(
-              blurRadius: _cityShadowBlur,
-              color: _cityShadowColor,
-              offset: _cityShadowOffset,
-            ),
-          ],
+          shadows: _cityLabelShadows,
         ),
       );
     }

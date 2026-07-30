@@ -1,17 +1,23 @@
 # e3dad_khodam_2026
 
-A new Flutter project.
+An interactive Arabic map of the cities of St Paul's journeys.
 
-## Getting Started
+## Running
 
-This project is a starting point for a Flutter application.
+The basemap is a custom Mapbox Studio style
+(`anderwbekhiet/cms775jc8003x01sd2mmyeczh`) fetched as raster tiles, so a
+Mapbox **public** access token (`pk....`) is required at build time. The
+token is never committed — pass it as a dart-define:
 
-A few resources to get you started if this is your first Flutter project:
+```sh
+flutter run --dart-define=MAPBOX_ACCESS_TOKEN=pk.your_token_here
+```
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+Same flag for `flutter build`. Without it the app runs but paints a
+"missing access token" notice where the basemap would be, instead of an
+empty map.
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Docs
+
+- [`docs/design.md`](docs/design.md) — normative design spec (coordinates,
+  marker visuals, palette, typography, attribution).

@@ -16,7 +16,7 @@ final class E3dadKhodamApp extends StatelessWidget {
   /// Source of the journey-map hierarchy and non-geographic groups.
   final JourneyMapRepository repository;
 
-  /// Concrete map-provider widget factory (e.g. `OsmMapSurface.new`).
+  /// Concrete map-provider widget factory (e.g. `MapboxMapSurface.new`).
   final MapSurfaceBuilder mapSurfaceBuilder;
 
   /// Creates the app root over the given data source and map provider.

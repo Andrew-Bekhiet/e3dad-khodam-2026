@@ -3,35 +3,40 @@ import 'package:e3dad_khodam_2026/src/domain/geo_position.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/map_camera_target.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/map_marker_spec.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/map_surface_spec.dart';
+import 'package:e3dad_khodam_2026/src/map_engine/mapbox/mapbox_style.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
-/// `MapSurfaceBuilder` implementation backed by OpenStreetMap tiles via
-/// `flutter_map`. The only file in this app allowed to import
-/// `package:flutter_map` or `package:latlong2`.
-final class OsmMapSurface extends StatefulWidget {
+/// `MapSurfaceBuilder` implementation backed by the app's Mapbox Studio
+/// style (see [MapboxStyle]), rendered as raster tiles via `flutter_map`.
+/// The only file in this app allowed to import `package:flutter_map` or
+/// `package:latlong2`.
+final class MapboxMapSurface extends StatefulWidget {
   /// The map content and camera target to render.
   final MapSurfaceSpec spec;
 
-  /// Creates an OSM-backed map surface.
+  /// Creates a Mapbox-backed map surface.
   ///
   /// Takes a single positional parameter so this constructor's tear-off,
-  /// `OsmMapSurface.new`, satisfies the `MapSurfaceBuilder` function type.
-  const OsmMapSurface(this.spec, {super.key});
+  /// `MapboxMapSurface.new`, satisfies the `MapSurfaceBuilder` function
+  /// type.
+  const MapboxMapSurface(this.spec, {super.key});
 
   @override
-  State<OsmMapSurface> createState() => _OsmMapSurfaceState();
+  State<MapboxMapSurface> createState() => _MapboxMapSurfaceState();
 }
 
-class _OsmMapSurfaceState extends State<OsmMapSurface>
+class _MapboxMapSurfaceState extends State<MapboxMapSurface>
     with SingleTickerProviderStateMixin {
   static const Curve _cameraCurve = Curves.easeInOutCubic;
-  static const String _tileUrlTemplate =
-      'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
   static const String _userAgentPackageName =
       'dev.andrewbekhiet.e3dad_khodam_2026';
-  static const String _attributionSourceText = 'OpenStreetMap contributors';
+
+  /// Mapbox's terms require both its own and OpenStreetMap's attribution
+  /// to stay visible on the map.
+  static const String _mapboxAttributionText = '© Mapbox';
+  static const String _osmAttributionText = '© OpenStreetMap';
   static const double _attributionFontSize = 10.0;
   static const Color _attributionTextColor = Color(0xFF333333);
   static const TextStyle _attributionTextStyle = TextStyle(
@@ -50,6 +55,11 @@ class _OsmMapSurfaceState extends State<OsmMapSurface>
   @override
   void initState() {
     super.initState();
+    assert(
+      MapboxStyle.hasAccessToken,
+      'No Mapbox access token: build with '
+      '--dart-define=${MapboxStyle.accessTokenEnvKey}=pk.<your token>.',
+    );
     _cameraAnimationController = AnimationController(
       vsync: this,
       duration: widget.spec.cameraAnimationDuration,
@@ -68,27 +78,41 @@ class _OsmMapSurfaceState extends State<OsmMapSurface>
         initialCameraFit: initialCamera.fit,
         minZoom: widget.spec.minZoom,
         maxZoom: widget.spec.maxZoom,
+        interactionOptions: const InteractionOptions(
+          flags: InteractiveFlag.all - InteractiveFlag.rotate,
+        ),
       ),
       children: [
-        TileLayer(
-          urlTemplate: _tileUrlTemplate,
-          userAgentPackageName: _userAgentPackageName,
-        ),
+        if (MapboxStyle.hasAccessToken)
+          TileLayer(
+            urlTemplate: MapboxStyle.tileUrlTemplate,
+            tileDimension: MapboxStyle.tileDimension,
+            zoomOffset: MapboxStyle.zoomOffset,
+            retinaMode: RetinaMode.isHighDensity(context),
+            userAgentPackageName: _userAgentPackageName,
+          )
+        else
+          const _MissingAccessTokenNotice(),
         MarkerLayer(markers: _toMarkers(widget.spec.markers)),
-        const RichAttributionWidget(
-          attributions: [
-            TextSourceAttribution(
-              _attributionSourceText,
-              textStyle: _attributionTextStyle,
-            ),
-          ],
-        ),
+        if (MapboxStyle.hasAccessToken)
+          const RichAttributionWidget(
+            attributions: [
+              TextSourceAttribution(
+                _mapboxAttributionText,
+                textStyle: _attributionTextStyle,
+              ),
+              TextSourceAttribution(
+                _osmAttributionText,
+                textStyle: _attributionTextStyle,
+              ),
+            ],
+          ),
       ],
     );
   }
 
   @override
-  void didUpdateWidget(OsmMapSurface oldWidget) {
+  void didUpdateWidget(MapboxMapSurface oldWidget) {
     super.didUpdateWidget(oldWidget);
     final camera = widget.spec.camera;
     if (camera == oldWidget.spec.camera) {
@@ -184,6 +208,38 @@ class _OsmMapSurfaceState extends State<OsmMapSurface>
   }
 }
 
+/// Painted in place of the basemap when the build defined no Mapbox
+/// access token, so the cause of a blank map is stated on the map itself
+/// instead of being swallowed as an endless stream of failed tile
+/// requests.
+class _MissingAccessTokenNotice extends StatelessWidget {
+  static const Color _background = Color(0xFFFFF4E5);
+  static const Color _textColor = Color(0xFF8A4B00);
+  static const double _fontSize = 12.0;
+  static const EdgeInsets _padding = EdgeInsets.all(24.0);
+  static const String _message =
+      'Missing Mapbox access token. Run with '
+      '--dart-define=${MapboxStyle.accessTokenEnvKey}=pk.<your token>';
+
+  const _MissingAccessTokenNotice();
+
+  @override
+  Widget build(BuildContext context) => const ColoredBox(
+    color: _background,
+    child: Padding(
+      padding: _padding,
+      child: Center(
+        child: Text(
+          _message,
+          textAlign: TextAlign.center,
+          textDirection: TextDirection.ltr,
+          style: TextStyle(color: _textColor, fontSize: _fontSize),
+        ),
+      ),
+    ),
+  );
+}
+
 /// The center/zoom (and optional [CameraFit]) to seed `MapOptions` with on
 /// first build, before the map has laid out and gained a usable
 /// [MapController.camera] to resolve a [FitBoundsCameraTarget] against.
@@ -211,8 +267,8 @@ class _InitialCamera {
       zoom: zoom,
     ),
     FitBoundsCameraTarget(:final bounds, :final padding) => _InitialCamera(
-      center: _OsmMapSurfaceState._fallbackCenter,
-      zoom: _OsmMapSurfaceState._fallbackZoom,
+      center: _MapboxMapSurfaceState._fallbackCenter,
+      zoom: _MapboxMapSurfaceState._fallbackZoom,
       fit: CameraFit.bounds(
         bounds: bounds.toLatLngBounds(),
         padding: padding,

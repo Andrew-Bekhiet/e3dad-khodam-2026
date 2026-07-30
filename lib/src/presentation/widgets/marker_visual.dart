@@ -125,11 +125,11 @@ final class MarkerVisual {
     shadowBlur: 0,
     shadowOffsetDy: 0,
     shadowOpacity: 0,
-    boxWidth: 90,
-    labelSegmentHeight: 14,
-    labelFontSize: 11,
-    labelFontWeight: FontWeight.w500,
-    labelColor: Color(0xFF2B2B2B),
+    boxWidth: 116,
+    labelSegmentHeight: 18,
+    labelFontSize: 14,
+    labelFontWeight: FontWeight.w700,
+    labelColor: Color(0xFF14243A),
     showLabelPill: false,
   );
 
@@ -150,7 +150,7 @@ final class MarkerVisual {
   final double cornerRadius;
 
   /// The kind's fixed fill color (spec §3) — constant across light/dark
-  /// app themes since the OSM basemap is always light.
+  /// app themes since the Mapbox basemap style is always light.
   final Color color;
 
   /// Centered white icon, or null for a plain disc/shape.

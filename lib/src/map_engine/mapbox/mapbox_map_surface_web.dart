@@ -205,19 +205,24 @@ class _MapboxMapSurfaceWebState extends State<MapboxMapSurfaceWeb>
       ),
     );
     map.touchZoomRotate.disableRotation();
-    map.on('load', ((JSAny? _) => _onStyleLoaded(style)).toJS);
+    map.on('load', ((JSAny? _) => _addSprites(style)).toJS);
+    // Same safety net as the mobile surface: a `fill-pattern` whose
+    // image is absent draws nothing rather than falling back to
+    // `fill-color`, so the renderer gets to ask for what it is missing.
+    map.on('styleimagemissing', ((JSAny? _) => _addSprites(style)).toJS);
     map.on('move', ((JSAny? _) => _onRendererCameraChanged()).toJS);
     map.on('moveend', ((JSAny? _) => _onMoveEnd()).toJS);
     _map = map;
   }
 
-  void _onStyleLoaded(PixelStyle style) {
+  /// Registers the patterns — what turns the style's `fill-pattern`
+  /// references into artwork. GL JS takes raw RGBA here; the mobile
+  /// surface has to encode PNG instead (see `PixelSpritePng`).
+  void _addSprites(PixelStyle style) {
     final map = _map;
     if (map == null) {
       return;
     }
-    // Registering the patterns is what turns the style's `fill-pattern`
-    // references into artwork.
     for (final sprite in style.sprites) {
       if (map.hasImage(sprite.id)) {
         continue;

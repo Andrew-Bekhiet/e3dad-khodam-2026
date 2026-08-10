@@ -5,6 +5,8 @@ import 'package:e3dad_khodam_2026/src/map_engine/map_surface_spec.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/mapbox/mapbox_style.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/mapbox/missing_access_token_notice.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/mapbox/pixel_style_source.dart';
+import 'package:e3dad_khodam_2026/src/map_engine/pixel_style/pixel_sprite.dart';
+import 'package:e3dad_khodam_2026/src/map_engine/pixel_style/pixel_sprite_png.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/pixel_style/pixel_tuning.dart';
 import 'package:flutter/widgets.dart';
 // `Size` collides with `dart:ui`'s, and only the latter is wanted here.
@@ -55,6 +57,7 @@ class _MapboxMapSurfaceNativeState extends State<MapboxMapSurfaceNative>
   late final MapCameraController _camera;
   MapboxMap? _map;
   PixelStyle? _style;
+  bool _styleRequested = false;
 
   @override
   void initState() {
@@ -108,6 +111,7 @@ class _MapboxMapSurfaceNativeState extends State<MapboxMapSurfaceNative>
               styleUri: MapboxStyle.styleUri,
               onMapCreated: _onMapCreated,
               onStyleLoadedListener: _onStyleLoaded,
+              onStyleImageMissingListener: _onStyleImageMissing,
               onCameraChangeListener: _onRendererCameraChanged,
               onMapIdleListener: _onMapIdle,
             ),
@@ -163,41 +167,67 @@ class _MapboxMapSurfaceNativeState extends State<MapboxMapSurfaceNative>
   }
 
   /// Loads the pixel style, once both the map and the built style exist
-  /// — they arrive in either order.
+  /// — they arrive in either order, so whichever lands second does the
+  /// loading, and [_styleRequested] keeps that from happening twice.
   Future<void> _applyStyle() async {
     final map = _map;
     final style = _style;
-    if (map == null || style == null) {
+    if (map == null || style == null || _styleRequested) {
       return;
     }
+    _styleRequested = true;
     await map.loadStyleJson(style.json);
   }
 
   Future<void> _onStyleLoaded(StyleLoadedEventData _) async {
-    final map = _map;
-    final style = _style;
-    if (map == null || style == null) {
+    // Loading a style clears every registered image, so the patterns go
+    // back in after each load.
+    await _addSprites();
+    await _pushCamera();
+  }
+
+  /// Supplies a pattern the renderer asked for.
+  ///
+  /// The eager registration in [_onStyleLoaded] can lose the race
+  /// against the first render — `style-loaded` does not guarantee the
+  /// pattern atlas is still waiting — and a `fill-pattern` whose image
+  /// is absent draws nothing at all rather than falling back to
+  /// `fill-color`. This is the SDK's own remedy for that, and the only
+  /// path that is ordering-proof.
+  Future<void> _onStyleImageMissing(StyleImageMissingEventData event) async {
+    final sprite = _style?.sprites
+        .where((candidate) => candidate.id == event.id)
+        .firstOrNull;
+    if (sprite == null) {
       return;
     }
-    // Registering the patterns is what turns the style's `fill-pattern`
-    // references into artwork; loading a style clears any previously
-    // registered images, so this has to run after every style load.
-    for (final sprite in style.sprites) {
-      await map.style.addStyleImage(
-        sprite.id,
-        _spriteScale,
-        MbxImage(
-          width: sprite.width,
-          height: sprite.height,
-          data: sprite.rgba,
-        ),
-        false,
-        [],
-        [],
-        null,
-      );
+    await _addSprite(sprite);
+  }
+
+  Future<void> _addSprites() async {
+    for (final sprite in _style?.sprites ?? const <PixelSprite>[]) {
+      await _addSprite(sprite);
     }
-    await _pushCamera();
+  }
+
+  Future<void> _addSprite(PixelSprite sprite) async {
+    final map = _map;
+    if (map == null) {
+      return;
+    }
+    final png = await sprite.toPng();
+    if (!mounted) {
+      return;
+    }
+    await map.style.addStyleImage(
+      sprite.id,
+      _spriteScale,
+      MbxImage(width: sprite.width, height: sprite.height, data: png),
+      false,
+      [],
+      [],
+      null,
+    );
   }
 
   void _onCameraChanged() {

@@ -19,6 +19,7 @@ dependencies:
   flutter_map: ^8.3.1
   latlong2: ^0.10.1
   mapbox_maps_flutter: ^2.27.0
+  web: ^1.1.1
 
 dev_dependencies:
   bloc_test: ^10.0.0

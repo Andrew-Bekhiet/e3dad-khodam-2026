@@ -19,6 +19,17 @@ subprojects {
     project.evaluationDependsOn(":app")
 }
 
+// AGP 9 dropped the need to apply the Kotlin plugin by hand, but
+// mapbox_maps_flutter's build script still configures the `kotlin { }`
+// extension that plugin registers, and fails evaluating without it.
+// Applying it for that one module keeps the plugin buildable without
+// pinning this app back to AGP 8.
+subprojects {
+    if (name == "mapbox_maps_flutter") {
+        apply(plugin = "org.jetbrains.kotlin.android")
+    }
+}
+
 tasks.register<Delete>("clean") {
     delete(rootProject.layout.buildDirectory)
 }

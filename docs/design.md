@@ -1,7 +1,7 @@
 # Design Spec — خريطة رحلات بولس الرسول
 
-Arabic-only, RTL, single-purpose map app over `flutter_map` + a custom Mapbox Studio basemap
-style (`anderwbekhiet/cms775jc8003x01sd2mmyeczh`), served as raster tiles.
+Arabic-only, RTL, single-purpose map app over a **pixel-art Mapbox basemap** (§10), rendered by
+Mapbox's own engines: the Maps SDK on android/ios, Mapbox GL JS on web.
 This document is normative for implementation: use the numbers given, don't re-derive them.
 
 ---
@@ -239,19 +239,12 @@ breadcrumb, and between breadcrumb depths, so the app bar doesn't hard-cut.
 ## 8. Basemap attribution
 
 Required by Mapbox's terms of service (which also cover the OpenStreetMap data behind the
-style). Use flutter_map's built-in `RichAttributionWidget` rather than hand-rolling it:
+style). Both renderers ship their own attribution control and both are left enabled — the
+Mapbox logo and info link on mobile, the `© Mapbox © OpenStreetMap` line on web. Nothing about
+it is hand-rolled, and nothing may switch it off.
 
-- **Text**: two entries, `"© Mapbox"` and `"© OpenStreetMap"`.
-- **Placement**: bottom-right corner of the map viewport, 8dp margin — the flutter_map default
-  and standard slippy-map convention; kept regardless of app RTL since it's a map-layer element,
-  not app chrome, so it doesn't follow reading direction.
-- **Style**: 10sp/400 (Regular), color `#333333`, **system/default font — not Cairo** (Latin
-  legal string). White pill background, 60–70% opacity, 4dp/2dp padding, 4dp radius — small,
-  unobtrusive, still legible over dark water tiles.
-- Not tappable for now: linking out (`TextSourceAttribution.onTap`) needs a URL launcher, and
-  no such dependency is in scope. The text alone satisfies the required credit; wire
-  `https://www.mapbox.com/about/maps/` and `https://www.openstreetmap.org/copyright` when a
-  launcher is added.
+The other default ornaments *are* switched off (compass, scale bar): they are not required,
+and neither belongs on a map whose camera cannot rotate.
 
 ---
 
@@ -280,6 +273,57 @@ style). Use flutter_map's built-in `RichAttributionWidget` rather than hand-roll
 Rows are flat `ListTile`s with no subtitle, no trailing chevron, no navigation — tapping does
 nothing (these entries have no children and no map presence by design). Dismiss via standard
 drag-down or scrim tap.
+
+---
+
+## 10. Pixel-art basemap
+
+The basemap is the stock Mapbox Streets style rewritten at runtime into pixel art, ported from
+the `pixel-map-test.html` tuner. `PixelStyleBuilder` transforms the style document (bundled as
+`assets/map/mapbox_streets_base_style.json`) and `PixelSprites` generates the pattern images;
+both are pure Dart, shared by the mobile and web surfaces, so the two platforms render from one
+definition. The tuned values live in `PixelTuning` — the numbers below are that class, restated
+for review, not a second source of truth.
+
+| Knob | Value | Effect |
+|---|---|---|
+| art scale | 4× | 16×16 art pixels upscaled nearest-neighbour to a 64px pattern |
+| texture | 1.0 | motifs draw their full pixel count |
+| shading | 1.0 | accent colour used undiluted |
+| saturation / lightness | 0.83 / 0.76 | HSL multipliers over the base palette |
+| greenness | 2 | `wood`+`scrub` painted forest, `grass`+`crop` painted grass; `landuse` hidden |
+| coast line | 1px | black outline on every water polygon — the signature element |
+| labels | symbolrank ≤ 1 | basemap labels all but gone; the app draws its own Arabic ones |
+| roads / boundaries | hidden | including road shields, oneway arrows and ferry labels |
+| zoom snap | 1.0 | camera settles on whole zoom levels, so patterns stay pixel-aligned |
+
+### Palette
+
+| Material | Base | Accent | Motif |
+|---|---|---|---|
+| water | `#34608f` | `#3586d1` | 3px horizontal dashes |
+| grass | `#52853e` | `#3a6830` | single-pixel speckle |
+| forest | `#295129` | `#17341d` | five canopy blobs |
+| sand | `#bfa05c` | `#a28650` | single-pixel speckle |
+| snow | `#87aff4` | `#7ea3d1` | single-pixel speckle |
+
+Mapbox's `landcover` data has no desert class, so bare land is *sand painted as the map
+background* and every green material is layered over it.
+
+Sprite layout is deterministic: a ported Mulberry32 PRNG with a fixed per-material seed,
+verified against the JavaScript to the bit. Texture that reshuffles between runs reads as a
+rendering bug rather than as style.
+
+### Camera and markers
+
+The app owns the camera (`WebMercatorCamera`) rather than reading one back from the renderer.
+Marker widgets sit on top of a platform view, so their positions must be known in the same
+frame the basemap draws; asking the renderer to project a coordinate is an async round trip
+and would leave markers trailing the map. The app animates its own camera and pushes each
+frame to the renderer; gestures travel the other way, and only there do markers lag.
+
+This is why rotation and pitch are disabled on both platforms: a rotated or pitched camera
+would invalidate the projection every marker position and the whole cross layout depend on.
 
 ---
 

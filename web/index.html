@@ -31,6 +31,15 @@
 
   <title>خريطة رحلات بولس الرسول</title>
   <link rel="manifest" href="manifest.json">
+
+  <!--
+    Mapbox GL JS renders the basemap on web (the Maps SDK the mobile
+    builds use has no web implementation). It has to be a plain script
+    tag: the app reaches the library through the `mapboxgl` global, and
+    nothing draws until this has run.
+  -->
+  <link href="https://api.mapbox.com/mapbox-gl-js/v3.27.0/mapbox-gl.css" rel="stylesheet">
+  <script src="https://api.mapbox.com/mapbox-gl-js/v3.27.0/mapbox-gl.js"></script>
 </head>
 <body>
   <!--

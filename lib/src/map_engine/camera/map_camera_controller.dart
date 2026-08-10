@@ -24,6 +24,13 @@ enum CameraChangeOrigin {
 final class MapCameraController extends ChangeNotifier {
   static const Curve _curve = Curves.easeInOutCubic;
 
+  /// Degrees of centre movement below which a renderer-reported camera
+  /// counts as the one the app already has. Roughly a tenth of a metre.
+  static const double _adoptEpsilon = 1e-6;
+
+  /// Zoom difference below which two cameras count as the same.
+  static const double _zoomEpsilon = 1e-4;
+
   final AnimationController _animation;
 
   /// Lower bound applied to every resolved zoom.
@@ -104,6 +111,11 @@ final class MapCameraController extends ChangeNotifier {
   /// Adopts a camera the renderer arrived at on its own — a pan or
   /// pinch. Ignored while an app-driven animation is in flight, where
   /// the renderer is merely echoing back the frames we just pushed.
+  ///
+  /// Movements smaller than [_adoptEpsilon] are also ignored: a
+  /// renderer echoes back a camera we pushed with the last bits of the
+  /// coordinates rounded, and adopting that would clear the pending
+  /// target for no visible gain.
   void adoptFromRenderer({
     required GeoPosition center,
     required double zoom,
@@ -113,7 +125,7 @@ final class MapCameraController extends ChangeNotifier {
       return;
     }
     final adopted = current.copyWith(center: center, zoom: zoom);
-    if (adopted == current) {
+    if (!_differsMeaningfully(current, adopted)) {
       return;
     }
     _camera = adopted;
@@ -122,6 +134,34 @@ final class MapCameraController extends ChangeNotifier {
     _target = null;
     _emit(CameraChangeOrigin.renderer);
   }
+
+  /// Settles the zoom onto the nearest multiple of [step], keeping the
+  /// centre. A [step] of `0` disables snapping.
+  void snapZoom(double step, {required Duration duration}) {
+    final current = _camera;
+    if (current == null || step <= 0 || isAnimating) {
+      return;
+    }
+    final snapped = ((current.zoom / step).roundToDouble() * step).clamp(
+      minZoom,
+      maxZoom,
+    );
+    if ((snapped - current.zoom).abs() < _zoomEpsilon) {
+      return;
+    }
+    moveTo(
+      CenterZoomCameraTarget(center: current.center, zoom: snapped),
+      duration: duration,
+    );
+  }
+
+  static bool _differsMeaningfully(
+    WebMercatorCamera from,
+    WebMercatorCamera to,
+  ) =>
+      (from.zoom - to.zoom).abs() > _zoomEpsilon ||
+      (from.center.latitude - to.center.latitude).abs() > _adoptEpsilon ||
+      (from.center.longitude - to.center.longitude).abs() > _adoptEpsilon;
 
   void _onTick() {
     final from = _from;

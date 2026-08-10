@@ -40,6 +40,23 @@ solid_lints:
       exclude:
         - method_name: copyWith
     no_magic_number: false
+    no_empty_block:
+      # The mixin's setState(() {}) rebuild trigger and the web platform's
+      # no-op configureMapboxRenderer() seam are both documented with an
+      # in-block comment explaining why the body is intentionally empty.
+      allow_with_comments: true
+    avoid_late_keyword:
+      # Built in initState against `vsync: this`, which is only available
+      # once the State is attached — see MapCameraController's call sites
+      # for the full rationale.
+      ignored_types:
+        - MapCameraController
+    prefer_match_file_name:
+      # mapbox_gl_js.dart is a hand-written JS-interop bindings file with
+      # several extension types; the first declared one need not match
+      # the file name.
+      exclude_entity:
+        - extension_type
 
 analyzer:
   language:

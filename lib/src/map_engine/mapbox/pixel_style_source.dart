@@ -5,21 +5,6 @@ import 'package:e3dad_khodam_2026/src/map_engine/pixel_style/pixel_sprite.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/pixel_style/pixel_style_builder.dart';
 import 'package:flutter/services.dart';
 
-/// The finished pixel basemap: the style document to hand a renderer,
-/// and the pattern images it references.
-final class PixelStyle {
-  /// The transformed style, as the JSON string both renderers accept.
-  final String json;
-
-  /// Patterns the style's `fill-pattern`/`background-pattern` names
-  /// refer to. A renderer must register every one of these, or the
-  /// patterned fills draw as nothing.
-  final List<PixelSprite> sprites;
-
-  /// Creates a built style.
-  const PixelStyle({required this.json, required this.sprites});
-}
-
 /// Builds the pixel basemap from the bundled stock Mapbox style.
 ///
 /// The stock style ships as an asset rather than being fetched from the
@@ -33,8 +18,6 @@ final class PixelStyleSource {
   /// `curl "https://api.mapbox.com/styles/v1/<user>/<style>?access_token=<pk>"`
   static const String baseStyleAsset =
       'assets/map/mapbox_streets_base_style.json';
-
-  const PixelStyleSource._();
 
   /// Loads the base style and rewrites it into the pixel look.
   static Future<PixelStyle> load({AssetBundle? bundle}) async {
@@ -50,4 +33,21 @@ final class PixelStyleSource {
       sprites: PixelSprites.build(palette),
     );
   }
+
+  const PixelStyleSource._();
+}
+
+/// The finished pixel basemap: the style document to hand a renderer,
+/// and the pattern images it references.
+final class PixelStyle {
+  /// The transformed style, as the JSON string both renderers accept.
+  final String json;
+
+  /// Patterns the style's `fill-pattern`/`background-pattern` names
+  /// refer to. A renderer must register every one of these, or the
+  /// patterned fills draw as nothing.
+  final List<PixelSprite> sprites;
+
+  /// Creates a built style.
+  const PixelStyle({required this.json, required this.sprites});
 }

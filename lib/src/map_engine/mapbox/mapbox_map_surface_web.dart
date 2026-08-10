@@ -2,6 +2,7 @@ import 'dart:js_interop';
 import 'dart:ui_web' as ui_web;
 
 import 'package:e3dad_khodam_2026/src/domain/geo_position.dart';
+import 'package:e3dad_khodam_2026/src/map_engine/camera/camera_change_listener_mixin.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/camera/map_camera_controller.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/camera/projected_marker_layer.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/map_surface_builder.dart';
@@ -30,8 +31,9 @@ const MapSurfaceBuilder mapboxMapSurface = MapboxMapSurfaceWeb.new;
 /// No-op on web: GL JS takes the access token when each map is created,
 /// so there is no global to configure up front. Still required so both
 /// platforms present the same seam to `main.dart`.
-// ignore: no_empty_block
-void configureMapboxRenderer() {}
+void configureMapboxRenderer() {
+  // Intentionally empty — see doc comment above.
+}
 
 /// The web map surface: Mapbox GL JS in a platform view, rendering the
 /// same pixel style the mobile surface renders, with the app's marker
@@ -53,7 +55,9 @@ final class MapboxMapSurfaceWeb extends StatefulWidget {
 }
 
 class _MapboxMapSurfaceWebState extends State<MapboxMapSurfaceWeb>
-    with SingleTickerProviderStateMixin {
+    with
+        SingleTickerProviderStateMixin,
+        CameraChangeListenerMixin<MapboxMapSurfaceWeb> {
   /// Platform view type, registered once per app run.
   static const String _viewType = 'e3dad-khodam-mapbox-gl';
 
@@ -72,9 +76,11 @@ class _MapboxMapSurfaceWebState extends State<MapboxMapSurfaceWeb>
 
   // Built in initState against `vsync: this`, which only becomes
   // available once this State is attached — see the identical field on
-  // the native surface for the full rationale.
-  // ignore: avoid_late_keyword
-  late final MapCameraController _camera;
+  // the native surface for the full rationale. Overrides
+  // CameraChangeListenerMixin's abstract getter directly, rather than
+  // through a delegating getter.
+  @override
+  late final MapCameraController cameraController;
   int? _viewId;
   gl.GlMap? _map;
 
@@ -82,17 +88,18 @@ class _MapboxMapSurfaceWebState extends State<MapboxMapSurfaceWeb>
   void initState() {
     super.initState();
     _registerViewFactory();
-    _camera = MapCameraController(
+    cameraController = MapCameraController(
       vsync: this,
       minZoom: widget.spec.minZoom,
       maxZoom: widget.spec.maxZoom,
-    )..addListener(_onCameraChanged);
+    );
+    listenForCameraChanges();
   }
 
   @override
   void didUpdateWidget(MapboxMapSurfaceWeb oldWidget) {
     super.didUpdateWidget(oldWidget);
-    _camera.syncFrom(widget.spec, oldWidget.spec);
+    cameraController.syncFrom(widget.spec, oldWidget.spec);
   }
 
   @override
@@ -104,7 +111,7 @@ class _MapboxMapSurfaceWebState extends State<MapboxMapSurfaceWeb>
     return LayoutBuilder(
       builder: (context, constraints) {
         _scheduleViewport(constraints.biggest);
-        final camera = _camera.camera;
+        final camera = cameraController.camera;
 
         return Stack(
           fit: StackFit.expand,
@@ -126,9 +133,8 @@ class _MapboxMapSurfaceWebState extends State<MapboxMapSurfaceWeb>
 
   @override
   void dispose() {
-    _camera
-      ..removeListener(_onCameraChanged)
-      ..dispose();
+    stopListeningForCameraChanges();
+    cameraController.dispose();
     _map?.remove();
     _containers.remove(_viewId);
 
@@ -157,14 +163,14 @@ class _MapboxMapSurfaceWebState extends State<MapboxMapSurfaceWeb>
   /// Viewport changes arrive mid-build; resolving the camera notifies
   /// listeners, which would rebuild this widget while it is building.
   void _scheduleViewport(Size size) {
-    if (_camera.camera?.viewport == size) {
+    if (cameraController.camera?.viewport == size) {
       return;
     }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) {
         return;
       }
-      _camera.setViewport(size);
+      cameraController.setViewport(size);
       _map?.resize();
     });
   }
@@ -198,17 +204,17 @@ class _MapboxMapSurfaceWebState extends State<MapboxMapSurfaceWeb>
         // to Dart maps only to convert them back would copy the whole
         // 130-layer document twice.
         style: _jsonParse(style.json),
-        center: _positionToJs(_initialCenter),
-        zoom: widget.spec.minZoom,
-        minZoom: widget.spec.minZoom,
-        maxZoom: widget.spec.maxZoom,
-        // A rotated or pitched camera would invalidate the app's own
-        // Web Mercator projection, which every marker position depends
-        // on.
-        dragRotate: false,
-        pitchWithRotate: false,
-        touchPitch: false,
-        antialias: false,
+        viewport: (
+          center: _positionToJs(_initialCenter),
+          zoom: widget.spec.minZoom,
+          minZoom: widget.spec.minZoom,
+          maxZoom: widget.spec.maxZoom,
+        ),
+        gestures: (
+          dragRotate: false,
+          pitchWithRotate: false,
+          touchPitch: false,
+        ),
       ),
     );
     map.touchZoomRotate.disableRotation();
@@ -247,19 +253,12 @@ class _MapboxMapSurfaceWebState extends State<MapboxMapSurfaceWeb>
     _pushCamera();
   }
 
-  void _onCameraChanged() {
-    if (!mounted) {
-      return;
-    }
-    setState(() {});
-    if (_camera.origin == CameraChangeOrigin.app) {
-      _pushCamera();
-    }
-  }
+  @override
+  void pushCameraToRenderer() => _pushCamera();
 
   void _pushCamera() {
     final map = _map;
-    final camera = _camera.camera;
+    final camera = cameraController.camera;
     if (map == null || camera == null) {
       return;
     }
@@ -279,7 +278,7 @@ class _MapboxMapSurfaceWebState extends State<MapboxMapSurfaceWeb>
       return;
     }
     final center = map.getCenter();
-    _camera.adoptFromRenderer(
+    cameraController.adoptFromRenderer(
       center: GeoPosition(latitude: center.lat, longitude: center.lng),
       zoom: map.getZoom(),
     );
@@ -289,11 +288,11 @@ class _MapboxMapSurfaceWebState extends State<MapboxMapSurfaceWeb>
   /// the renderer resamples the patterns and the pixel art turns to
   /// mush.
   void _onMoveEnd() =>
-      _camera.snapZoom(PixelTuning.zoomSnap, duration: _snapDuration);
+      cameraController.snapZoom(PixelTuning.zoomSnap, duration: _snapDuration);
 
   /// Where the map opens before the app's own camera is pushed on
   /// style load — a moment later, and always overridden.
-  GeoPosition get _initialCenter => _camera.camera?.center ?? _nullIsland;
+  GeoPosition get _initialCenter => cameraController.camera?.center ?? _nullIsland;
 
   static const GeoPosition _nullIsland = GeoPosition(
     latitude: 0,

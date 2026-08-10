@@ -7,6 +7,9 @@
 /// token is reported by `MissingAccessTokenNotice` rather than silently
 /// producing an empty basemap.
 final class MapboxStyle {
+  /// Whether [accessToken] was supplied at build time.
+  static bool get hasAccessToken => accessToken.isNotEmpty;
+
   /// Owner of the Studio style — the `{username}` path segment of the
   /// Static Tiles API.
   static const String username = 'anderwbekhiet';
@@ -26,9 +29,6 @@ final class MapboxStyle {
   static const String accessToken = String.fromEnvironment(
     'MAPBOX_ACCESS_TOKEN',
   );
-
-  /// Whether [accessToken] was supplied at build time.
-  static bool get hasAccessToken => accessToken.isNotEmpty;
 
   /// The dart-define key [accessToken] is read from, named here so error
   /// messages and build docs cannot drift apart.

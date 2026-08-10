@@ -1,35 +1,6 @@
 import 'package:e3dad_khodam_2026/src/map_engine/pixel_style/pixel_rgb.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/pixel_style/pixel_tuning.dart';
 
-/// One terrain material's two colours: the flat fill and the accent the
-/// motif speckles over it.
-final class PixelMaterial {
-  /// The fill colour the tile is flooded with.
-  final PixelRgb base;
-
-  /// The accent colour motif pixels are drawn in, before
-  /// [PixelTuning.shadingContrast] pulls it back toward [base].
-  final PixelRgb accent;
-
-  /// Creates a material from its two colours.
-  const PixelMaterial({required this.base, required this.accent});
-
-  /// This material with both colours pushed through
-  /// [PixelRgb.adjusted].
-  PixelMaterial adjusted({
-    required double saturation,
-    required double lightness,
-  }) => PixelMaterial(
-    base: base.adjusted(saturation: saturation, lightness: lightness),
-    accent: accent.adjusted(saturation: saturation, lightness: lightness),
-  );
-
-  /// The accent as actually painted: [base] blended toward [accent] by
-  /// `contrast`, so the shading knob fades the motif out rather than
-  /// removing it.
-  PixelRgb shadedAccent(double contrast) => base.mixedWith(accent, contrast);
-}
-
 /// The five terrain materials of the pixel basemap, after the
 /// saturation/lightness knobs have been applied.
 ///
@@ -100,4 +71,33 @@ final class PixelPalette {
     sand: _baseSand.adjusted(saturation: saturation, lightness: lightness),
     snow: _baseSnow.adjusted(saturation: saturation, lightness: lightness),
   );
+}
+
+/// One terrain material's two colours: the flat fill and the accent the
+/// motif speckles over it.
+final class PixelMaterial {
+  /// The fill colour the tile is flooded with.
+  final PixelRgb base;
+
+  /// The accent colour motif pixels are drawn in, before
+  /// [PixelTuning.shadingContrast] pulls it back toward [base].
+  final PixelRgb accent;
+
+  /// Creates a material from its two colours.
+  const PixelMaterial({required this.base, required this.accent});
+
+  /// This material with both colours pushed through
+  /// [PixelRgb.adjusted].
+  PixelMaterial adjusted({
+    required double saturation,
+    required double lightness,
+  }) => PixelMaterial(
+    base: base.adjusted(saturation: saturation, lightness: lightness),
+    accent: accent.adjusted(saturation: saturation, lightness: lightness),
+  );
+
+  /// The accent as actually painted: [base] blended toward [accent] by
+  /// `contrast`, so the shading knob fades the motif out rather than
+  /// removing it.
+  PixelRgb shadedAccent(double contrast) => base.mixedWith(accent, contrast);
 }

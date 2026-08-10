@@ -31,8 +31,11 @@ void main() {
       final codec = await ui.instantiateImageCodec(await sprite.toPng());
       final frame = await codec.getNextFrame();
       final decoded = await frame.image.toByteData();
+      if (decoded == null) {
+        fail('toByteData returned null');
+      }
 
-      expect(decoded!.buffer.asUint8List(), sprite.rgba);
+      expect(decoded.buffer.asUint8List(), sprite.rgba);
       frame.image.dispose();
       codec.dispose();
     });

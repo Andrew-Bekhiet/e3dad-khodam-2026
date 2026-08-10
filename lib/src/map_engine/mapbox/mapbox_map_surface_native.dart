@@ -1,4 +1,5 @@
 import 'package:e3dad_khodam_2026/src/domain/geo_position.dart';
+import 'package:e3dad_khodam_2026/src/map_engine/camera/camera_change_listener_mixin.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/camera/map_camera_controller.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/camera/projected_marker_layer.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/map_surface_builder.dart';
@@ -51,7 +52,9 @@ final class MapboxMapSurfaceNative extends StatefulWidget {
 }
 
 class _MapboxMapSurfaceNativeState extends State<MapboxMapSurfaceNative>
-    with SingleTickerProviderStateMixin {
+    with
+        SingleTickerProviderStateMixin,
+        CameraChangeListenerMixin<MapboxMapSurfaceNative> {
   /// Sprites are authored at one image pixel per screen pixel; letting
   /// the renderer scale them would smooth the very edges the look is
   /// made of.
@@ -64,9 +67,10 @@ class _MapboxMapSurfaceNativeState extends State<MapboxMapSurfaceNative>
   // Built in initState against `vsync: this`, which only becomes
   // available once this State is attached — a nullable field with a
   // null check on every use would be strictly worse than the one late
-  // initialization this buys.
-  // ignore: avoid_late_keyword
-  late final MapCameraController _camera;
+  // initialization this buys. Overrides CameraChangeListenerMixin's
+  // abstract getter directly, rather than through a delegating getter.
+  @override
+  late final MapCameraController cameraController;
   MapboxMap? _map;
   PixelStyle? _style;
   bool _styleRequested = false;
@@ -74,18 +78,19 @@ class _MapboxMapSurfaceNativeState extends State<MapboxMapSurfaceNative>
   @override
   void initState() {
     super.initState();
-    _camera = MapCameraController(
+    cameraController = MapCameraController(
       vsync: this,
       minZoom: widget.spec.minZoom,
       maxZoom: widget.spec.maxZoom,
-    )..addListener(_onCameraChanged);
+    );
+    listenForCameraChanges();
     _loadStyle();
   }
 
   @override
   void didUpdateWidget(MapboxMapSurfaceNative oldWidget) {
     super.didUpdateWidget(oldWidget);
-    _camera.syncFrom(widget.spec, oldWidget.spec);
+    cameraController.syncFrom(widget.spec, oldWidget.spec);
   }
 
   @override
@@ -97,7 +102,7 @@ class _MapboxMapSurfaceNativeState extends State<MapboxMapSurfaceNative>
     return LayoutBuilder(
       builder: (context, constraints) {
         _scheduleViewport(constraints.biggest);
-        final camera = _camera.camera;
+        final camera = cameraController.camera;
 
         return Stack(
           fit: StackFit.expand,
@@ -128,9 +133,8 @@ class _MapboxMapSurfaceNativeState extends State<MapboxMapSurfaceNative>
 
   @override
   void dispose() {
-    _camera
-      ..removeListener(_onCameraChanged)
-      ..dispose();
+    stopListeningForCameraChanges();
+    cameraController.dispose();
     super.dispose();
   }
 
@@ -138,14 +142,14 @@ class _MapboxMapSurfaceNativeState extends State<MapboxMapSurfaceNative>
   /// notifies listeners and would rebuild this widget while it is
   /// already building — so hand it to the next frame.
   void _scheduleViewport(Size size) {
-    if (_camera.camera?.viewport == size) {
+    if (cameraController.camera?.viewport == size) {
       return;
     }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) {
         return;
       }
-      _camera.setViewport(size);
+      cameraController.setViewport(size);
     });
   }
 
@@ -239,21 +243,14 @@ class _MapboxMapSurfaceNativeState extends State<MapboxMapSurfaceNative>
     );
   }
 
-  void _onCameraChanged() {
-    if (!mounted) {
-      return;
-    }
-    // Reposition the markers for the new camera regardless of who moved
-    // it; only tell the renderer about movements it did not make.
-    setState(() {});
-    if (_camera.origin == CameraChangeOrigin.app) {
-      _pushCamera();
-    }
+  @override
+  void pushCameraToRenderer() {
+    _pushCamera();
   }
 
   Future<void> _pushCamera() async {
     final map = _map;
-    final camera = _camera.camera;
+    final camera = cameraController.camera;
     if (map == null || camera == null) {
       return;
     }
@@ -269,7 +266,7 @@ class _MapboxMapSurfaceNativeState extends State<MapboxMapSurfaceNative>
 
   void _onRendererCameraChanged(CameraChangedEventData event) {
     final center = event.cameraState.center.coordinates;
-    _camera.adoptFromRenderer(
+    cameraController.adoptFromRenderer(
       center: GeoPosition(
         latitude: center.lat.toDouble(),
         longitude: center.lng.toDouble(),
@@ -282,7 +279,7 @@ class _MapboxMapSurfaceNativeState extends State<MapboxMapSurfaceNative>
   /// levels the renderer resamples the patterns and the pixel art turns
   /// to mush.
   void _onMapIdle(MapIdleEventData _) {
-    _camera.snapZoom(PixelTuning.zoomSnap, duration: _snapDuration);
+    cameraController.snapZoom(PixelTuning.zoomSnap, duration: _snapDuration);
   }
 
   static Point _pointOf(GeoPosition position) =>

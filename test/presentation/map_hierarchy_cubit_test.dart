@@ -7,22 +7,35 @@ import 'package:e3dad_khodam_2026/src/presentation/cubit/map_hierarchy_state.dar
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+// The dataset is a compile-time constant, so a real repository exercises
+// exactly the same tree every test would get from a mock — mocking it
+// would only add indirection, not isolation.
+const _repository = StaticJourneyMapRepository();
+
+// Pins the exact fixed root camera the cubit is documented to always
+// return at the root cross; mirrors MapHierarchyCubit's own private
+// `_rootBounds`/`_fitPadding` constants.
+const _rootCamera = FitBoundsCameraTarget(
+  bounds: GeoBounds(south: 28.5, west: 15.0, north: 46.5, east: 37.0),
+  padding: EdgeInsets.only(top: 100, left: 84, right: 84, bottom: 56),
+);
+
+/// Matches a [MapHierarchyState] back at the root cross — shared by the
+/// tests that return to it via different paths ([MapHierarchyCubit.reset],
+/// wrapping [MapHierarchyCubit.backward] past the first depth-first node).
+Matcher _isRootState() => isA<MapHierarchyState>()
+    .having((state) => state.isAtRoot, 'isAtRoot', isTrue)
+    .having((state) => state.breadcrumb, 'breadcrumb', isEmpty);
+
 void main() {
-  // The dataset is a compile-time constant, so a real repository exercises
-  // exactly the same tree every test would get from a mock — mocking it
-  // would only add indirection, not isolation.
-  const repository = StaticJourneyMapRepository();
+  _constructionAndDrillDownTests();
+  _goBackAndResetTests();
+  _traversalTests();
+}
 
-  // Pins the exact fixed root camera the cubit is documented to always
-  // return at the root cross; mirrors MapHierarchyCubit's own private
-  // `_rootBounds`/`_fitPadding` constants.
-  const rootCamera = FitBoundsCameraTarget(
-    bounds: GeoBounds(south: 28.5, west: 15.0, north: 46.5, east: 37.0),
-    padding: EdgeInsets.only(top: 100, left: 84, right: 84, bottom: 56),
-  );
-
+void _constructionAndDrillDownTests() {
   test('MapHierarchyCubit_construction_startsAtRootWithFourCategories', () {
-    final cubit = MapHierarchyCubit(repository);
+    final cubit = MapHierarchyCubit(_repository);
     addTearDown(cubit.close);
 
     expect(cubit.state.isAtRoot, isTrue);
@@ -31,12 +44,12 @@ void main() {
       cubit.state.visibleNodes.map((node) => node.id).toList(),
       ['continents', 'countries', 'seas', 'islands'],
     );
-    expect(cubit.state.camera, equals(rootCamera));
+    expect(cubit.state.camera, equals(_rootCamera));
   });
 
   blocTest<MapHierarchyCubit, MapHierarchyState>(
     'MapHierarchyCubit_drillDownIntoCategory_showsChildrenAndBreadcrumb',
-    build: () => MapHierarchyCubit(repository),
+    build: () => MapHierarchyCubit(_repository),
     act: (cubit) => cubit.drillDown('countries'),
     expect: () => [
       isA<MapHierarchyState>()
@@ -55,7 +68,7 @@ void main() {
 
   blocTest<MapHierarchyCubit, MapHierarchyState>(
     'MapHierarchyCubit_drillDownTwoLevels_showsCitiesAndFocusesParent',
-    build: () => MapHierarchyCubit(repository),
+    build: () => MapHierarchyCubit(_repository),
     act: (cubit) {
       cubit.drillDown('countries');
       cubit.drillDown('asia_minor');
@@ -83,21 +96,23 @@ void main() {
 
   blocTest<MapHierarchyCubit, MapHierarchyState>(
     'MapHierarchyCubit_drillDownOnLeafCity_emitsNothing',
-    build: () => MapHierarchyCubit(repository),
+    build: () => MapHierarchyCubit(_repository),
     act: (cubit) => cubit.drillDown('rome'),
     expect: () => <MapHierarchyState>[],
   );
 
   blocTest<MapHierarchyCubit, MapHierarchyState>(
     'MapHierarchyCubit_drillDownOnUnknownId_emitsNothing',
-    build: () => MapHierarchyCubit(repository),
+    build: () => MapHierarchyCubit(_repository),
     act: (cubit) => cubit.drillDown('atlantis'),
     expect: () => <MapHierarchyState>[],
   );
+}
 
+void _goBackAndResetTests() {
   blocTest<MapHierarchyCubit, MapHierarchyState>(
     'MapHierarchyCubit_goBackFromDepthOne_returnsToRoot',
-    build: () => MapHierarchyCubit(repository),
+    build: () => MapHierarchyCubit(_repository),
     act: (cubit) {
       cubit.drillDown('countries');
       cubit.goBack();
@@ -107,13 +122,13 @@ void main() {
       isA<MapHierarchyState>()
           .having((state) => state.isAtRoot, 'isAtRoot', isTrue)
           .having((state) => state.breadcrumb, 'breadcrumb', isEmpty)
-          .having((state) => state.camera, 'camera', equals(rootCamera)),
+          .having((state) => state.camera, 'camera', equals(_rootCamera)),
     ],
   );
 
   blocTest<MapHierarchyCubit, MapHierarchyState>(
     'MapHierarchyCubit_goBackFromDepthTwo_returnsToDepthOne',
-    build: () => MapHierarchyCubit(repository),
+    build: () => MapHierarchyCubit(_repository),
     act: (cubit) {
       cubit.drillDown('countries');
       cubit.drillDown('asia_minor');
@@ -137,30 +152,26 @@ void main() {
 
   blocTest<MapHierarchyCubit, MapHierarchyState>(
     'MapHierarchyCubit_goBackAtRoot_emitsNothing',
-    build: () => MapHierarchyCubit(repository),
+    build: () => MapHierarchyCubit(_repository),
     act: (cubit) => cubit.goBack(),
     expect: () => <MapHierarchyState>[],
   );
 
   blocTest<MapHierarchyCubit, MapHierarchyState>(
     'MapHierarchyCubit_resetFromDepthTwo_returnsToRootInOneEmission',
-    build: () => MapHierarchyCubit(repository),
+    build: () => MapHierarchyCubit(_repository),
     act: (cubit) {
       cubit.drillDown('countries');
       cubit.drillDown('asia_minor');
       cubit.reset();
     },
     skip: 2,
-    expect: () => [
-      isA<MapHierarchyState>()
-          .having((state) => state.isAtRoot, 'isAtRoot', isTrue)
-          .having((state) => state.breadcrumb, 'breadcrumb', isEmpty),
-    ],
+    expect: () => [_isRootState()],
   );
 
   blocTest<MapHierarchyCubit, MapHierarchyState>(
     'MapHierarchyCubit_drillDownToSingleChildCountry_hasNonDegenerateBounds',
-    build: () => MapHierarchyCubit(repository),
+    build: () => MapHierarchyCubit(_repository),
     act: (cubit) => cubit.drillDown('italy'),
     expect: () => [
       isA<MapHierarchyState>().having(
@@ -176,10 +187,12 @@ void main() {
       ),
     ],
   );
+}
 
+void _traversalTests() {
   blocTest<MapHierarchyCubit, MapHierarchyState>(
     'MapHierarchyCubit_forwardFromOverview_focusesFirstDfsNode',
-    build: () => MapHierarchyCubit(repository),
+    build: () => MapHierarchyCubit(_repository),
     act: (cubit) => cubit.forward(),
     expect: () => [
       isA<MapHierarchyState>()
@@ -203,7 +216,7 @@ void main() {
 
   blocTest<MapHierarchyCubit, MapHierarchyState>(
     'MapHierarchyCubit_forwardFromExpandedParent_stepsIntoFirstLeafChild',
-    build: () => MapHierarchyCubit(repository),
+    build: () => MapHierarchyCubit(_repository),
     act: (cubit) {
       cubit.drillDown('countries');
       cubit.drillDown('asia_minor');
@@ -227,7 +240,7 @@ void main() {
 
   blocTest<MapHierarchyCubit, MapHierarchyState>(
     'MapHierarchyCubit_backwardFromOverview_focusesLastDfsNode',
-    build: () => MapHierarchyCubit(repository),
+    build: () => MapHierarchyCubit(_repository),
     act: (cubit) => cubit.backward(),
     expect: () => [
       isA<MapHierarchyState>()
@@ -242,22 +255,18 @@ void main() {
 
   blocTest<MapHierarchyCubit, MapHierarchyState>(
     'MapHierarchyCubit_backwardFromFirstDfsNode_wrapsToOverview',
-    build: () => MapHierarchyCubit(repository),
+    build: () => MapHierarchyCubit(_repository),
     act: (cubit) {
       cubit.drillDown('continents');
       cubit.backward();
     },
     skip: 1,
-    expect: () => [
-      isA<MapHierarchyState>()
-          .having((state) => state.isAtRoot, 'isAtRoot', isTrue)
-          .having((state) => state.breadcrumb, 'breadcrumb', isEmpty),
-    ],
+    expect: () => [_isRootState()],
   );
 
   blocTest<MapHierarchyCubit, MapHierarchyState>(
     'MapHierarchyCubit_forwardThenBackward_returnsToSameState',
-    build: () => MapHierarchyCubit(repository),
+    build: () => MapHierarchyCubit(_repository),
     act: (cubit) {
       cubit.drillDown('countries');
       cubit.forward();

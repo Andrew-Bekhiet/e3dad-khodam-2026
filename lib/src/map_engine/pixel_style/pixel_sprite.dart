@@ -55,7 +55,14 @@ final class PixelSprites {
   static const int _bytesPerPixel = 4;
   static const int _opaque = 255;
 
-  const PixelSprites._();
+  // Per-pattern seeds. Fixed, not derived from anything that changes at
+  // runtime: a texture that reshuffles when an unrelated setting moves
+  // reads as a rendering bug rather than as style.
+  static const int _waveSeed = 11;
+  static const int _grassSeed = 23;
+  static const int _treeSeed = 37;
+  static const int _sandSeed = 51;
+  static const int _snowSeed = 67;
 
   /// Builds every pattern for [palette] at the tuned settings.
   static List<PixelSprite> build(PixelPalette palette) => [
@@ -65,15 +72,6 @@ final class PixelSprites {
     _sprite(sand, palette.sand, _Motif.speckle, _sandSeed),
     _sprite(snow, palette.snow, _Motif.speckle, _snowSeed),
   ];
-
-  // Per-pattern seeds. Fixed, not derived from anything that changes at
-  // runtime: a texture that reshuffles when an unrelated setting moves
-  // reads as a rendering bug rather than as style.
-  static const int _waveSeed = 11;
-  static const int _grassSeed = 23;
-  static const int _treeSeed = 37;
-  static const int _sandSeed = 51;
-  static const int _snowSeed = 67;
 
   static PixelSprite _sprite(
     String id,
@@ -116,6 +114,8 @@ final class PixelSprites {
 
     return PixelSprite(id: id, width: size, height: size, rgba: rgba);
   }
+
+  const PixelSprites._();
 }
 
 /// A single accent pixel's position inside the `artSize × artSize` grid.
@@ -220,6 +220,16 @@ final class _PixelRandom {
   static const int _halfWordBits = 16;
   static const double _twoPow32 = 4294967296.0;
 
+  /// `Math.imul`: the low 32 bits of `a * b`. Split into half-words
+  /// because on the web Dart ints are doubles, and a full 32×32 product
+  /// overflows the 53 bits of exact integer precision they carry.
+  static int _mul32(int a, int b) {
+    final low = a & _mask16;
+    final high = (a >>> _halfWordBits) & _mask16;
+
+    return (low * b + (((high * b) & _mask16) << _halfWordBits)) & _mask32;
+  }
+
   int _state;
 
   _PixelRandom(int seed) : _state = seed & _mask32;
@@ -240,14 +250,4 @@ final class _PixelRandom {
 
   /// The next integer in `[0, bound)`.
   int nextIndex(int bound) => (nextDouble() * bound).floor();
-
-  /// `Math.imul`: the low 32 bits of `a * b`. Split into half-words
-  /// because on the web Dart ints are doubles, and a full 32×32 product
-  /// overflows the 53 bits of exact integer precision they carry.
-  static int _mul32(int a, int b) {
-    final low = a & _mask16;
-    final high = (a >>> _halfWordBits) & _mask16;
-
-    return (low * b + (((high * b) & _mask16) << _halfWordBits)) & _mask32;
-  }
 }

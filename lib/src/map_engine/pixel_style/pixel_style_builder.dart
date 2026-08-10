@@ -19,6 +19,8 @@ typedef JsonMap = Map<String, Object?>;
 /// does, never by hard-coded layer ids, so a re-published Studio style
 /// with different layer names still comes out right.
 final class PixelStyleBuilder {
+  static bool get _showLanduse => PixelTuning.greenness >= _landuseGreenLevel;
+
   /// Prefix marking the layers this builder adds. Existing layers never
   /// use it, so it doubles as the "don't re-process my own output"
   /// guard.
@@ -70,8 +72,6 @@ final class PixelStyleBuilder {
   static const List<String> _snowClasses = ['snow'];
   static const String _coastColor = '#000000';
   static const int _landuseGreenLevel = 3;
-
-  const PixelStyleBuilder._();
 
   /// Returns [baseStyle] rewritten into the pixel-art style.
   ///
@@ -179,9 +179,16 @@ final class PixelStyleBuilder {
 
       return;
     }
-    if (layer['type'] != 'fill') {
-      return;
+    if (layer['type'] == 'fill') {
+      _applyToFillLayer(layer, sourceLayer, palette);
     }
+  }
+
+  static void _applyToFillLayer(
+    JsonMap layer,
+    String sourceLayer,
+    PixelPalette palette,
+  ) {
     if (sourceLayer == _waterSourceLayer) {
       _setPaint(layer, {
         'fill-color': palette.water.base.hex,
@@ -191,14 +198,15 @@ final class PixelStyleBuilder {
 
       return;
     }
-    if (sourceLayer == _landuseSourceLayer) {
-      _setVisible(layer, _showLanduse);
-      _setPaint(layer, {
-        'fill-color': palette.grass.base.hex,
-        'fill-pattern': _pattern(PixelSprites.grass),
-        'fill-antialias': false,
-      });
+    if (sourceLayer != _landuseSourceLayer) {
+      return;
     }
+    _setVisible(layer, _showLanduse);
+    _setPaint(layer, {
+      'fill-color': palette.grass.base.hex,
+      'fill-pattern': _pattern(PixelSprites.grass),
+      'fill-antialias': false,
+    });
   }
 
   static void _applyToSymbolLayer(JsonMap layer, String sourceLayer) {
@@ -224,8 +232,6 @@ final class PixelStyleBuilder {
     // make sense alongside the road geometry they annotate.
     _setVisible(layer, !PixelTuning.hideRoads);
   }
-
-  static bool get _showLanduse => PixelTuning.greenness >= _landuseGreenLevel;
 
   static List<JsonMap> _landcoverLayers(String sourceId, PixelPalette palette) {
     final level = _greenLevels[PixelTuning.greenness.clamp(
@@ -322,4 +328,6 @@ final class PixelStyleBuilder {
     }
     layer['paint'] = paint;
   }
+
+  const PixelStyleBuilder._();
 }

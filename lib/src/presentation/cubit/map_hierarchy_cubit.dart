@@ -60,6 +60,30 @@ final class MapHierarchyCubit extends Cubit<MapHierarchyState> {
     padding: _fitPadding,
   );
 
+  static MapHierarchyState _rootState(JourneyMapTree tree, Duration duration) =>
+      MapHierarchyState(
+        visibleNodes: tree.roots,
+        breadcrumb: const [],
+        camera: _rootCamera,
+        cameraAnimationDuration: duration,
+      );
+
+  static MapCameraTarget _cameraFor(List<MapNode> nodes) =>
+      FitBoundsCameraTarget(
+        bounds: _fittableBounds(nodes),
+        padding: _fitPadding,
+      );
+
+  /// Computes the enclosing box for [nodes], padding it out when it would
+  /// otherwise be degenerate (zero area, from a single node).
+  static GeoBounds _fittableBounds(List<MapNode> nodes) {
+    final bounds = GeoBounds.containing(nodes.map((node) => node.position));
+    final isDegenerate =
+        bounds.north == bounds.south || bounds.east == bounds.west;
+
+    return isDegenerate ? bounds.padded(_degenerateBoundsPadding) : bounds;
+  }
+
   /// Loaded once at construction — this is data pulled from the
   /// repository, not view state, so it is kept off [MapHierarchyState].
   final JourneyMapTree _tree;
@@ -160,29 +184,5 @@ final class MapHierarchyCubit extends Cubit<MapHierarchyState> {
       camera: _cameraFor(visibleNodes),
       cameraAnimationDuration: duration,
     );
-  }
-
-  static MapHierarchyState _rootState(JourneyMapTree tree, Duration duration) =>
-      MapHierarchyState(
-        visibleNodes: tree.roots,
-        breadcrumb: const [],
-        camera: _rootCamera,
-        cameraAnimationDuration: duration,
-      );
-
-  static MapCameraTarget _cameraFor(List<MapNode> nodes) =>
-      FitBoundsCameraTarget(
-        bounds: _fittableBounds(nodes),
-        padding: _fitPadding,
-      );
-
-  /// Computes the enclosing box for [nodes], padding it out when it would
-  /// otherwise be degenerate (zero area, from a single node).
-  static GeoBounds _fittableBounds(List<MapNode> nodes) {
-    final bounds = GeoBounds.containing(nodes.map((node) => node.position));
-    final isDegenerate =
-        bounds.north == bounds.south || bounds.east == bounds.west;
-
-    return isDegenerate ? bounds.padded(_degenerateBoundsPadding) : bounds;
   }
 }

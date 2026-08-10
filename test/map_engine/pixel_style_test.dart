@@ -16,9 +16,8 @@ JsonMap _baseStyle() {
   return jsonDecode(File(path).readAsStringSync()) as JsonMap;
 }
 
-List<JsonMap> _layers(JsonMap style) => [
-  for (final layer in style['layers']! as List<Object?>) layer! as JsonMap,
-];
+List<JsonMap> _layers(JsonMap style) =>
+    (style['layers']! as List<Object?>).cast<JsonMap>();
 
 String? _visibility(JsonMap layer) =>
     (layer['layout'] as JsonMap?)?['visibility'] as String?;

@@ -20,22 +20,6 @@ final class MapNodeMarker extends StatelessWidget {
   static const double _opacityBegin = 0.0;
   static const double _opacityEnd = 1.0;
   static const Color _white = Color(0xFFFFFFFF);
-  static const Color _shadowBase = Color(0xFF000000);
-  static const double _diamondRotation = math.pi / 4;
-  static const double _diamondInset = 0.75;
-
-  /// The node this marker represents.
-  final MapNode node;
-
-  /// Invoked on tap; never wired up for leaf (non-expandable) nodes.
-  final VoidCallback onTap;
-
-  /// Creates the marker widget for [node]. Each build re-plays the
-  /// 250ms fade+scale entrance (spec §5) because [build] keys it to
-  /// [MapNode.id], so a fresh marker at a new level always animates in;
-  /// the outgoing-fade/staggering half of §5 is intentionally not
-  /// implemented (see round notes).
-  const MapNodeMarker({required this.node, required this.onTap, super.key});
 
   /// The fixed box `ProjectedMarkerLayer` reserves for this marker —
   /// top shape segment + gap + label, matching what [build] paints.
@@ -44,7 +28,7 @@ final class MapNodeMarker extends StatelessWidget {
 
     return Size(
       visual.boxWidth,
-      visual.topSegmentSize + _labelGap + visual.labelSegmentHeight,
+      visual.topSegmentSize + _labelGap + visual.label.segmentHeight,
     );
   }
 
@@ -59,70 +43,47 @@ final class MapNodeMarker extends StatelessWidget {
   static Alignment anchorAlignment(MapNode node) {
     final visual = MarkerVisual.forNode(node);
     final totalHeight =
-        visual.topSegmentSize + _labelGap + visual.labelSegmentHeight;
+        visual.topSegmentSize + _labelGap + visual.label.segmentHeight;
 
     return Alignment(0, 1 - (visual.topSegmentSize / totalHeight));
   }
 
   static IconData? _iconFor(MapNode node) => switch (node) {
-    CategoryNode(:final arm) => switch (arm) {
-      CrossArm.top => Icons.public,
-      CrossArm.bottom => Icons.flag,
-      CrossArm.left => Icons.waves,
-      CrossArm.right => Icons.beach_access,
-    },
-    PlaceNode(:final kind) => switch (kind) {
-      PlaceKind.sea => Icons.waves,
-      PlaceKind.island => Icons.terrain,
-      PlaceKind.continent || PlaceKind.country || PlaceKind.city => null,
-    },
+    CategoryNode(:final arm) => _iconForArm(arm),
+    PlaceNode(:final kind) => _iconForPlaceKind(kind),
   };
 
-  static BoxShadow _shadowFor(MarkerVisual visual) => BoxShadow(
-    color: _shadowBase.withValues(alpha: visual.shadowOpacity),
-    blurRadius: visual.shadowBlur,
-    offset: Offset(0, visual.shadowOffsetDy),
-  );
+  static IconData _iconForArm(CrossArm arm) => switch (arm) {
+    CrossArm.top => Icons.public,
+    CrossArm.bottom => Icons.flag,
+    CrossArm.left => Icons.waves,
+    CrossArm.right => Icons.beach_access,
+  };
+
+  static IconData? _iconForPlaceKind(PlaceKind kind) => switch (kind) {
+    PlaceKind.sea => Icons.waves,
+    PlaceKind.island => Icons.terrain,
+    PlaceKind.continent || PlaceKind.country || PlaceKind.city => null,
+  };
+
+  /// The node this marker represents.
+  final MapNode node;
+
+  /// Invoked on tap; never wired up for leaf (non-expandable) nodes.
+  final VoidCallback onTap;
+
+  /// Creates the marker widget for [node]. Each build re-plays the
+  /// 250ms fade+scale entrance (spec §5) because [build] keys it to
+  /// [MapNode.id], so a fresh marker at a new level always animates in;
+  /// the outgoing-fade/staggering half of §5 is intentionally not
+  /// implemented (see round notes).
+  const MapNodeMarker({required this.node, required this.onTap, super.key});
 
   @override
   Widget build(BuildContext context) {
     final visual = MarkerVisual.forNode(node);
     final icon = _iconFor(node);
-    final shape = switch (visual.shape) {
-      MarkerShape.circle => Container(
-        width: visual.paintedDiameter,
-        height: visual.paintedDiameter,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: visual.color,
-          border: visual.hasRing
-              ? Border.all(color: _white, width: visual.ringWidth)
-              : null,
-          boxShadow: [_shadowFor(visual)],
-        ),
-      ),
-      MarkerShape.roundedSquare => Container(
-        width: visual.paintedDiameter,
-        height: visual.paintedDiameter,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(visual.cornerRadius),
-          color: visual.color,
-          boxShadow: [_shadowFor(visual)],
-        ),
-      ),
-      MarkerShape.diamond => Transform.rotate(
-        angle: _diamondRotation,
-        child: Container(
-          width: visual.paintedDiameter * _diamondInset,
-          height: visual.paintedDiameter * _diamondInset,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(visual.cornerRadius),
-            color: visual.color,
-            boxShadow: [_shadowFor(visual)],
-          ),
-        ),
-      ),
-    };
+    final shape = _MarkerShapeSegment(visual);
 
     final content = TweenAnimationBuilder<double>(
       key: ValueKey('marker-enter-${node.id}'),
@@ -154,10 +115,10 @@ final class MapNodeMarker extends StatelessWidget {
           ),
           MarkerLabelPill(
             text: node.label,
-            fontSize: visual.labelFontSize,
-            fontWeight: visual.labelFontWeight,
-            textColor: visual.labelColor,
-            showBackground: visual.showLabelPill,
+            fontSize: visual.label.fontSize,
+            fontWeight: visual.label.fontWeight,
+            textColor: visual.label.color,
+            showBackground: visual.label.showPill,
           ),
         ],
       ),
@@ -172,5 +133,66 @@ final class MapNodeMarker extends StatelessWidget {
       behavior: HitTestBehavior.opaque,
       child: content,
     );
+  }
+}
+
+/// The painted outline shape at the top of a [MapNodeMarker], factored
+/// into its own widget rather than a function returning a widget so
+/// Flutter can diff and rebuild it independently of the marker's label
+/// and entrance animation.
+final class _MarkerShapeSegment extends StatelessWidget {
+  static const Color _shadowBase = Color(0xFF000000);
+  static const double _diamondRotation = math.pi / 4;
+  static const double _diamondInset = 0.75;
+
+  static BoxShadow _shadowFor(MarkerShadow shadow) => BoxShadow(
+    color: _shadowBase.withValues(alpha: shadow.opacity),
+    blurRadius: shadow.blur,
+    offset: Offset(0, shadow.offsetDy),
+  );
+
+  final MarkerVisual visual;
+
+  const _MarkerShapeSegment(this.visual);
+
+  @override
+  Widget build(BuildContext context) {
+    final style = visual.shapeStyle;
+
+    return switch (style.shape) {
+      MarkerShape.circle => Container(
+        width: style.paintedDiameter,
+        height: style.paintedDiameter,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: style.color,
+          border: style.hasRing
+              ? Border.all(color: MapNodeMarker._white, width: style.ringWidth)
+              : null,
+          boxShadow: [_shadowFor(visual.shadow)],
+        ),
+      ),
+      MarkerShape.roundedSquare => Container(
+        width: style.paintedDiameter,
+        height: style.paintedDiameter,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(style.cornerRadius),
+          color: style.color,
+          boxShadow: [_shadowFor(visual.shadow)],
+        ),
+      ),
+      MarkerShape.diamond => Transform.rotate(
+        angle: _diamondRotation,
+        child: Container(
+          width: style.paintedDiameter * _diamondInset,
+          height: style.paintedDiameter * _diamondInset,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(style.cornerRadius),
+            color: style.color,
+            boxShadow: [_shadowFor(visual.shadow)],
+          ),
+        ),
+      ),
+    };
   }
 }

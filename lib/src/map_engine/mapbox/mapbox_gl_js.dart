@@ -25,7 +25,6 @@ external set accessToken(String _);
 bool get isMapboxGlLoaded => globalContext.has('mapboxgl');
 
 /// A Mapbox GL JS map instance.
-// ignore: prefer_match_file_name
 @JS('Map')
 extension type GlMap._(JSObject _) implements JSObject {
   /// Creates a map inside the given container element.
@@ -84,27 +83,60 @@ extension type GlImageOptions._(JSObject _) implements JSObject {
   external factory GlImageOptions({double pixelRatio});
 }
 
+/// Camera framing for [GlMapOptions]: where the map opens and how far it
+/// may zoom.
+typedef GlViewport = ({
+  JSArray<JSNumber> center,
+  double zoom,
+  double minZoom,
+  double maxZoom,
+});
+
+/// Gesture toggles for [GlMapOptions] — the fixed set the app disables on
+/// both platforms so its own Web Mercator projection, which every marker
+/// position depends on, is never invalidated by a rotated or pitched
+/// camera.
+typedef GlGestureOptions = ({
+  bool dragRotate,
+  bool pitchWithRotate,
+  bool touchPitch,
+});
+
 /// Constructor options for [GlMap].
 extension type GlMapOptions._(JSObject _) implements JSObject {
   /// Creates options.
   ///
-  /// [style] is a decoded style document rather than a URL, so the
-  /// pixel style is applied on the very first frame — there is no plain
-  /// basemap to flash past first.
-  // ignore: number_of_parameters
-  external factory GlMapOptions({
-    JSObject container,
-    JSAny style,
-    JSArray<JSNumber> center,
-    double zoom,
-    double minZoom,
-    double maxZoom,
-    bool dragRotate,
-    bool pitchWithRotate,
-    bool touchPitch,
-    bool antialias,
-    bool attributionControl,
-  });
+  /// [style] is a decoded style document rather than a URL, so the pixel
+  /// style is applied on the very first frame — there is no plain basemap
+  /// to flash past first.
+  ///
+  /// Built by hand from a plain [JSObject] rather than an `external
+  /// factory`: GL JS reads these off one flat object, so [viewport] and
+  /// [gestures] are grouped here for readability and unpacked into that
+  /// same flat shape below.
+  factory GlMapOptions({
+    required JSObject container,
+    required JSAny style,
+    required GlViewport viewport,
+    required GlGestureOptions gestures,
+    bool antialias = false,
+    bool attributionControl = false,
+  }) {
+    final options = JSObject()
+      ..['container'] = container
+      ..['style'] = style
+      ..['center'] = viewport.center
+      ..['zoom'] = viewport.zoom.toJS
+      ..['minZoom'] = viewport.minZoom.toJS
+      ..['maxZoom'] = viewport.maxZoom.toJS
+      ..['dragRotate'] = gestures.dragRotate.toJS
+      ..['pitchWithRotate'] = gestures.pitchWithRotate.toJS
+      ..['touchPitch'] = gestures.touchPitch.toJS
+      ..['antialias'] = antialias.toJS
+      ..['attributionControl'] = attributionControl.toJS;
+
+    return GlMapOptions._(options);
+  }
 }
 
 /// Camera options for [GlMap.jumpTo].

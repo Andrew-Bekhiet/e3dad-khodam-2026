@@ -15,13 +15,13 @@ final class PixelTuning {
 
   /// How far the accent colour travels from the base colour, `0`–`1`.
   /// At `0` a tile is flat; at `1` the accent is used undiluted.
-  static const double shadingContrast = 1.0;
+  static const double shadingContrast = 0.52;
 
   /// HSL saturation multiplier applied to every base colour.
-  static const double saturation = 0.83;
+  static const double saturation = 1;
 
   /// HSL lightness multiplier applied to every base colour.
-  static const double lightness = 0.76;
+  static const double lightness = 1;
 
   /// How much of the landcover data is painted green, `0`–`3`:
   /// see `PixelStyleBuilder` for the class lists each level selects.
@@ -32,7 +32,7 @@ final class PixelTuning {
   /// Width, in pixels, of the black coastline drawn around every water
   /// polygon — the single most recognisable element of the look. `0`
   /// hides it.
-  static const double coastLineWidth = 1.0;
+  static const double coastLineWidth = 1.5;
 
   /// Only basemap place labels with `symbolrank <= labelRank` survive.
   /// `1` keeps just the highest-rank handful, since this app draws its

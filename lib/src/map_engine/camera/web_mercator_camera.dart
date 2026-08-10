@@ -32,6 +32,36 @@ final class WebMercatorCamera extends Equatable {
   /// standard clamp used by every slippy-map implementation.
   static const double maxLatitude = 85.051129;
 
+  /// Web Mercator pixel coordinates of [position] in a world of
+  /// [worldSize] pixels, origin at the top-left (north-west) corner.
+  static Offset _worldOf(GeoPosition position, double worldSize) {
+    final latitude = position.latitude.clamp(-maxLatitude, maxLatitude);
+    final sinLatitude = math.sin(latitude * math.pi / _halfTurnDegrees);
+    final x = (position.longitude + _halfTurnDegrees) / _degreesPerTurn;
+    final y =
+        _half -
+        math.log((1 + sinLatitude) / (1 - sinLatitude)) / (4 * math.pi);
+
+    return Offset(x * worldSize, y * worldSize);
+  }
+
+  /// Inverse of [_worldOf].
+  static GeoPosition _positionOf(Offset world, double worldSize) {
+    final x = world.dx / worldSize;
+    final y = world.dy / worldSize;
+    final latitude =
+        _quarterTurnDegrees -
+        2 *
+            math.atan(math.exp((y - _half) * 2 * math.pi)) *
+            _halfTurnDegrees /
+            math.pi;
+
+    return GeoPosition(
+      latitude: latitude,
+      longitude: x * _degreesPerTurn - _halfTurnDegrees,
+    );
+  }
+
   /// Geographic position at the centre of the viewport.
   final GeoPosition center;
 
@@ -44,42 +74,15 @@ final class WebMercatorCamera extends Equatable {
   @override
   List<Object?> get props => [center, zoom, viewport];
 
+  /// The world's edge length in pixels at [zoom].
+  double get worldSize => tileSize * math.pow(2, zoom);
+
   /// Creates a camera.
   const WebMercatorCamera({
     required this.center,
     required this.zoom,
     required this.viewport,
   });
-
-  /// The world's edge length in pixels at [zoom].
-  double get worldSize => tileSize * math.pow(2, zoom);
-
-  /// Where [position] falls inside the viewport, in logical pixels from
-  /// its top-left corner.
-  Offset offsetOf(GeoPosition position) {
-    final world = _worldOf(position, worldSize);
-    final centerWorld = _worldOf(center, worldSize);
-
-    return Offset(
-      viewport.width * _half + (world.dx - centerWorld.dx),
-      viewport.height * _half + (world.dy - centerWorld.dy),
-    );
-  }
-
-  /// This camera moved to [center] and [zoom], keeping the viewport.
-  WebMercatorCamera copyWith({GeoPosition? center, double? zoom}) =>
-      WebMercatorCamera(
-        center: center ?? this.center,
-        zoom: zoom ?? this.zoom,
-        viewport: viewport,
-      );
-
-  /// This camera resized to [viewport].
-  WebMercatorCamera resized(Size viewport) => WebMercatorCamera(
-    center: center,
-    zoom: zoom,
-    viewport: viewport,
-  );
 
   /// The camera that frames [bounds] inside [viewport] minus [padding],
   /// clamped to `[minZoom, maxZoom]`.
@@ -134,33 +137,30 @@ final class WebMercatorCamera extends Equatable {
     );
   }
 
-  /// Web Mercator pixel coordinates of [position] in a world of
-  /// [worldSize] pixels, origin at the top-left (north-west) corner.
-  static Offset _worldOf(GeoPosition position, double worldSize) {
-    final latitude = position.latitude.clamp(-maxLatitude, maxLatitude);
-    final sinLatitude = math.sin(latitude * math.pi / _halfTurnDegrees);
-    final x = (position.longitude + _halfTurnDegrees) / _degreesPerTurn;
-    final y =
-        _half -
-        math.log((1 + sinLatitude) / (1 - sinLatitude)) / (4 * math.pi);
+  /// Where [position] falls inside the viewport, in logical pixels from
+  /// its top-left corner.
+  Offset offsetOf(GeoPosition position) {
+    final world = _worldOf(position, worldSize);
+    final centerWorld = _worldOf(center, worldSize);
 
-    return Offset(x * worldSize, y * worldSize);
-  }
-
-  /// Inverse of [_worldOf].
-  static GeoPosition _positionOf(Offset world, double worldSize) {
-    final x = world.dx / worldSize;
-    final y = world.dy / worldSize;
-    final latitude =
-        _quarterTurnDegrees -
-        2 *
-            math.atan(math.exp((y - _half) * 2 * math.pi)) *
-            _halfTurnDegrees /
-            math.pi;
-
-    return GeoPosition(
-      latitude: latitude,
-      longitude: x * _degreesPerTurn - _halfTurnDegrees,
+    return Offset(
+      viewport.width * _half + (world.dx - centerWorld.dx),
+      viewport.height * _half + (world.dy - centerWorld.dy),
     );
   }
+
+  /// This camera moved to [center] and [zoom], keeping the viewport.
+  WebMercatorCamera copyWith({GeoPosition? center, double? zoom}) =>
+      WebMercatorCamera(
+        center: center ?? this.center,
+        zoom: zoom ?? this.zoom,
+        viewport: viewport,
+      );
+
+  /// This camera resized to [viewport].
+  WebMercatorCamera resized(Size viewport) => WebMercatorCamera(
+    center: center,
+    zoom: zoom,
+    viewport: viewport,
+  );
 }

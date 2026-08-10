@@ -14,10 +14,10 @@ final class CategoryNode extends MapNode {
 
   /// Creates a root category node.
   const CategoryNode({
+    required this.arm,
     required super.id,
     required super.label,
     required super.position,
     required super.children,
-    required this.arm,
   });
 }

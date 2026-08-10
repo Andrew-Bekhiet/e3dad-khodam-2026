@@ -1,6 +1,6 @@
 name: e3dad_khodam_2026
 description: "An interactive Arabic map of the cities of St Paul's journeys."
-publish_to: 'none'
+publish_to: "none"
 
 version: 1.0.0+1
 
@@ -23,7 +23,7 @@ dev_dependencies:
   bloc_test: ^10.0.0
   flutter_test:
     sdk: flutter
-  solid_lints: ^0.3.3
+  solid_lints: ^1.0.0-dev.1
 
 flutter:
   uses-material-design: true

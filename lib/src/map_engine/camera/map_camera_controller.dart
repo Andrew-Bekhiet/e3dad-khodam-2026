@@ -1,18 +1,11 @@
 import 'package:e3dad_khodam_2026/src/domain/geo_position.dart';
+import 'package:e3dad_khodam_2026/src/map_engine/camera/camera_change_origin.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/camera/web_mercator_camera.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/map_camera_target.dart';
+import 'package:e3dad_khodam_2026/src/map_engine/map_surface_spec.dart';
 import 'package:flutter/widgets.dart';
 
-/// Why the camera last changed, so a surface can tell its own animation
-/// apart from a movement the renderer already knows about.
-enum CameraChangeOrigin {
-  /// The app moved the camera; the renderer must be told to follow.
-  app,
-
-  /// The renderer moved the camera (a user gesture); the app is only
-  /// catching up, and echoing it back would fight the gesture.
-  renderer,
-}
+export 'package:e3dad_khodam_2026/src/map_engine/camera/camera_change_origin.dart';
 
 /// Owns the app's authoritative [WebMercatorCamera] and animates it
 /// between [MapCameraTarget]s.
@@ -30,6 +23,17 @@ final class MapCameraController extends ChangeNotifier {
 
   /// Zoom difference below which two cameras count as the same.
   static const double _zoomEpsilon = 1e-4;
+
+  static bool _differsMeaningfully(
+    WebMercatorCamera from,
+    WebMercatorCamera to,
+  ) =>
+      (from.zoom - to.zoom).abs() > _zoomEpsilon ||
+      (from.center.latitude - to.center.latitude).abs() > _adoptEpsilon ||
+      (from.center.longitude - to.center.longitude).abs() > _adoptEpsilon;
+
+  static double _lerp(double from, double to, double t) =>
+      from + (to - from) * t;
 
   final AnimationController _animation;
 
@@ -77,11 +81,9 @@ final class MapCameraController extends ChangeNotifier {
       return;
     }
     final target = _target;
-    if (target == null) {
-      _camera = _camera?.resized(viewport);
-    } else {
-      _camera = _resolve(target, viewport);
-    }
+    _camera = target == null
+        ? _camera?.resized(viewport)
+        : _resolve(target, viewport);
     _emit(CameraChangeOrigin.app);
   }
 
@@ -106,6 +108,16 @@ final class MapCameraController extends ChangeNotifier {
       ..duration = duration
       ..reset()
       ..forward();
+  }
+
+  /// Moves to [spec]'s camera target if it differs from [previous]'s —
+  /// the `didUpdateWidget` logic both map surfaces need, kept here so
+  /// it is written once.
+  void syncFrom(MapSurfaceSpec spec, MapSurfaceSpec previous) {
+    if (spec.camera == previous.camera) {
+      return;
+    }
+    moveTo(spec.camera, duration: spec.cameraAnimationDuration);
   }
 
   /// Adopts a camera the renderer arrived at on its own — a pan or
@@ -155,14 +167,6 @@ final class MapCameraController extends ChangeNotifier {
     );
   }
 
-  static bool _differsMeaningfully(
-    WebMercatorCamera from,
-    WebMercatorCamera to,
-  ) =>
-      (from.zoom - to.zoom).abs() > _zoomEpsilon ||
-      (from.center.latitude - to.center.latitude).abs() > _adoptEpsilon ||
-      (from.center.longitude - to.center.longitude).abs() > _adoptEpsilon;
-
   void _onTick() {
     final from = _from;
     final to = _to;
@@ -173,7 +177,11 @@ final class MapCameraController extends ChangeNotifier {
     _camera = WebMercatorCamera(
       center: GeoPosition(
         latitude: _lerp(from.center.latitude, to.center.latitude, t),
-        longitude: _lerp(from.center.longitude, to.center.longitude, t),
+        longitude: _lerp(
+          from.center.longitude,
+          to.center.longitude,
+          t,
+        ),
       ),
       zoom: _lerp(from.zoom, to.zoom, t),
       viewport: to.viewport,
@@ -202,7 +210,4 @@ final class MapCameraController extends ChangeNotifier {
     _origin = origin;
     notifyListeners();
   }
-
-  static double _lerp(double from, double to, double t) =>
-      from + (to - from) * t;
 }

@@ -24,6 +24,7 @@ final class AppTheme {
       surface: _lightSurface,
       onSurface: _lightOnSurface,
     );
+
     return ThemeData(
       useMaterial3: true,
       colorScheme: colorScheme,
@@ -49,6 +50,7 @@ final class AppTheme {
           surface: _darkSurface,
           onSurface: _darkOnSurface,
         );
+
     return ThemeData(
       useMaterial3: true,
       colorScheme: colorScheme,

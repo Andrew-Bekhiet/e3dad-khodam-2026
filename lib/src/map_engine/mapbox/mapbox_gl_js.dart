@@ -14,7 +14,7 @@ import 'dart:js_interop_unsafe';
 /// member below is undefined until that has run, which is why
 /// [isMapboxGlLoaded] is checked before any of it is touched.
 @JS()
-external set accessToken(String value);
+external set accessToken(String _);
 
 /// Whether the `mapboxgl` global exists — i.e. whether the script tag in
 /// `web/index.html` loaded.
@@ -25,6 +25,7 @@ external set accessToken(String value);
 bool get isMapboxGlLoaded => globalContext.has('mapboxgl');
 
 /// A Mapbox GL JS map instance.
+// ignore: prefer_match_file_name
 @JS('Map')
 extension type GlMap._(JSObject _) implements JSObject {
   /// Creates a map inside the given container element.
@@ -90,6 +91,7 @@ extension type GlMapOptions._(JSObject _) implements JSObject {
   /// [style] is a decoded style document rather than a URL, so the
   /// pixel style is applied on the very first frame — there is no plain
   /// basemap to flash past first.
+  // ignore: number_of_parameters
   external factory GlMapOptions({
     JSObject container,
     JSAny style,

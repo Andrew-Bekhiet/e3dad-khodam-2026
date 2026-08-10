@@ -1,1 +1,86 @@
 include: package:solid_lints/analysis_options.yaml
+
+plugins:
+  solid_lints: 1.0.0-dev.1
+
+solid_lints:
+  diagnostics:
+    avoid_unused_parameters:
+      exclude:
+        - build
+        - builder
+      exclude_annotation:
+        - freezed
+        - unfreezed
+    member_ordering:
+      order:
+        - static_getters_setters
+        - static_fields
+        - static_methods
+        - fields
+        - getters_setters
+        - constructors
+        - methods
+      widgets_order:
+        - init_state_method
+        - did_change_dependencies_method
+        - did_update_widget_method
+        - build_method
+        - deactivate_method
+        - dispose_method
+    named_parameters_ordering:
+      order:
+        - required
+        - required_super
+        - default
+        - nullable
+        - super
+    number_of_parameters:
+      max_parameters: 7
+      exclude:
+        - method_name: copyWith
+    no_magic_number: false
+
+analyzer:
+  language:
+    strict-casts: false
+    strict-inference: false
+    strict-raw-types: false
+  exclude:
+    - "build/**"
+    - "**/*.g.dart"
+    - "**/*.freezed.dart"
+    - "**/*.gr.dart"
+    - "**/__generated__/*"
+  errors:
+    duplicate_ignore: false
+    invalid_annotation_target: false
+    undefined_hidden_name: false
+linter:
+  rules:
+    # Disabled
+    avoid_catches_without_on_clauses: false
+    avoid_positional_boolean_parameters: false
+    avoid_dynamic_calls: false
+    flutter_style_todos: false
+    no_default_cases: false
+    omit_local_variable_types: false
+    public_member_api_docs: false
+    sort_constructors_first: false
+    specify_nonobvious_property_types: false
+    lines_longer_than_80_chars: false
+    prefer_asserts_with_message: false
+    prefer_foreach: false
+    # Enabled
+    avoid_futureor_void: true
+    avoid_init_to_null: true
+    close_sinks: true
+    library_names: true
+    no_literal_bool_comparisons: true
+    package_prefixed_library_names: true
+    prefer_mixin: true
+    prefer_void_to_null: true
+    unnecessary_null_aware_operator_on_extension_on_nullable: true
+    unreachable_from_main: true
+    use_decorated_box: true
+    use_truncating_division: true

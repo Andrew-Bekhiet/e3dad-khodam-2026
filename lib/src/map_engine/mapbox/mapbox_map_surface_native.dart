@@ -1,6 +1,7 @@
 import 'package:e3dad_khodam_2026/src/domain/geo_position.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/camera/map_camera_controller.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/camera/projected_marker_layer.dart';
+import 'package:e3dad_khodam_2026/src/map_engine/map_surface_builder.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/map_surface_spec.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/mapbox/mapbox_style.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/mapbox/missing_access_token_notice.dart';
@@ -12,16 +13,22 @@ import 'package:flutter/widgets.dart';
 // `Size` collides with `dart:ui`'s, and only the latter is wanted here.
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart' hide Size;
 
-/// Builds the mobile map surface for [spec]; the mobile half of
-/// `mapbox_map_surface.dart`'s platform seam.
-Widget mapboxMapSurface(MapSurfaceSpec spec) => MapboxMapSurfaceNative(spec);
+/// Builds the mobile map surface for a [MapSurfaceSpec]; the mobile half
+/// of `mapbox_map_surface.dart`'s platform seam.
+///
+/// A tear-off assigned to a top-level constant, not a function
+/// declaration, per the rationale in `MapSurfaceBuilder`'s own doc
+/// comment: a function that returns a widget is otherwise flagged by
+/// `avoid_returning_widgets`.
+const MapSurfaceBuilder mapboxMapSurface = MapboxMapSurfaceNative.new;
 
 /// Hands the Maps SDK its access token. Must run before the first map
 /// widget is built.
 void configureMapboxRenderer() {
-  if (MapboxStyle.hasAccessToken) {
-    MapboxOptions.setAccessToken(MapboxStyle.accessToken);
+  if (!MapboxStyle.hasAccessToken) {
+    return;
   }
+  MapboxOptions.setAccessToken(MapboxStyle.accessToken);
 }
 
 /// The mobile map surface: Mapbox's own Maps SDK rendering the pixel
@@ -54,6 +61,11 @@ class _MapboxMapSurfaceNativeState extends State<MapboxMapSurfaceNative>
   /// read as a movement, short enough not to feel like a correction.
   static const Duration _snapDuration = Duration(milliseconds: 120);
 
+  // Built in initState against `vsync: this`, which only becomes
+  // available once this State is attached — a nullable field with a
+  // null check on every use would be strictly worse than the one late
+  // initialization this buys.
+  // ignore: avoid_late_keyword
   late final MapCameraController _camera;
   MapboxMap? _map;
   PixelStyle? _style;
@@ -71,21 +83,9 @@ class _MapboxMapSurfaceNativeState extends State<MapboxMapSurfaceNative>
   }
 
   @override
-  void dispose() {
-    _camera
-      ..removeListener(_onCameraChanged)
-      ..dispose();
-    super.dispose();
-  }
-
-  @override
   void didUpdateWidget(MapboxMapSurfaceNative oldWidget) {
     super.didUpdateWidget(oldWidget);
-    final target = widget.spec.camera;
-    if (target == oldWidget.spec.camera) {
-      return;
-    }
-    _camera.moveTo(target, duration: widget.spec.cameraAnimationDuration);
+    _camera.syncFrom(widget.spec, oldWidget.spec);
   }
 
   @override
@@ -126,6 +126,14 @@ class _MapboxMapSurfaceNativeState extends State<MapboxMapSurfaceNative>
     );
   }
 
+  @override
+  void dispose() {
+    _camera
+      ..removeListener(_onCameraChanged)
+      ..dispose();
+    super.dispose();
+  }
+
   /// Viewport changes arrive mid-build, but resolving the camera
   /// notifies listeners and would rebuild this widget while it is
   /// already building — so hand it to the next frame.
@@ -134,9 +142,10 @@ class _MapboxMapSurfaceNativeState extends State<MapboxMapSurfaceNative>
       return;
     }
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        _camera.setViewport(size);
+      if (!mounted) {
+        return;
       }
+      _camera.setViewport(size);
     });
   }
 

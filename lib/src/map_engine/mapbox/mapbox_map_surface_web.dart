@@ -4,6 +4,7 @@ import 'dart:ui_web' as ui_web;
 import 'package:e3dad_khodam_2026/src/domain/geo_position.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/camera/map_camera_controller.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/camera/projected_marker_layer.dart';
+import 'package:e3dad_khodam_2026/src/map_engine/map_surface_builder.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/map_surface_spec.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/mapbox/mapbox_gl_js.dart'
     as gl;
@@ -16,14 +17,20 @@ import 'package:web/web.dart' as web;
 
 /// Parses a JSON string with the browser's own parser.
 @JS('JSON.parse')
-external JSObject _jsonParse(String source);
+external JSObject _jsonParse(String _);
 
-/// Builds the web map surface for [spec]; the web half of
+/// Builds the web map surface for a [MapSurfaceSpec]; the web half of
 /// `mapbox_map_surface.dart`'s platform seam.
-Widget mapboxMapSurface(MapSurfaceSpec spec) => MapboxMapSurfaceWeb(spec);
+///
+/// A tear-off assigned to a top-level constant, not a function
+/// declaration — see `mapbox_map_surface_native.dart`'s copy of this
+/// same doc comment for why.
+const MapSurfaceBuilder mapboxMapSurface = MapboxMapSurfaceWeb.new;
 
 /// No-op on web: GL JS takes the access token when each map is created,
-/// so there is no global to configure up front.
+/// so there is no global to configure up front. Still required so both
+/// platforms present the same seam to `main.dart`.
+// ignore: no_empty_block
 void configureMapboxRenderer() {}
 
 /// The web map surface: Mapbox GL JS in a platform view, rendering the
@@ -63,6 +70,10 @@ class _MapboxMapSurfaceWebState extends State<MapboxMapSurfaceWeb>
   /// is how an instance finds the element it was given.
   static final Map<int, web.HTMLElement> _containers = {};
 
+  // Built in initState against `vsync: this`, which only becomes
+  // available once this State is attached — see the identical field on
+  // the native surface for the full rationale.
+  // ignore: avoid_late_keyword
   late final MapCameraController _camera;
   int? _viewId;
   gl.GlMap? _map;
@@ -79,24 +90,9 @@ class _MapboxMapSurfaceWebState extends State<MapboxMapSurfaceWeb>
   }
 
   @override
-  void dispose() {
-    _camera
-      ..removeListener(_onCameraChanged)
-      ..dispose();
-    _map?.remove();
-    _containers.remove(_viewId);
-
-    super.dispose();
-  }
-
-  @override
   void didUpdateWidget(MapboxMapSurfaceWeb oldWidget) {
     super.didUpdateWidget(oldWidget);
-    final target = widget.spec.camera;
-    if (target == oldWidget.spec.camera) {
-      return;
-    }
-    _camera.moveTo(target, duration: widget.spec.cameraAnimationDuration);
+    _camera.syncFrom(widget.spec, oldWidget.spec);
   }
 
   @override
@@ -126,6 +122,17 @@ class _MapboxMapSurfaceWebState extends State<MapboxMapSurfaceWeb>
         );
       },
     );
+  }
+
+  @override
+  void dispose() {
+    _camera
+      ..removeListener(_onCameraChanged)
+      ..dispose();
+    _map?.remove();
+    _containers.remove(_viewId);
+
+    super.dispose();
   }
 
   /// Registers the factory that hands Flutter the `<div>` GL JS draws

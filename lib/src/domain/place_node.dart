@@ -13,10 +13,10 @@ final class PlaceNode extends MapNode {
 
   /// Creates a place node.
   const PlaceNode({
+    required this.kind,
     required super.id,
     required super.label,
     required super.position,
     required super.children,
-    required this.kind,
   });
 }

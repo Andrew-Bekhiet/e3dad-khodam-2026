@@ -8,19 +8,37 @@ import 'package:equatable/equatable.dart';
 /// depth-first walk over [roots]) rather than computed lazily with `late`,
 /// since the dataset is small and fixed for the lifetime of the tree.
 final class JourneyMapTree extends Equatable {
+  /// Recursively records [node] and its ancestor chain into the two
+  /// indexes, and appends it to [depthFirstNodes]; [ancestors] excludes
+  /// [node] itself.
+  static void _index(
+    MapNode node,
+    List<MapNode> ancestors,
+    Map<String, MapNode> nodesById,
+    Map<String, List<MapNode>> pathsById,
+    List<MapNode> depthFirstNodes,
+  ) {
+    final path = [...ancestors, node];
+    nodesById[node.id] = node;
+    pathsById[node.id] = path;
+    depthFirstNodes.add(node);
+    for (final child in node.children) {
+      _index(child, path, nodesById, pathsById, depthFirstNodes);
+    }
+  }
+
   /// Every top-level category node, e.g. قارات، بلاد، بحار، جزر.
   final List<MapNode> roots;
 
   final Map<String, MapNode> _nodesById;
   final Map<String, List<MapNode>> _pathsById;
-  final List<MapNode> _depthFirstNodes;
 
   /// Every node in the tree, in depth-first pre-order: each root, then
   /// its entire subtree left to right, before moving to the next root —
   /// the order a linear "walk every node" navigation (e.g. a slideshow)
   /// should visit them in. Captured once during construction, not
   /// recomputed on access.
-  List<MapNode> get depthFirstNodes => _depthFirstNodes;
+  final List<MapNode> depthFirstNodes;
 
   @override
   List<Object?> get props => [roots];
@@ -46,27 +64,8 @@ final class JourneyMapTree extends Equatable {
     this.roots,
     this._nodesById,
     this._pathsById,
-    this._depthFirstNodes,
+    this.depthFirstNodes,
   );
-
-  /// Recursively records [node] and its ancestor chain into the two
-  /// indexes, and appends it to [depthFirstNodes]; [ancestors] excludes
-  /// [node] itself.
-  static void _index(
-    MapNode node,
-    List<MapNode> ancestors,
-    Map<String, MapNode> nodesById,
-    Map<String, List<MapNode>> pathsById,
-    List<MapNode> depthFirstNodes,
-  ) {
-    final path = [...ancestors, node];
-    nodesById[node.id] = node;
-    pathsById[node.id] = path;
-    depthFirstNodes.add(node);
-    for (final child in node.children) {
-      _index(child, path, nodesById, pathsById, depthFirstNodes);
-    }
-  }
 
   /// Finds the node with [id] anywhere in the tree, or null if absent.
   MapNode? findById(String id) => _nodesById[id];

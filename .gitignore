@@ -43,3 +43,16 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Gradle places build output here too; /build/ above only covers the root.
+/android/build/
+
+# Xcode's resolved Swift Package versions. The plugin versions that
+# produce them are already pinned by pubspec.lock, so committing these
+# only adds churn.
+**/xcshareddata/swiftpm/Package.resolved
+
+# Editor launch configs — this project's carries the Mapbox access
+# token as a --dart-define, and that must not be committed. Pass it on
+# the command line instead (see README).
+.vscode/

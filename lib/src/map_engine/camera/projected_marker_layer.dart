@@ -5,11 +5,11 @@ import 'package:flutter/widgets.dart';
 /// Lays marker widgets over a map surface at the screen positions
 /// [camera] projects their coordinates to.
 ///
-/// Replaces what `flutter_map`'s `MarkerLayer` used to do, now that the
+/// Replaces what flutter_map's `MarkerLayer` used to do, now that the
 /// basemap is drawn by a platform view that knows nothing about Flutter
-/// widgets. The positioning formula is deliberately the same one
-/// `MarkerLayer` uses, so `MapMarkerSpec.alignment` keeps its existing
-/// meaning and marker anchoring is unchanged.
+/// widgets. The positioning formula is deliberately the one that layer
+/// used, so `MapMarkerSpec.alignment` keeps its meaning and marker
+/// anchoring is unchanged by the move.
 final class ProjectedMarkerLayer extends StatelessWidget {
   static const double _half = 0.5;
 

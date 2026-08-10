@@ -37,8 +37,8 @@ final class MapNodeMarker extends StatelessWidget {
   /// implemented (see round notes).
   const MapNodeMarker({required this.node, required this.onTap, super.key});
 
-  /// The fixed box flutter_map must reserve for this marker — top shape
-  /// segment + gap + label, matching exactly what [build] paints.
+  /// The fixed box `ProjectedMarkerLayer` reserves for this marker —
+  /// top shape segment + gap + label, matching what [build] paints.
   static Size layoutSize(MapNode node) {
     final visual = MarkerVisual.forNode(node);
 
@@ -51,12 +51,11 @@ final class MapNodeMarker extends StatelessWidget {
   /// Where within [layoutSize] the geographic point sits: horizontally
   /// centered, vertically at the middle of the painted shape — not the
   /// box center — so the shape, not the label beneath it, anchors to
-  /// the coordinate. Derived from flutter_map 8's `Marker` layout: for a
-  /// box of total height `H` with the anchor shape of height `D` at the
-  /// top, the y-alignment that puts the shape's own center on the point
-  /// is `1 - D / H` (confirmed against `MarkerLayer`'s positioning math;
-  /// the naive `D / H - 1` has the wrong sign and pins the label, not
-  /// the shape, to the coordinate).
+  /// the coordinate. For a box of total height `H` with the anchor
+  /// shape of height `D` at the top, the y-alignment that puts the
+  /// shape's own center on the point is `1 - D / H` (the naive
+  /// `D / H - 1` has the wrong sign and pins the label, not the shape,
+  /// to the coordinate). `ProjectedMarkerLayer` consumes it.
   static Alignment anchorAlignment(MapNode node) {
     final visual = MarkerVisual.forNode(node);
     final totalHeight =

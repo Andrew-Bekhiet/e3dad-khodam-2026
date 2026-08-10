@@ -176,7 +176,7 @@ final class MarkerVisual {
   /// Drop-shadow opacity, `0`–`1`; `0` paints no shadow (city markers).
   final double shadowOpacity;
 
-  /// Fixed marker box width flutter_map must reserve — wide enough for
+  /// Fixed marker box width the marker layer reserves — wide enough for
   /// this tier's longest known Arabic label at [labelFontSize].
   final double boxWidth;
 

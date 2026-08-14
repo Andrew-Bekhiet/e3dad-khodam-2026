@@ -34,53 +34,29 @@ final class LevelHud extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Row(
-                    children: [
-                      Text(
-                        level == null
-                            ? AppStrings.gameTitle
-                            : '${AppStrings.levelWord} '
-                                  '${ArabicNumerals.format(state.levelNumber)}'
-                                  ' / '
-                                  '${ArabicNumerals.format(state.levelCount)}',
-                        style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                          color: GamePalette.accent,
-                        ),
-                      ),
-                      const Spacer(),
-                      if (level != null)
-                        Text(
-                          level.dateline,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: GamePalette.ink.withValues(alpha: 0.7),
-                          ),
-                        ),
-                    ],
+                  Text(
+                    level == null
+                        ? AppStrings.gameTitle
+                        : '${AppStrings.levelWord} '
+                              '${ArabicNumerals.format(state.levelNumber)}'
+                              ' / '
+                              '${ArabicNumerals.format(state.levelCount)}',
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: GamePalette.accent,
+                    ),
                   ),
                   if (level != null) ...[
                     const SizedBox(height: 2),
                     Text(
                       level.title,
                       style: const TextStyle(
-                        fontSize: 18,
+                        fontSize: 19,
                         fontWeight: FontWeight.w700,
                         color: GamePalette.ink,
                       ),
                     ),
-                    if (state.isPlaying) ...[
-                      const SizedBox(height: 4),
-                      Text(
-                        level.objective,
-                        style: const TextStyle(
-                          fontSize: 13,
-                          height: 1.4,
-                          color: GamePalette.ink,
-                        ),
-                      ),
-                    ],
                   ],
                   const SizedBox(height: 8),
                   _ProgressBar(progress: state.progress),

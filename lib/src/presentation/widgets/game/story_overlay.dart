@@ -2,7 +2,7 @@ import 'package:e3dad_khodam_2026/src/domain/game/game_character.dart';
 import 'package:e3dad_khodam_2026/src/domain/game/story_beat.dart';
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/game_palette.dart';
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/guide_dialogue_panel.dart';
-import 'package:e3dad_khodam_2026/src/presentation/widgets/game/narrator_band.dart';
+import 'package:e3dad_khodam_2026/src/presentation/widgets/game/narrator_card.dart';
 import 'package:flutter/widgets.dart';
 
 /// The story layer over the map: the guide's panel, the narrator's band,
@@ -44,21 +44,18 @@ final class StoryOverlay extends StatelessWidget {
         key: ValueKey('${current.speaker}:${current.text}'),
         behavior: HitTestBehavior.opaque,
         onTap: onAdvance,
-        child: _forBeat(current),
+        // Both voices dim the map behind them: a beat is something to
+        // read, not something happening at the place on screen.
+        child: ColoredBox(
+          color: GamePalette.scrim,
+          child: _forBeat(current),
+        ),
       ),
     },
   );
 
   Widget _forBeat(StoryBeat current) => switch (current.speaker) {
-    StorySpeaker.guide => GuideDialoguePanel(
-      character: guide,
-      beat: current,
-    ),
-    // The narrator dims the whole map behind the band: these beats are
-    // between levels, not about the place currently on screen.
-    StorySpeaker.narrator => ColoredBox(
-      color: GamePalette.scrim,
-      child: NarratorBand(character: narrator, beat: current),
-    ),
+    StorySpeaker.guide => GuideDialoguePanel(character: guide, beat: current),
+    StorySpeaker.narrator => NarratorCard(character: narrator, beat: current),
   };
 }

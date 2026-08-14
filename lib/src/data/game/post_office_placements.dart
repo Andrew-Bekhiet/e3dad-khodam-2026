@@ -12,7 +12,7 @@ final class PostOfficePlacements {
   /// The courier in تسالونيكي.
   static const List<CharacterPlacement> thessalonica = [
     CharacterPlacement(
-      character: PostOfficeCharacters.courier,
+      characters: PostOfficeCharacters.couriers,
       stop: JourneyStops.thessalonica,
     ),
   ];
@@ -20,7 +20,7 @@ final class PostOfficePlacements {
   /// The courier in كورنثوس.
   static const List<CharacterPlacement> corinth = [
     CharacterPlacement(
-      character: PostOfficeCharacters.courier,
+      characters: PostOfficeCharacters.couriers,
       stop: JourneyStops.corinth,
     ),
   ];
@@ -28,7 +28,7 @@ final class PostOfficePlacements {
   /// The courier in غلاطية.
   static const List<CharacterPlacement> galatia = [
     CharacterPlacement(
-      character: PostOfficeCharacters.courier,
+      characters: PostOfficeCharacters.couriers,
       stop: JourneyStops.galatia,
     ),
   ];
@@ -36,7 +36,7 @@ final class PostOfficePlacements {
   /// The courier in رومية.
   static const List<CharacterPlacement> rome = [
     CharacterPlacement(
-      character: PostOfficeCharacters.courier,
+      characters: PostOfficeCharacters.couriers,
       stop: JourneyStops.rome,
     ),
   ];
@@ -44,7 +44,7 @@ final class PostOfficePlacements {
   /// The courier in فيلبي.
   static const List<CharacterPlacement> philippi = [
     CharacterPlacement(
-      character: PostOfficeCharacters.courier,
+      characters: PostOfficeCharacters.couriers,
       stop: JourneyStops.philippi,
     ),
   ];
@@ -52,7 +52,7 @@ final class PostOfficePlacements {
   /// The courier in كولوسي.
   static const List<CharacterPlacement> colossae = [
     CharacterPlacement(
-      character: PostOfficeCharacters.courier,
+      characters: PostOfficeCharacters.couriers,
       stop: JourneyStops.colossae,
     ),
   ];
@@ -60,7 +60,7 @@ final class PostOfficePlacements {
   /// The courier in أفسس.
   static const List<CharacterPlacement> ephesus = [
     CharacterPlacement(
-      character: PostOfficeCharacters.courier,
+      characters: PostOfficeCharacters.couriers,
       stop: JourneyStops.ephesus,
     ),
   ];
@@ -68,7 +68,7 @@ final class PostOfficePlacements {
   /// The courier in كريت.
   static const List<CharacterPlacement> crete = [
     CharacterPlacement(
-      character: PostOfficeCharacters.courier,
+      characters: PostOfficeCharacters.couriers,
       stop: JourneyStops.crete,
     ),
   ];
@@ -76,7 +76,7 @@ final class PostOfficePlacements {
   /// The courier in أورشليم.
   static const List<CharacterPlacement> jerusalem = [
     CharacterPlacement(
-      character: PostOfficeCharacters.courier,
+      characters: PostOfficeCharacters.couriers,
       stop: JourneyStops.jerusalem,
     ),
   ];

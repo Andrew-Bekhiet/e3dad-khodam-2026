@@ -6,24 +6,22 @@ import 'package:equatable/equatable.dart';
 /// One level of the guided game: a letter to deliver, the place it is
 /// delivered to, and the story beats played before it ([briefing]) and
 /// once it is cleared ([clearance]).
+///
+/// Every string here comes from the play script (`المسرحية.docx`); a
+/// level the script says nothing about simply has empty lists, and shows
+/// its city card and verses alone.
 final class GameLevel extends Equatable {
   /// Stable identifier, used for lookups and as a widget key.
   final String id;
 
-  /// The level's Arabic name — normally the letter being delivered.
+  /// The letter's name, as the play script names it.
   final String title;
-
-  /// Short Arabic dateline for the level, e.g. `'تسالونيكي · ٥٢ م'`.
-  final String dateline;
-
-  /// One short Arabic line telling the player what this level is about.
-  final String objective;
 
   /// Where every character on the map stands during this level, in draw
   /// order. Never empty: the first entry's stop is the level's
   /// [destination], which the camera frames and the letter is addressed
-  /// to. Extra entries are how a second or third character travels their
-  /// own route through the same levels.
+  /// to. Extra entries are how a second group travels its own route
+  /// through the same levels.
   final List<CharacterPlacement> placements;
 
   /// Beats played before the level's map is handed to the player.
@@ -32,18 +30,27 @@ final class GameLevel extends Equatable {
   /// Beats played once the player steps past the level's map.
   final List<StoryBeat> clearance;
 
-  /// The place this level is about: where its leading character stands.
+  /// The verses the script quotes for this letter, in the order it
+  /// quotes them. Revealed one at a time on the level's city card.
+  final List<String> verses;
+
+  /// Artwork for the level's city card, shown over the map while the
+  /// level is being played. May point at a file that does not exist yet:
+  /// the card falls back to the city's name alone.
+  final String imageAsset;
+
+  /// The place this level is about: where its leading group stands.
   JourneyStop get destination => placements.first.stop;
 
   @override
   List<Object?> get props => [
     id,
     title,
-    dateline,
-    objective,
     placements,
     briefing,
     clearance,
+    verses,
+    imageAsset,
   ];
 
   /// Creates a level.
@@ -55,10 +62,10 @@ final class GameLevel extends Equatable {
   const GameLevel({
     required this.id,
     required this.title,
-    required this.dateline,
-    required this.objective,
     required this.placements,
-    required this.briefing,
-    required this.clearance,
+    required this.imageAsset,
+    this.briefing = const [],
+    this.clearance = const [],
+    this.verses = const [],
   });
 }

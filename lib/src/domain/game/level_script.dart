@@ -12,6 +12,10 @@ final class LevelScript extends Equatable {
   /// The character credited for the narrator overlay.
   final GameCharacter narrator;
 
+  /// Whose words the levels' verses are; shown on the city card that
+  /// quotes them.
+  final GameCharacter letterWriter;
+
   /// Beats played once, before the first level's briefing.
   final List<StoryBeat> prologue;
 
@@ -22,12 +26,20 @@ final class LevelScript extends Equatable {
   final List<StoryBeat> epilogue;
 
   @override
-  List<Object?> get props => [guide, narrator, prologue, levels, epilogue];
+  List<Object?> get props => [
+    guide,
+    narrator,
+    letterWriter,
+    prologue,
+    levels,
+    epilogue,
+  ];
 
   /// Creates a script.
   const LevelScript({
     required this.guide,
     required this.narrator,
+    required this.letterWriter,
     required this.prologue,
     required this.levels,
     required this.epilogue,

@@ -3,6 +3,7 @@ import 'package:e3dad_khodam_2026/src/domain/game/game_sounds.dart';
 import 'package:e3dad_khodam_2026/src/domain/game/level_script_repository.dart';
 import 'package:e3dad_khodam_2026/src/presentation/cubit/game_journey_cubit.dart';
 import 'package:e3dad_khodam_2026/src/presentation/cubit/game_journey_state.dart';
+import 'package:e3dad_khodam_2026/src/presentation/widgets/game/city_overlay.dart';
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/game_map_view.dart';
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/level_hud.dart';
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/pixel_panel.dart';
@@ -64,6 +65,15 @@ class _GameJourneyViewState extends State<_GameJourneyView> {
           fit: StackFit.expand,
           children: [
             const GameMapView(),
+            if (state.isPlaying && state.level != null)
+              CityOverlay(
+                level: state.level!,
+                cityLabel: state.currentStop?.label ?? '',
+                verses: state.revealedVerses,
+                versesSpeaker: cubit.letterWriter,
+                hasMoreVerses: state.hasMoreVerses,
+                onRevealVerse: cubit.revealNextVerse,
+              ),
             LevelHud(state: state),
             StoryOverlay(
               guide: cubit.guide,
@@ -88,25 +98,32 @@ class _GameJourneyViewState extends State<_GameJourneyView> {
     super.dispose();
   }
 
-  /// Arrow keys walk the script, space and enter advance it, and escape
-  /// leaves the game. Left/right are not mirrored for RTL: they match the
-  /// on-screen arrows, which are not mirrored either.
+  /// Left and right walk the script, space and enter advance it, down
+  /// and up work the level's verses, and escape leaves the game.
+  /// Left/right are not mirrored for RTL: they match the on-screen
+  /// arrows, which are not mirrored either.
   KeyEventResult _onKeyEvent(GameJourneyCubit cubit, KeyEvent event) {
     if (event is! KeyDownEvent && event is! KeyRepeatEvent) {
       return KeyEventResult.ignored;
     }
     switch (event.logicalKey) {
       case LogicalKeyboardKey.arrowRight:
-      case LogicalKeyboardKey.arrowDown:
       case LogicalKeyboardKey.space:
       case LogicalKeyboardKey.enter:
         _step(cubit, forward: true);
 
         return KeyEventResult.handled;
       case LogicalKeyboardKey.arrowLeft:
-      case LogicalKeyboardKey.arrowUp:
       case LogicalKeyboardKey.backspace:
         _step(cubit, forward: false);
+
+        return KeyEventResult.handled;
+      case LogicalKeyboardKey.arrowDown:
+        cubit.revealNextVerse();
+
+        return KeyEventResult.handled;
+      case LogicalKeyboardKey.arrowUp:
+        cubit.hideLastVerse();
 
         return KeyEventResult.handled;
       case LogicalKeyboardKey.escape:

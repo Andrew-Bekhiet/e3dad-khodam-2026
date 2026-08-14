@@ -19,14 +19,21 @@ final class MapTokenSpec extends Equatable {
   /// The token's artwork recipe.
   final MapTokenStyle style;
 
+  /// Screen-space nudge from [position], in logical pixels, positive
+  /// right and down. This is how characters travelling together stand
+  /// side by side instead of exactly on top of each other, without
+  /// pretending they are in different cities.
+  final Offset offset;
+
   @override
-  List<Object?> get props => [id, position, style];
+  List<Object?> get props => [id, position, style, offset];
 
   /// Creates a token.
   const MapTokenSpec({
     required this.id,
     required this.position,
     required this.style,
+    this.offset = Offset.zero,
   });
 }
 

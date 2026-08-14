@@ -34,6 +34,7 @@ void _advanceUntil(GameJourneyCubit cubit, bool Function() test) {
 void main() {
   _startAndStepTests();
   _mapContentTests();
+  _verseTests();
   _clearanceAndJumpTests();
 }
 
@@ -71,7 +72,7 @@ void _startAndStepTests() {
     expect(cubit.state, equals(first));
   });
 
-  test('GameJourneyCubit_walkingTheWholeScript_endsOnTheEpilogue', () {
+  test('GameJourneyCubit_walkingTheWholeScript_endsOnTheLastLevel', () {
     final cubit = GameJourneyCubit(_repository);
     addTearDown(cubit.close);
 
@@ -79,17 +80,20 @@ void _startAndStepTests() {
       cubit.forward();
     }
 
+    // The play writes no closing narration, so the last step is the
+    // fourteenth letter itself.
     expect(cubit.state.isAtEnd, isTrue);
-    expect(cubit.state.step.phase, GamePhase.epilogue);
-    expect(cubit.state.currentStop, isNull);
+    expect(cubit.state.levelNumber, 14);
+    expect(cubit.state.currentStop, JourneyStops.ephesus);
     expect(cubit.state.progress, 1.0);
-    // Every letter delivered: fourteen levels, nine distinct cities.
-    expect(cubit.state.clearedStops.length, 9);
+    // The eight other cities already delivered to; أفسس is the current
+    // stop, so it is drawn highlighted rather than cleared.
+    expect(cubit.state.clearedStops.length, 8);
   });
 }
 
 void _mapContentTests() {
-  test('GameJourneyCubit_firstLevel_putsTheCourierOnItsDestination', () {
+  test('GameJourneyCubit_firstLevel_putsBothCouriersOnItsDestination', () {
     final cubit = GameJourneyCubit(_repository);
     addTearDown(cubit.close);
 
@@ -97,9 +101,16 @@ void _mapContentTests() {
 
     expect(cubit.state.currentStop, JourneyStops.thessalonica);
     expect(cubit.state.clearedStops, isEmpty);
-    expect(cubit.state.trails, hasLength(1));
-    expect(cubit.state.trails.single.position, JourneyStops.thessalonica);
-    expect(cubit.state.trails.single.path, [JourneyStops.thessalonica]);
+    // The two postmen travel together: one trail each, same route.
+    expect(cubit.state.trails, hasLength(2));
+    expect(
+      cubit.state.trails.map((trail) => trail.character.id),
+      ['courier1', 'courier2'],
+    );
+    for (final trail in cubit.state.trails) {
+      expect(trail.path, [JourneyStops.thessalonica]);
+      expect(trail.position, JourneyStops.thessalonica);
+    }
     // The city after this one is previewed, but no further.
     expect(cubit.state.nextStop, JourneyStops.thessalonica);
   });
@@ -112,7 +123,7 @@ void _mapContentTests() {
 
     // Both Thessalonian letters are delivered to one city, so the trail
     // is still a single point and the city is not drawn twice.
-    expect(cubit.state.trails.single.path, [JourneyStops.thessalonica]);
+    expect(cubit.state.trails.first.path, [JourneyStops.thessalonica]);
     expect(cubit.state.clearedStops, isEmpty);
     expect(cubit.state.currentStop, JourneyStops.thessalonica);
   });
@@ -124,11 +135,86 @@ void _mapContentTests() {
     _advanceUntil(cubit, () => cubit.state.levelNumber == 3);
 
     expect(cubit.state.currentStop, JourneyStops.corinth);
-    expect(cubit.state.trails.single.path, [
-      JourneyStops.thessalonica,
-      JourneyStops.corinth,
-    ]);
+    for (final trail in cubit.state.trails) {
+      expect(trail.path, [JourneyStops.thessalonica, JourneyStops.corinth]);
+    }
     expect(cubit.state.clearedStops, [JourneyStops.thessalonica]);
+  });
+}
+
+void _verseTests() {
+  test('GameJourneyCubit_revealNextVerse_showsThemOneAtATime', () {
+    final cubit = GameJourneyCubit(_repository);
+    addTearDown(cubit.close);
+
+    _advanceUntil(
+      cubit,
+      () => cubit.state.levelNumber == 1 && cubit.state.isPlaying,
+    );
+    final verses = cubit.state.level!.verses;
+
+    expect(cubit.state.revealedVerses, isEmpty);
+    cubit.revealNextVerse();
+    expect(cubit.state.revealedVerses, [verses.first]);
+
+    for (var shown = 1; shown < verses.length; shown++) {
+      cubit.revealNextVerse();
+    }
+    expect(cubit.state.revealedVerses, verses);
+
+    // Nothing left to reveal, and nothing breaks by asking again.
+    expect(cubit.state.hasMoreVerses, isFalse);
+    cubit.revealNextVerse();
+    expect(cubit.state.revealedVerses, verses);
+  });
+
+  test('GameJourneyCubit_hideLastVerse_takesThemBackOff', () {
+    final cubit = GameJourneyCubit(_repository);
+    addTearDown(cubit.close);
+
+    _advanceUntil(
+      cubit,
+      () => cubit.state.levelNumber == 1 && cubit.state.isPlaying,
+    );
+    cubit
+      ..revealNextVerse()
+      ..revealNextVerse()
+      ..hideLastVerse();
+
+    expect(cubit.state.revealedVerses, hasLength(1));
+
+    cubit
+      ..hideLastVerse()
+      ..hideLastVerse();
+    expect(cubit.state.revealedVerses, isEmpty);
+  });
+
+  test('GameJourneyCubit_steppingOn_forgetsTheVersesRevealed', () {
+    final cubit = GameJourneyCubit(_repository);
+    addTearDown(cubit.close);
+
+    _advanceUntil(
+      cubit,
+      () => cubit.state.levelNumber == 1 && cubit.state.isPlaying,
+    );
+    cubit
+      ..revealNextVerse()
+      ..forward()
+      ..backward();
+
+    expect(cubit.state.revealedVerses, isEmpty);
+  });
+
+  test('GameJourneyCubit_revealNextVerse_doesNothingDuringDialogue', () {
+    final cubit = GameJourneyCubit(_repository);
+    addTearDown(cubit.close);
+
+    // The opening beat: a line is showing, so there is no card to
+    // reveal verses on.
+    expect(cubit.state.isPlaying, isFalse);
+    cubit.revealNextVerse();
+
+    expect(cubit.state.revealedVerses, isEmpty);
   });
 }
 

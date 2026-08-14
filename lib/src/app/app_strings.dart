@@ -23,9 +23,6 @@ final class AppStrings {
   /// The word "level", prefixed to the level counter in the game HUD.
   static const String levelWord = 'المرحلة';
 
-  /// Cue under a story line telling the player how to move on.
-  static const String continueHint = 'اضغط للمتابعة';
-
   /// Tooltip on the "step back" arrow, on both the map and the game.
   static const String backwardTooltip = 'السابق';
 

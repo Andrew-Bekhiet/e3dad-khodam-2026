@@ -15,29 +15,22 @@ final class PostOfficeScript {
     ...PostOfficePrisonLevels.all,
   ];
 
-  /// The finished script, with the beats that open and close the game.
+  /// The finished script.
+  ///
+  /// The opening beat is the game's own opening line in the play; the
+  /// play has no closing narration yet, so the game simply ends on its
+  /// last level rather than inventing one.
   static const LevelScript script = LevelScript(
     guide: PostOfficeCharacters.guide,
     narrator: PostOfficeCharacters.narrator,
+    letterWriter: PostOfficeCharacters.paul,
     prologue: [
-      StoryBeat.narrator(
-        'مكتب بريد قديم، وباب محدش بيفتحه… وجوّه صندوق فيه أربعتاشر جواب مستنيين من ألفين سنة.',
-        title: 'post office',
-      ),
       StoryBeat.guide(
-        'انتو دلوقتي في زمن ٥٢ م، عصر أول رسالة لبولس الرسول. معاكم ١٤ رسالة متقسمين على ١٤ مرحلة… يلا نبتدي.',
+        'أهلا بكم في لعبة post office. انتو دلوقتي في زمن ٥٢ م، ودة عصر اول رسالة لبولس الرسول. انتو دلوقتي معاكم ١٤ رسالة متقسمين ل١٤ مرحلة، لازم تفهموهم كويس اوي وتوصلوهم عشان تعرفوا تطلعوا من اللعبة',
       ),
     ],
     levels: levels,
-    epilogue: [
-      StoryBeat.guide(
-        'أربعتاشر جواب اتسلّموا كلهم. أنتم كده خرجتم من اللعبة… بس الرسايل فضلت معاكم.',
-        title: 'خلصت اللعبة',
-      ),
-      StoryBeat.narrator(
-        'البوسطة طول عمرها بتبعت إخطارات… لكن الطرد ده اتسلّم لحد باب البيت.',
-      ),
-    ],
+    epilogue: [],
   );
 
   const PostOfficeScript._();

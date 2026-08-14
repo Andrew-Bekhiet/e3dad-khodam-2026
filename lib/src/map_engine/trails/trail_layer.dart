@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import 'package:e3dad_khodam_2026/src/map_engine/map_trail_spec.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/pixel_style/pixel_style_builder.dart';
+import 'package:e3dad_khodam_2026/src/map_engine/trails/trail_curve.dart';
 
 /// Builds the GeoJSON source and line layer the travelled routes are
 /// drawn by.
@@ -70,13 +71,16 @@ final class TrailLayer {
     ],
   };
 
+  /// The stops become a curve here rather than in the spec: a trail is
+  /// authored as the places someone actually stopped at, and how that
+  /// route is drawn between them is a rendering decision.
   static JsonMap _feature(MapTrailSpec trail) => {
     'type': 'Feature',
     'id': trail.id,
     'geometry': <String, Object?>{
       'type': 'LineString',
       'coordinates': [
-        for (final point in trail.points)
+        for (final point in TrailCurve.through(trail.points))
           <double>[point.longitude, point.latitude],
       ],
     },

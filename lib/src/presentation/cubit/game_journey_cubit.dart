@@ -152,11 +152,12 @@ final class GameJourneyCubit extends Cubit<GameJourneyState> {
     final paths = <String, List<JourneyStop>>{};
     for (final level in levels.take(levelIndex + 1)) {
       for (final placement in level.placements) {
-        final id = placement.character.id;
-        characters[id] ??= placement.character;
-        final path = paths.putIfAbsent(id, () => <JourneyStop>[]);
-        if (path.isEmpty || path.last.id != placement.stop.id) {
-          path.add(placement.stop);
+        for (final character in placement.characters) {
+          characters[character.id] ??= character;
+          final path = paths.putIfAbsent(character.id, () => <JourneyStop>[]);
+          if (path.isEmpty || path.last.id != placement.stop.id) {
+            path.add(placement.stop);
+          }
         }
       }
     }
@@ -218,6 +219,9 @@ final class GameJourneyCubit extends Cubit<GameJourneyState> {
   /// The character credited on the narrator overlay.
   GameCharacter get narrator => _script.narrator;
 
+  /// Whose words the city cards' verses are.
+  GameCharacter get letterWriter => _script.letterWriter;
+
   /// Loads the script once and starts on its first step.
   ///
   /// [sounds] is silent by default; pass a real player once the clearance
@@ -254,6 +258,24 @@ final class GameJourneyCubit extends Cubit<GameJourneyState> {
   /// Returns to the opening beat.
   void restart() {
     _goTo(0);
+  }
+
+  /// Reveals the next verse on the level's city card. Only meaningful
+  /// while the level is being played — the verses belong to the card,
+  /// not to the dialogue over it.
+  void revealNextVerse() {
+    if (!state.isPlaying || !state.hasMoreVerses) {
+      return;
+    }
+    emit(state.withVersesShown(state.versesShown + 1));
+  }
+
+  /// Takes the last revealed verse back off the card.
+  void hideLastVerse() {
+    if (state.versesShown == 0) {
+      return;
+    }
+    emit(state.withVersesShown(state.versesShown - 1));
   }
 
   /// Jumps to the playable map of the level whose destination is

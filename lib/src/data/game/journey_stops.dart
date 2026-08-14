@@ -35,7 +35,7 @@ final class JourneyStops {
   static const JourneyStop rome = JourneyStop(
     id: 'rome',
     label: 'رومية',
-    position: GeoPosition(latitude: 41.90, longitude: 12.50),
+    position: GeoPosition(latitude: 41.9, longitude: 12.5),
   );
 
   /// فيلبي.

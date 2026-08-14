@@ -18,6 +18,8 @@ final class TokenLayer {
   /// Feature property naming the token's style image.
   static const String spriteProperty = 'tokenSprite';
 
+  static const String _offsetProperty = 'tokenOffset';
+
   /// The `geojson` source definition, whose data is replaced wholesale
   /// whenever a character moves.
   static JsonMap source(List<MapTokenSpec> tokens) => {
@@ -34,6 +36,13 @@ final class TokenLayer {
     'layout': <String, Object?>{
       'icon-image': <Object?>['get', spriteProperty],
       'icon-anchor': 'center',
+      // `get` is typed `value`; icon-offset rejects it unasserted.
+      'icon-offset': <Object?>[
+        'array',
+        'number',
+        2,
+        <Object?>['get', _offsetProperty],
+      ],
       // A character must never be hidden or nudged aside by label
       // collision: where they stand is the whole point of the token.
       'icon-allow-overlap': true,
@@ -67,7 +76,10 @@ final class TokenLayer {
         token.position.latitude,
       ],
     },
-    'properties': <String, Object?>{spriteProperty: token.style.id},
+    'properties': <String, Object?>{
+      spriteProperty: token.style.id,
+      _offsetProperty: <double>[token.offset.dx, token.offset.dy],
+    },
   };
 
   const TokenLayer._();

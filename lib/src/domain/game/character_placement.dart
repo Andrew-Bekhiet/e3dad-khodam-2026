@@ -9,14 +9,14 @@ import 'package:equatable/equatable.dart';
 /// levels, read in order, are their own route — and their own trail.
 final class CharacterPlacement extends Equatable {
   /// Who is standing somewhere.
-  final GameCharacter character;
+  final List<GameCharacter> characters;
 
   /// Where they are standing during this level.
   final JourneyStop stop;
 
   @override
-  List<Object?> get props => [character, stop];
+  List<Object?> get props => [characters, stop];
 
   /// Creates a placement.
-  const CharacterPlacement({required this.character, required this.stop});
+  const CharacterPlacement({required this.characters, required this.stop});
 }

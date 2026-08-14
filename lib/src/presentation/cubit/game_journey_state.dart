@@ -49,6 +49,18 @@ final class GameJourneyState extends Equatable {
   /// How long the map surface should take to animate to [camera].
   final Duration cameraAnimationDuration;
 
+  /// How many of the level's verses have been revealed on its city card.
+  /// Reset to zero on every step, and raised one at a time by the down
+  /// arrow while the level is being played.
+  final int versesShown;
+
+  /// The verses revealed so far, in the order the script quotes them.
+  List<String> get revealedVerses =>
+      (level?.verses ?? const <String>[]).take(versesShown).toList();
+
+  /// Whether the level has a verse left to reveal.
+  bool get hasMoreVerses => versesShown < (level?.verses.length ?? 0);
+
   /// The line to show over the map, or null while the level's map is
   /// being played with no overlay.
   StoryBeat? get beat => step.beat;
@@ -79,6 +91,7 @@ final class GameJourneyState extends Equatable {
     trails,
     camera,
     cameraAnimationDuration,
+    versesShown,
   ];
 
   /// Creates a playthrough state.
@@ -95,5 +108,24 @@ final class GameJourneyState extends Equatable {
     this.level,
     this.currentStop,
     this.nextStop,
+    this.versesShown = 0,
   });
+
+  /// The same state with [count] verses revealed. Nothing else can
+  /// change while reading verses, so this is the one copy the game needs.
+  GameJourneyState withVersesShown(int count) => GameJourneyState(
+    step: step,
+    stepIndex: stepIndex,
+    stepCount: stepCount,
+    levelNumber: levelNumber,
+    levelCount: levelCount,
+    clearedStops: clearedStops,
+    trails: trails,
+    camera: camera,
+    cameraAnimationDuration: cameraAnimationDuration,
+    level: level,
+    currentStop: currentStop,
+    nextStop: nextStop,
+    versesShown: count,
+  );
 }

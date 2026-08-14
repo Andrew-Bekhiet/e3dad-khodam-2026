@@ -53,7 +53,7 @@ final class PixelTuning {
   /// Zoom levels the camera settles onto after a gesture. Snapping to
   /// whole levels keeps the sprites pixel-aligned; between levels the
   /// renderer scales patterns and the art blurs.
-  static const double zoomSnap = 1.0;
+  static const double zoomSnap = 0.05;
 
   const PixelTuning._();
 }

@@ -1,12 +1,17 @@
+import 'dart:convert';
+
+import 'package:e3dad_khodam_2026/src/domain/geo_bounds.dart';
 import 'package:e3dad_khodam_2026/src/domain/geo_position.dart';
-import 'package:e3dad_khodam_2026/src/map_engine/camera/camera_change_listener_mixin.dart';
-import 'package:e3dad_khodam_2026/src/map_engine/camera/map_camera_controller.dart';
-import 'package:e3dad_khodam_2026/src/map_engine/camera/projected_marker_layer.dart';
+import 'package:e3dad_khodam_2026/src/map_engine/map_camera_target.dart';
+import 'package:e3dad_khodam_2026/src/map_engine/map_marker_spec.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/map_surface_builder.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/map_surface_spec.dart';
+import 'package:e3dad_khodam_2026/src/map_engine/map_surface_state_mixin.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/mapbox/mapbox_style.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/mapbox/missing_access_token_notice.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/mapbox/pixel_style_source.dart';
+import 'package:e3dad_khodam_2026/src/map_engine/markers/marker_layer.dart';
+import 'package:e3dad_khodam_2026/src/map_engine/markers/marker_sprite.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/pixel_style/pixel_sprite.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/pixel_style/pixel_sprite_png.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/pixel_style/pixel_tuning.dart';
@@ -32,11 +37,12 @@ void configureMapboxRenderer() {
   MapboxOptions.setAccessToken(MapboxStyle.accessToken);
 }
 
-/// The mobile map surface: Mapbox's own Maps SDK rendering the pixel
-/// style, with the app's marker widgets laid over it.
+/// The mobile map surface: the Maps SDK rendering the pixel style, with
+/// markers as a symbol layer inside it.
 ///
-/// The web build never imports this file (see `mapbox_map_surface.dart`),
-/// since the SDK has no web implementation.
+/// Everything positional belongs to the SDK — nothing here knows where a
+/// coordinate lands on screen, which is why rotation and pitch are left
+/// enabled. The web build never imports this file.
 final class MapboxMapSurfaceNative extends StatefulWidget {
   /// The map content and camera target to render.
   final MapSurfaceSpec spec;
@@ -52,45 +58,41 @@ final class MapboxMapSurfaceNative extends StatefulWidget {
 }
 
 class _MapboxMapSurfaceNativeState extends State<MapboxMapSurfaceNative>
-    with
-        SingleTickerProviderStateMixin,
-        CameraChangeListenerMixin<MapboxMapSurfaceNative> {
-  /// Sprites are authored at one image pixel per screen pixel; letting
-  /// the renderer scale them would smooth the very edges the look is
-  /// made of.
-  static const double _spriteScale = 1.0;
+    with MapSurfaceStateMixin<MapboxMapSurfaceNative> {
+  /// One image pixel per screen pixel; scaling would smooth the very
+  /// edges the pixel-art look is made of.
+  static const double _patternScale = 1.0;
 
-  /// How long a zoom snap takes once a gesture settles. Long enough to
-  /// read as a movement, short enough not to feel like a correction.
+  /// Hit-test radius in logical pixels; city dots are only 18px across.
+  static const double _tapSlop = 12.0;
+
   static const Duration _snapDuration = Duration(milliseconds: 120);
 
-  // Built in initState against `vsync: this`, which only becomes
-  // available once this State is attached — a nullable field with a
-  // null check on every use would be strictly worse than the one late
-  // initialization this buys. Overrides CameraChangeListenerMixin's
-  // abstract getter directly, rather than through a delegating getter.
-  @override
-  late final MapCameraController cameraController;
+  /// Below this, a snap is skipped so it cannot re-trigger itself.
+  static const double _zoomEpsilon = 1e-3;
+
   MapboxMap? _map;
   PixelStyle? _style;
   bool _styleRequested = false;
+  bool _styleLoaded = false;
 
   @override
   void initState() {
     super.initState();
-    cameraController = MapCameraController(
-      vsync: this,
-      minZoom: widget.spec.minZoom,
-      maxZoom: widget.spec.maxZoom,
-    );
-    listenForCameraChanges();
     _loadStyle();
   }
 
   @override
-  void didUpdateWidget(MapboxMapSurfaceNative oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    cameraController.syncFrom(widget.spec, oldWidget.spec);
+  MapSurfaceSpec specOf(MapboxMapSurfaceNative widget) => widget.spec;
+
+  @override
+  void pushMarkers(List<MapMarkerSpec> markers) {
+    _pushMarkers(markers);
+  }
+
+  @override
+  void moveCamera(MapCameraTarget camera, Duration duration) {
+    _moveCamera(camera, duration);
   }
 
   @override
@@ -99,62 +101,26 @@ class _MapboxMapSurfaceNativeState extends State<MapboxMapSurfaceNative>
       return const MissingAccessTokenNotice();
     }
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        _scheduleViewport(constraints.biggest);
-        final camera = cameraController.camera;
-
-        return Stack(
-          fit: StackFit.expand,
-          children: [
-            MapWidget(
-              // The SDK insists on a style at construction and cannot
-              // take JSON there, so it briefly shows the plain Studio
-              // style before `loadStyleJson` swaps in the pixel one.
-              // Both draw from the same tile source, so this costs one
-              // style document, not a second set of tiles.
-              styleUri: MapboxStyle.styleUri,
-              onMapCreated: _onMapCreated,
-              onStyleLoadedListener: _onStyleLoaded,
-              onStyleImageMissingListener: _onStyleImageMissing,
-              onCameraChangeListener: _onRendererCameraChanged,
-              onMapIdleListener: _onMapIdle,
-            ),
-            if (camera != null)
-              ProjectedMarkerLayer(
-                camera: camera,
-                markers: widget.spec.markers,
-              ),
-          ],
-        );
-      },
+    return MapWidget(
+      // The SDK insists on a style URI at construction and cannot take
+      // JSON there, so the plain Studio style shows briefly before
+      // `loadStyleJson` swaps in the pixel one. Same tile source.
+      styleUri: MapboxStyle.styleUri,
+      onMapCreated: _onMapCreated,
+      onStyleLoadedListener: _onStyleLoaded,
+      onStyleImageMissingListener: _onStyleImageMissing,
+      onMapIdleListener: _onMapIdle,
     );
   }
 
   @override
   void dispose() {
-    stopListeningForCameraChanges();
-    cameraController.dispose();
+    _map?.dispose();
     super.dispose();
   }
 
-  /// Viewport changes arrive mid-build, but resolving the camera
-  /// notifies listeners and would rebuild this widget while it is
-  /// already building — so hand it to the next frame.
-  void _scheduleViewport(Size size) {
-    if (cameraController.camera?.viewport == size) {
-      return;
-    }
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) {
-        return;
-      }
-      cameraController.setViewport(size);
-    });
-  }
-
   Future<void> _loadStyle() async {
-    final style = await PixelStyleSource.load();
+    final style = await PixelStyleSource.load(markers: widget.spec.markers);
     if (!mounted) {
       return;
     }
@@ -164,24 +130,21 @@ class _MapboxMapSurfaceNativeState extends State<MapboxMapSurfaceNative>
 
   Future<void> _onMapCreated(MapboxMap map) async {
     _map = map;
-    await map.gestures.updateSettings(
-      GesturesSettings(
-        // A rotated or pitched camera would invalidate the app's own
-        // Web Mercator projection, which every marker position and the
-        // whole cross layout depend on.
-        rotateEnabled: false,
-        pitchEnabled: false,
-        simultaneousRotateAndPinchToZoomEnabled: false,
-      ),
-    );
     await map.compass.updateSettings(CompassSettings(enabled: false));
     await map.scaleBar.updateSettings(ScaleBarSettings(enabled: false));
+    await map.setBounds(
+      CameraBoundsOptions(
+        minZoom: widget.spec.minZoom,
+        maxZoom: widget.spec.maxZoom,
+      ),
+    );
+    _listenForMarkerTaps(map);
     await _applyStyle();
   }
 
-  /// Loads the pixel style, once both the map and the built style exist
-  /// — they arrive in either order, so whichever lands second does the
-  /// loading, and [_styleRequested] keeps that from happening twice.
+  /// The map and the built style arrive in either order, so whichever
+  /// lands second loads. The flag is read and set before the first
+  /// `await`, so no second caller can observe it unset — hence no lock.
   Future<void> _applyStyle() async {
     final map = _map;
     final style = _style;
@@ -193,37 +156,50 @@ class _MapboxMapSurfaceNativeState extends State<MapboxMapSurfaceNative>
   }
 
   Future<void> _onStyleLoaded(StyleLoadedEventData _) async {
-    // Loading a style clears every registered image, so the patterns go
-    // back in after each load.
+    _styleLoaded = true;
+    // Loading a style clears every registered image.
     await _addSprites();
-    await _pushCamera();
+    await _moveCamera(widget.spec.camera, Duration.zero);
   }
 
-  /// Supplies a pattern the renderer asked for.
-  ///
-  /// The eager registration in [_onStyleLoaded] can lose the race
-  /// against the first render — `style-loaded` does not guarantee the
-  /// pattern atlas is still waiting — and a `fill-pattern` whose image
-  /// is absent draws nothing at all rather than falling back to
-  /// `fill-color`. This is the SDK's own remedy for that, and the only
-  /// path that is ordering-proof.
+  /// Supplies an image the renderer asked for. The eager registration in
+  /// [_onStyleLoaded] can lose the race against the first render, and a
+  /// missing `fill-pattern` or `icon-image` draws nothing at all.
   Future<void> _onStyleImageMissing(StyleImageMissingEventData event) async {
-    final sprite = _style?.sprites
+    final pattern = _style?.sprites
         .where((candidate) => candidate.id == event.id)
         .firstOrNull;
-    if (sprite == null) {
+    if (pattern != null) {
+      await _addSprite(pattern);
+
       return;
     }
-    await _addSprite(sprite);
+    final markerStyle = _style?.markerStyles
+        .where((candidate) => candidate.id == event.id)
+        .firstOrNull;
+    if (markerStyle == null) {
+      return;
+    }
+    await _addSprite(await MarkerSprite.render(markerStyle));
   }
 
   Future<void> _addSprites() async {
-    for (final sprite in _style?.sprites ?? const <PixelSprite>[]) {
+    final style = _style;
+    if (style == null) {
+      return;
+    }
+    for (final sprite in style.sprites) {
       await _addSprite(sprite);
+    }
+    for (final sprite in await MarkerSprite.renderAll(style.markerStyles)) {
+      await _addSprite(sprite, scale: MarkerSprite.scale);
     }
   }
 
-  Future<void> _addSprite(PixelSprite sprite) async {
+  Future<void> _addSprite(
+    PixelSprite sprite, {
+    double scale = _patternScale,
+  }) async {
     final map = _map;
     if (map == null) {
       return;
@@ -234,7 +210,7 @@ class _MapboxMapSurfaceNativeState extends State<MapboxMapSurfaceNative>
     }
     await map.style.addStyleImage(
       sprite.id,
-      _spriteScale,
+      scale,
       MbxImage(width: sprite.width, height: sprite.height, data: png),
       false,
       [],
@@ -243,45 +219,132 @@ class _MapboxMapSurfaceNativeState extends State<MapboxMapSurfaceNative>
     );
   }
 
-  @override
-  void pushCameraToRenderer() {
-    _pushCamera();
-  }
-
-  Future<void> _pushCamera() async {
+  /// Replaces the marker source's data, registering artwork for any
+  /// style the previous level did not use.
+  Future<void> _pushMarkers(List<MapMarkerSpec> markers) async {
     final map = _map;
-    final camera = cameraController.camera;
-    if (map == null || camera == null) {
+    if (map == null || !_styleLoaded) {
       return;
     }
-    await map.setCamera(
-      CameraOptions(
-        center: _pointOf(camera.center),
-        zoom: camera.zoom,
-        bearing: 0,
-        pitch: 0,
-      ),
+    for (final markerStyle in MarkerLayer.stylesOf(markers)) {
+      if (await map.style.hasStyleImage(markerStyle.id)) {
+        continue;
+      }
+      await _addSprite(
+        await MarkerSprite.render(markerStyle),
+        scale: MarkerSprite.scale,
+      );
+    }
+    if (!mounted) {
+      return;
+    }
+    await map.style.setStyleSourceProperty(
+      MarkerLayer.sourceId,
+      'data',
+      jsonEncode(MarkerLayer.featureCollection(markers)),
     );
   }
 
-  void _onRendererCameraChanged(CameraChangedEventData event) {
-    final center = event.cameraState.center.coordinates;
-    cameraController.adoptFromRenderer(
-      center: GeoPosition(
-        latitude: center.lat.toDouble(),
-        longitude: center.lng.toDouble(),
+  /// Moves the map's own camera. A [FitBoundsCameraTarget] is resolved by
+  /// `cameraForCoordinateBounds`, which knows the real viewport and
+  /// projection, so nothing here reimplements Web Mercator.
+  Future<void> _moveCamera(MapCameraTarget target, Duration duration) async {
+    final map = _map;
+    if (map == null || !_styleLoaded) {
+      return;
+    }
+    final camera = switch (target) {
+      CenterZoomCameraTarget(:final center, :final zoom) => CameraOptions(
+        center: center.toMapboxPoint(),
+        zoom: zoom,
       ),
-      zoom: event.cameraState.zoom,
+      FitBoundsCameraTarget(:final bounds, :final padding) =>
+        await map.cameraForCoordinateBounds(
+          bounds.toMapboxBounds(),
+          MbxEdgeInsets(
+            top: padding.top,
+            left: padding.left,
+            bottom: padding.bottom,
+            right: padding.right,
+          ),
+          null,
+          null,
+          widget.spec.maxZoom,
+          null,
+        ),
+    };
+    if (!mounted) {
+      return;
+    }
+    if (duration == Duration.zero) {
+      await map.setCamera(camera);
+
+      return;
+    }
+    await map.flyTo(
+      camera,
+      MapAnimationOptions(duration: duration.inMilliseconds),
     );
   }
 
-  /// Settles onto a whole zoom level once a gesture ends: between
-  /// levels the renderer resamples the patterns and the pixel art turns
-  /// to mush.
-  void _onMapIdle(MapIdleEventData _) {
-    cameraController.snapZoom(PixelTuning.zoomSnap, duration: _snapDuration);
+  /// Settles onto a whole zoom level: between levels the renderer
+  /// resamples the patterns and the pixel art turns to mush.
+  Future<void> _onMapIdle(MapIdleEventData _) async {
+    final map = _map;
+    if (map == null || PixelTuning.zoomSnap <= 0) {
+      return;
+    }
+    final state = await map.getCameraState();
+    final snapped =
+        (state.zoom / PixelTuning.zoomSnap).roundToDouble() *
+        PixelTuning.zoomSnap;
+    if (!mounted || (snapped - state.zoom).abs() < _zoomEpsilon) {
+      return;
+    }
+    await map.easeTo(
+      CameraOptions(zoom: snapped),
+      MapAnimationOptions(duration: _snapDuration.inMilliseconds),
+    );
   }
 
-  static Point _pointOf(GeoPosition position) =>
-      Point(coordinates: Position(position.longitude, position.latitude));
+  /// The renderer hit-tests the marker layer and applies
+  /// [MarkerLayer.interactiveFilter], so inert markers never match.
+  void _listenForMarkerTaps(MapboxMap map) {
+    map.addInteraction(
+      TapInteraction(
+        FeaturesetDescriptor(layerId: MarkerLayer.layerId),
+        (feature, _) {
+          final id = MarkerLayer.idOf(feature.properties);
+          if (id != null && mounted) {
+            widget.spec.onMarkerTap(id);
+          }
+        },
+        filter: jsonEncode(MarkerLayer.interactiveFilter),
+        radius: _tapSlop,
+      ),
+    );
+  }
+}
+
+/// Lives here rather than on the domain types, which must stay free of
+/// `mapbox_maps_flutter` since it has no web implementation.
+extension GeoPositionMapbox on GeoPosition {
+  /// Note the axis order — the SDK takes longitude first.
+  Point toMapboxPoint() => Point(coordinates: Position(longitude, latitude));
+}
+
+/// See [GeoPositionMapbox] for why this lives here.
+extension GeoBoundsMapbox on GeoBounds {
+  /// South-west then north-east.
+  CoordinateBounds toMapboxBounds() => CoordinateBounds(
+    southwest: GeoPosition(
+      latitude: south,
+      longitude: west,
+    ).toMapboxPoint(),
+    northeast: GeoPosition(
+      latitude: north,
+      longitude: east,
+    ).toMapboxPoint(),
+    infiniteBounds: false,
+  );
 }

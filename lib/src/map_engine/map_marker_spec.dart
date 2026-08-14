@@ -1,36 +1,43 @@
 import 'package:e3dad_khodam_2026/src/domain/geo_position.dart';
+import 'package:e3dad_khodam_2026/src/map_engine/markers/map_marker_style.dart';
 import 'package:equatable/equatable.dart';
-import 'package:flutter/widgets.dart';
 
-/// A provider-agnostic description of one marker to render on the map,
-/// consumed by a `MapSurfaceBuilder` implementation.
+/// A provider-agnostic description of one marker to render on the map.
+///
+/// Pure data with no Flutter widget in sight: markers are handed to the
+/// renderer as GeoJSON features drawn by a symbol layer, so everything
+/// here has to survive being serialised into a feature's properties or
+/// resolved from its [style].
 final class MapMarkerSpec extends Equatable {
-  /// Stable identifier, typically the corresponding map node's id.
+  /// Stable identifier, typically the corresponding map node's id. Also
+  /// what a tap on this marker reports back, so it must round-trip
+  /// through the feature's properties unchanged.
   final String id;
 
   /// Where the marker is anchored geographically.
   final GeoPosition position;
 
-  /// The marker widget's footprint, used by the map engine to lay it out.
-  final Size size;
+  /// Text drawn beneath the marker's shape.
+  final String label;
 
-  /// The point within [size] that lines up with [position], e.g.
-  /// [Alignment.bottomCenter] for a pin whose tip should touch the ground.
-  final Alignment alignment;
+  /// How the marker looks. Markers sharing a style share one style
+  /// image.
+  final MapMarkerStyle style;
 
-  /// Builds the marker's visual content.
-  final WidgetBuilder builder;
+  /// Whether tapping this marker should be reported. Leaf markers are
+  /// inert, and excluding them here keeps them out of the tap query
+  /// rather than relying on the caller to ignore the result.
+  final bool isInteractive;
 
   @override
-  List<Object?> get props => [id, position, size, alignment];
+  List<Object?> get props => [id, position, label, style, isInteractive];
 
-  /// Creates a marker spec. [builder] is excluded from equality since
-  /// closures are never structurally comparable.
+  /// Creates a marker spec.
   const MapMarkerSpec({
     required this.id,
     required this.position,
-    required this.size,
-    required this.alignment,
-    required this.builder,
+    required this.label,
+    required this.style,
+    required this.isInteractive,
   });
 }

@@ -27,6 +27,14 @@ final class MapSurfaceSpec extends Equatable {
   /// picks the duration per transition.
   final Duration cameraAnimationDuration;
 
+  /// Called with a marker's id when the renderer reports a tap on it.
+  ///
+  /// Only ever called for markers whose [MapMarkerSpec.isInteractive] is
+  /// true. The surface reports the tap rather than the marker carrying
+  /// its own callback, because a marker is now a GeoJSON feature and a
+  /// feature cannot hold a closure.
+  final void Function(String markerId) onMarkerTap;
+
   @override
   List<Object?> get props => [
     markers,
@@ -37,11 +45,15 @@ final class MapSurfaceSpec extends Equatable {
   ];
 
   /// Creates a map surface spec.
+  ///
+  /// [onMarkerTap] is excluded from equality, as closures are never
+  /// structurally comparable.
   const MapSurfaceSpec({
     required this.markers,
     required this.camera,
     required this.minZoom,
     required this.maxZoom,
     required this.cameraAnimationDuration,
+    required this.onMarkerTap,
   });
 }

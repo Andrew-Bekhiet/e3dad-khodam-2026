@@ -16,6 +16,34 @@ import 'dart:js_interop_unsafe';
 @JS()
 external set accessToken(String _);
 
+/// Installs the plugin that shapes and reorders right-to-left scripts.
+///
+/// Without it GL JS draws Arabic as isolated glyphs in logical order, so
+/// a label reads back to front with no letters joined. The native SDKs
+/// ship this support built in; only GL JS makes you ask. Throws if called
+/// more than once per page, hence [ensureRtlTextPluginSet].
+@JS('setRTLTextPlugin')
+external void _setRtlTextPlugin(String _, JSFunction? __, bool ___);
+
+bool _rtlTextPluginSet = false;
+
+/// Installs the RTL text plugin once per page, before the first map is
+/// created. Later calls are no-ops.
+void ensureRtlTextPluginSet() {
+  if (_rtlTextPluginSet) {
+    return;
+  }
+  _rtlTextPluginSet = true;
+  // Eager rather than lazy: lazy defers the download until RTL text is
+  // first encountered, which is the very first frame here and shows the
+  // labels unshaped until it lands.
+  _setRtlTextPlugin(rtlTextPluginUrl, null, false);
+}
+
+/// The Mapbox-hosted RTL text plugin bundle.
+const String rtlTextPluginUrl =
+    'https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-rtl-text/v0.3.0/mapbox-gl-rtl-text.js';
+
 /// Whether the `mapboxgl` global exists — i.e. whether the script tag in
 /// `web/index.html` loaded.
 ///
@@ -36,9 +64,24 @@ extension type GlMap._(JSObject _) implements JSObject {
   /// Releases the map's WebGL context and DOM nodes.
   external void remove();
 
-  /// Moves the camera immediately, with no animation. The app animates
-  /// its own camera and pushes each frame, so GL JS never eases.
+  /// Registers [listener] for [event] on features of [layerId] only.
+  @JS('on')
+  external void onLayer(String event, String layerId, JSFunction listener);
+
+  /// Moves the camera immediately, with no animation.
   external void jumpTo(GlCameraOptions options);
+
+  /// Eases the camera to [options] over its `duration`.
+  external void easeTo(GlCameraOptions options);
+
+  /// Frames [bounds] — `[[west, south], [east, north]]` — inside the
+  /// current viewport, honouring [options]' padding and duration.
+  external void fitBounds(JSArray<JSArray<JSNumber>> bounds,
+      GlFitBoundsOptions options);
+
+  /// The source registered under [id], or undefined before the style has
+  /// loaded.
+  external GlGeoJsonSource? getSource(String id);
 
   /// Registers a pattern image under [id].
   external void addImage(String id, GlImageData image, GlImageOptions options);
@@ -59,6 +102,43 @@ extension type GlMap._(JSObject _) implements JSObject {
   /// The pinch gesture handler, whose rotation half this app switches
   /// off — as it does every other rotation and pitch control.
   external GlTouchZoomRotateHandler get touchZoomRotate;
+}
+
+/// A `geojson` source, whose features can be replaced wholesale.
+extension type GlGeoJsonSource._(JSObject _) implements JSObject {
+  /// Replaces the source's data with [featureCollection].
+  external void setData(JSAny featureCollection);
+}
+
+/// Options for [GlMap.fitBounds].
+extension type GlFitBoundsOptions._(JSObject _) implements JSObject {
+  /// Creates fit options. [padding] is `{top,right,bottom,left}` in
+  /// pixels; a [duration] of zero fits without animating.
+  factory GlFitBoundsOptions({
+    required JSObject padding,
+    required double duration,
+    required double maxZoom,
+  }) {
+    final options = JSObject()
+      ..['padding'] = padding
+      ..['duration'] = duration.toJS
+      ..['maxZoom'] = maxZoom.toJS;
+
+    return GlFitBoundsOptions._(options);
+  }
+}
+
+/// The event GL JS passes to a layer-scoped click listener.
+extension type GlMapMouseEvent._(JSObject _) implements JSObject {
+  /// Features under the pointer, topmost first. Always present on a
+  /// layer-scoped listener, which only fires when something was hit.
+  external JSArray<GlMapFeature> get features;
+}
+
+/// A rendered feature as surfaced by [GlMapMouseEvent].
+extension type GlMapFeature._(JSObject _) implements JSObject {
+  /// The feature's `properties` object.
+  external JSObject get properties;
 }
 
 /// The pinch-zoom/rotate gesture handler.
@@ -92,16 +172,6 @@ typedef GlViewport = ({
   double maxZoom,
 });
 
-/// Gesture toggles for [GlMapOptions] — the fixed set the app disables on
-/// both platforms so its own Web Mercator projection, which every marker
-/// position depends on, is never invalidated by a rotated or pitched
-/// camera.
-typedef GlGestureOptions = ({
-  bool dragRotate,
-  bool pitchWithRotate,
-  bool touchPitch,
-});
-
 /// Constructor options for [GlMap].
 extension type GlMapOptions._(JSObject _) implements JSObject {
   /// Creates options.
@@ -111,14 +181,12 @@ extension type GlMapOptions._(JSObject _) implements JSObject {
   /// to flash past first.
   ///
   /// Built by hand from a plain [JSObject] rather than an `external
-  /// factory`: GL JS reads these off one flat object, so [viewport] and
-  /// [gestures] are grouped here for readability and unpacked into that
-  /// same flat shape below.
+  /// factory`: GL JS reads these off one flat object, so [viewport] is
+  /// grouped here for readability and unpacked into that flat shape.
   factory GlMapOptions({
     required JSObject container,
     required JSAny style,
     required GlViewport viewport,
-    required GlGestureOptions gestures,
     bool antialias = false,
     bool attributionControl = false,
   }) {
@@ -129,9 +197,6 @@ extension type GlMapOptions._(JSObject _) implements JSObject {
       ..['zoom'] = viewport.zoom.toJS
       ..['minZoom'] = viewport.minZoom.toJS
       ..['maxZoom'] = viewport.maxZoom.toJS
-      ..['dragRotate'] = gestures.dragRotate.toJS
-      ..['pitchWithRotate'] = gestures.pitchWithRotate.toJS
-      ..['touchPitch'] = gestures.touchPitch.toJS
       ..['antialias'] = antialias.toJS
       ..['attributionControl'] = attributionControl.toJS;
 
@@ -139,15 +204,27 @@ extension type GlMapOptions._(JSObject _) implements JSObject {
   }
 }
 
-/// Camera options for [GlMap.jumpTo].
+/// Camera options for [GlMap.jumpTo] and [GlMap.easeTo].
+///
+/// Built by hand rather than as an object-literal constructor so an
+/// omitted `center` is genuinely absent: GL JS treats a present-but-null
+/// `center` as a request to move to null, not as "leave it alone".
 extension type GlCameraOptions._(JSObject _) implements JSObject {
-  /// Creates camera options.
-  external factory GlCameraOptions({
-    JSArray<JSNumber> center,
-    double zoom,
-    double bearing,
-    double pitch,
-  });
+  /// Creates camera options. [duration] is only read by [GlMap.easeTo].
+  factory GlCameraOptions({
+    required double zoom,
+    double duration = 0,
+    JSArray<JSNumber>? center,
+  }) {
+    final options = JSObject()
+      ..['zoom'] = zoom.toJS
+      ..['duration'] = duration.toJS;
+    if (center != null) {
+      options['center'] = center;
+    }
+
+    return GlCameraOptions._(options);
+  }
 }
 
 /// A `{lng, lat}` pair as returned by [GlMap.getCenter].

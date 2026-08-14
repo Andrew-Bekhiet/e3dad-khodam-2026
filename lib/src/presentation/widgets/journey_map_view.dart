@@ -2,7 +2,7 @@ import 'package:e3dad_khodam_2026/src/map_engine/map_marker_spec.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/map_surface_builder.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/map_surface_spec.dart';
 import 'package:e3dad_khodam_2026/src/presentation/cubit/map_hierarchy_cubit.dart';
-import 'package:e3dad_khodam_2026/src/presentation/widgets/map_node_marker.dart';
+import 'package:e3dad_khodam_2026/src/presentation/widgets/marker_styles.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -28,18 +28,16 @@ final class JourneyMapView extends StatelessWidget {
           MapMarkerSpec(
             id: node.id,
             position: node.position,
-            size: MapNodeMarker.layoutSize(node),
-            alignment: MapNodeMarker.anchorAlignment(node),
-            builder: (_) => MapNodeMarker(
-              node: node,
-              onTap: () => cubit.drillDown(node.id),
-            ),
+            label: node.label,
+            style: MarkerStyles.forNode(node),
+            isInteractive: node.isExpandable,
           ),
       ],
       camera: state.camera,
       minZoom: _minZoom,
       maxZoom: _maxZoom,
       cameraAnimationDuration: state.cameraAnimationDuration,
+      onMarkerTap: cubit.drillDown,
     );
 
     return surfaceBuilder(spec);

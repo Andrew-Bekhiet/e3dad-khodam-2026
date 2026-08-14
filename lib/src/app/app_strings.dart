@@ -16,6 +16,25 @@ final class AppStrings {
   /// this action.
   static const String backButtonTooltip = 'رجوع';
 
+  /// Title of the guided game screen, and the tooltip on the app-bar
+  /// action that opens it.
+  static const String gameTitle = 'لعبة post office';
+
+  /// The word "level", prefixed to the level counter in the game HUD.
+  static const String levelWord = 'المرحلة';
+
+  /// Cue under a story line telling the player how to move on.
+  static const String continueHint = 'اضغط للمتابعة';
+
+  /// Tooltip on the "step back" arrow, on both the map and the game.
+  static const String backwardTooltip = 'السابق';
+
+  /// Tooltip on the "step forward" arrow, on both the map and the game.
+  static const String forwardTooltip = 'التالي';
+
+  /// Tooltip on the game's "start over" action.
+  static const String restartTooltip = 'من البداية';
+
   /// Exact OSM attribution string required by the tile usage policy
   /// (spec §8). The OSM map surface renders this itself; kept here too
   /// as the single catalog entry for the app's fixed copy.

@@ -7,6 +7,8 @@ import 'package:e3dad_khodam_2026/src/map_engine/map_marker_spec.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/map_surface_builder.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/map_surface_spec.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/map_surface_state_mixin.dart';
+import 'package:e3dad_khodam_2026/src/map_engine/map_token_spec.dart';
+import 'package:e3dad_khodam_2026/src/map_engine/map_trail_spec.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/mapbox/mapbox_style.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/mapbox/missing_access_token_notice.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/mapbox/pixel_style_source.dart';
@@ -15,6 +17,9 @@ import 'package:e3dad_khodam_2026/src/map_engine/markers/marker_sprite.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/pixel_style/pixel_sprite.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/pixel_style/pixel_sprite_png.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/pixel_style/pixel_tuning.dart';
+import 'package:e3dad_khodam_2026/src/map_engine/tokens/token_layer.dart';
+import 'package:e3dad_khodam_2026/src/map_engine/tokens/token_sprite.dart';
+import 'package:e3dad_khodam_2026/src/map_engine/trails/trail_layer.dart';
 import 'package:flutter/widgets.dart';
 // `Size` collides with `dart:ui`'s, and only the latter is wanted here.
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart' hide Size;
@@ -91,6 +96,19 @@ class _MapboxMapSurfaceNativeState extends State<MapboxMapSurfaceNative>
   }
 
   @override
+  void pushTrails(List<MapTrailSpec> trails) {
+    _setSourceData(
+      TrailLayer.sourceId,
+      TrailLayer.featureCollection(trails),
+    );
+  }
+
+  @override
+  void pushTokens(List<MapTokenSpec> tokens) {
+    _pushTokens(tokens);
+  }
+
+  @override
   void moveCamera(MapCameraTarget camera, Duration duration) {
     _moveCamera(camera, duration);
   }
@@ -120,7 +138,11 @@ class _MapboxMapSurfaceNativeState extends State<MapboxMapSurfaceNative>
   }
 
   Future<void> _loadStyle() async {
-    final style = await PixelStyleSource.load(markers: widget.spec.markers);
+    final style = await PixelStyleSource.load(
+      markers: widget.spec.markers,
+      trails: widget.spec.trails,
+      tokens: widget.spec.tokens,
+    );
     if (!mounted) {
       return;
     }
@@ -177,10 +199,25 @@ class _MapboxMapSurfaceNativeState extends State<MapboxMapSurfaceNative>
     final markerStyle = _style?.markerStyles
         .where((candidate) => candidate.id == event.id)
         .firstOrNull;
-    if (markerStyle == null) {
+    if (markerStyle != null) {
+      await _addSprite(
+        await MarkerSprite.render(markerStyle),
+        scale: MarkerSprite.scale,
+      );
+
       return;
     }
-    await _addSprite(await MarkerSprite.render(markerStyle));
+    final tokenStyle = widget.spec.tokens
+        .map((token) => token.style)
+        .where((candidate) => candidate.id == event.id)
+        .firstOrNull;
+    if (tokenStyle == null) {
+      return;
+    }
+    await _addSprite(
+      await TokenSprite.render(tokenStyle),
+      scale: TokenSprite.scale,
+    );
   }
 
   Future<void> _addSprites() async {
@@ -193,6 +230,9 @@ class _MapboxMapSurfaceNativeState extends State<MapboxMapSurfaceNative>
     }
     for (final sprite in await MarkerSprite.renderAll(style.markerStyles)) {
       await _addSprite(sprite, scale: MarkerSprite.scale);
+    }
+    for (final sprite in await TokenSprite.renderAll(style.tokenStyles)) {
+      await _addSprite(sprite, scale: TokenSprite.scale);
     }
   }
 
@@ -238,11 +278,48 @@ class _MapboxMapSurfaceNativeState extends State<MapboxMapSurfaceNative>
     if (!mounted) {
       return;
     }
-    await map.style.setStyleSourceProperty(
+    await _setSourceData(
       MarkerLayer.sourceId,
-      'data',
-      jsonEncode(MarkerLayer.featureCollection(markers)),
+      MarkerLayer.featureCollection(markers),
     );
+  }
+
+  /// Replaces the token source's data, registering artwork for any
+  /// character the map has not drawn before.
+  Future<void> _pushTokens(List<MapTokenSpec> tokens) async {
+    final map = _map;
+    if (map == null || !_styleLoaded) {
+      return;
+    }
+    for (final tokenStyle in TokenLayer.stylesOf(tokens)) {
+      if (await map.style.hasStyleImage(tokenStyle.id)) {
+        continue;
+      }
+      await _addSprite(
+        await TokenSprite.render(tokenStyle),
+        scale: TokenSprite.scale,
+      );
+    }
+    if (!mounted) {
+      return;
+    }
+    await _setSourceData(
+      TokenLayer.sourceId,
+      TokenLayer.featureCollection(tokens),
+    );
+  }
+
+  /// Swaps a `geojson` source's features. The SDK takes the replacement
+  /// as an encoded string, not as a map.
+  Future<void> _setSourceData(
+    String sourceId,
+    Map<String, Object?> data,
+  ) async {
+    final map = _map;
+    if (map == null || !_styleLoaded) {
+      return;
+    }
+    await map.style.setStyleSourceProperty(sourceId, 'data', jsonEncode(data));
   }
 
   /// Moves the map's own camera. A [FitBoundsCameraTarget] is resolved by

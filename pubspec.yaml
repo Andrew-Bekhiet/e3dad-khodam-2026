@@ -30,6 +30,10 @@ flutter:
 
   assets:
     - assets/map/mapbox_streets_base_style.json
+    # Declared as a directory so a character's artwork can be dropped in
+    # without touching this file; missing portraits degrade to a
+    # placeholder at runtime.
+    - assets/characters/
 
   fonts:
     - family: Cairo

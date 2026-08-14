@@ -3,7 +3,9 @@ import 'package:e3dad_khodam_2026/src/app/app_strings.dart';
 import 'package:e3dad_khodam_2026/src/domain/journey_map_repository.dart';
 import 'package:e3dad_khodam_2026/src/presentation/cubit/map_hierarchy_cubit.dart';
 import 'package:e3dad_khodam_2026/src/presentation/cubit/map_hierarchy_state.dart';
+import 'package:e3dad_khodam_2026/src/presentation/pages/game_journey_page.dart';
 import 'package:e3dad_khodam_2026/src/presentation/widgets/journey_map_view.dart';
+import 'package:e3dad_khodam_2026/src/presentation/widgets/map_arrow_controls.dart';
 import 'package:e3dad_khodam_2026/src/presentation/widgets/non_geographic_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -68,6 +70,11 @@ final class JourneyMapPage extends StatelessWidget {
                 ),
               ),
               actions: [
+                IconButton(
+                  icon: const Icon(Icons.videogame_asset_outlined),
+                  tooltip: AppStrings.gameTitle,
+                  onPressed: () => _openGame(context),
+                ),
                 if (AppFeatures.showNonGeographicGroups)
                   IconButton(
                     icon: const Icon(Icons.people_outline),
@@ -85,18 +92,9 @@ final class JourneyMapPage extends StatelessWidget {
                   end: 16,
                   bottom: 16,
                   child: SafeArea(
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.arrow_left),
-                          onPressed: cubit.backward,
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.arrow_right),
-                          onPressed: cubit.forward,
-                        ),
-                      ],
+                    child: MapArrowControls(
+                      onBackward: cubit.backward,
+                      onForward: cubit.forward,
                     ),
                   ),
                 ),
@@ -107,6 +105,15 @@ final class JourneyMapPage extends StatelessWidget {
       },
     ),
   );
+
+  /// Opens the guided game. It reads its script and map provider from the
+  /// same ambient providers this page does, so the route needs nothing
+  /// passed into it.
+  static void _openGame(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => const GameJourneyPage()),
+    );
+  }
 
   static void _showNonGeographicSheet(BuildContext context) {
     final groups = context

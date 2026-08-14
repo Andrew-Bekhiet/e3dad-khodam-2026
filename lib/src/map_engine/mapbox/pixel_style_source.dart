@@ -1,11 +1,15 @@
 import 'dart:convert';
 
 import 'package:e3dad_khodam_2026/src/map_engine/map_marker_spec.dart';
+import 'package:e3dad_khodam_2026/src/map_engine/map_token_spec.dart';
+import 'package:e3dad_khodam_2026/src/map_engine/map_trail_spec.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/markers/map_marker_style.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/markers/marker_layer.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/pixel_style/pixel_palette.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/pixel_style/pixel_sprite.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/pixel_style/pixel_style_builder.dart';
+import 'package:e3dad_khodam_2026/src/map_engine/tokens/token_layer.dart';
+import 'package:e3dad_khodam_2026/src/map_engine/trails/trail_layer.dart';
 import 'package:flutter/services.dart';
 
 /// Builds the pixel basemap from the bundled stock Mapbox style.
@@ -23,14 +27,15 @@ final class PixelStyleSource {
       'assets/map/mapbox_streets_base_style.json';
 
   /// Loads the base style, rewrites it into the pixel look, and appends
-  /// the marker source and layer holding [markers].
+  /// the content layers holding [markers], [trails] and [tokens].
   ///
-  /// Markers go into the style document rather than being added to a
-  /// live map so the very first rendered frame already has them, and so
-  /// the mobile and web surfaces share one definition of what a marker
-  /// looks like.
+  /// Content goes into the style document rather than being added to a
+  /// live map so the very first rendered frame already has it, and so the
+  /// mobile and web surfaces share one definition of what it looks like.
   static Future<PixelStyle> load({
     required List<MapMarkerSpec> markers,
+    List<MapTrailSpec> trails = const [],
+    List<MapTokenSpec> tokens = const [],
     AssetBundle? bundle,
   }) async {
     final source = await (bundle ?? rootBundle).loadString(baseStyleAsset);
@@ -39,29 +44,41 @@ final class PixelStyleSource {
       jsonDecode(source) as JsonMap,
       palette,
     );
-    _appendMarkerLayer(style, markers);
+    _appendContentLayers(style, markers, trails, tokens);
 
     return PixelStyle(
       json: jsonEncode(style),
       sprites: PixelSprites.build(palette),
       markerStyles: MarkerLayer.stylesOf(markers),
+      tokenStyles: TokenLayer.stylesOf(tokens),
     );
   }
 
-  /// Adds the marker source and layer last, so markers draw over every
-  /// basemap layer including the place labels.
-  static void _appendMarkerLayer(JsonMap style, List<MapMarkerSpec> markers) {
+  /// Adds the app's own sources and layers after every basemap layer, so
+  /// they draw over the place labels — and in the order they must stack:
+  /// a route runs under the markers of the cities it joins, and a
+  /// character stands in front of both.
+  static void _appendContentLayers(
+    JsonMap style,
+    List<MapMarkerSpec> markers,
+    List<MapTrailSpec> trails,
+    List<MapTokenSpec> tokens,
+  ) {
     final sources = switch (style['sources']) {
       final Map<Object?, Object?> existing => JsonMap.from(existing),
       _ => <String, Object?>{},
     };
+    sources[TrailLayer.sourceId] = TrailLayer.source(trails);
     sources[MarkerLayer.sourceId] = MarkerLayer.source(markers);
+    sources[TokenLayer.sourceId] = TokenLayer.source(tokens);
     style['sources'] = sources;
 
     final layers = [
       for (final layer in (style['layers'] as List<Object?>? ?? const []))
         layer,
+      TrailLayer.layer(),
       MarkerLayer.layer(),
+      TokenLayer.layer(),
     ];
     style['layers'] = layers;
   }
@@ -85,10 +102,16 @@ final class PixelStyle {
   /// labels with no shape.
   final List<MapMarkerStyle> markerStyles;
 
+  /// Token styles the character layer's `icon-image` names. A renderer
+  /// must rasterise and register each one, or the characters draw as
+  /// nothing at all.
+  final List<MapTokenStyle> tokenStyles;
+
   /// Creates a built style.
   const PixelStyle({
     required this.json,
     required this.sprites,
     required this.markerStyles,
+    required this.tokenStyles,
   });
 }

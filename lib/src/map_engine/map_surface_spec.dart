@@ -1,5 +1,7 @@
 import 'package:e3dad_khodam_2026/src/map_engine/map_camera_target.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/map_marker_spec.dart';
+import 'package:e3dad_khodam_2026/src/map_engine/map_token_spec.dart';
+import 'package:e3dad_khodam_2026/src/map_engine/map_trail_spec.dart';
 import 'package:equatable/equatable.dart';
 
 /// The full, provider-agnostic description of what a map surface should
@@ -11,6 +13,14 @@ import 'package:equatable/equatable.dart';
 final class MapSurfaceSpec extends Equatable {
   /// Markers to render on the surface.
   final List<MapMarkerSpec> markers;
+
+  /// Routes already travelled, drawn under the markers. Empty for a plain
+  /// map with nobody moving over it.
+  final List<MapTrailSpec> trails;
+
+  /// Characters standing on the map, drawn over everything else. Empty
+  /// for a plain map with nobody on it.
+  final List<MapTokenSpec> tokens;
 
   /// Where the camera should be, or move to.
   final MapCameraTarget camera;
@@ -38,6 +48,8 @@ final class MapSurfaceSpec extends Equatable {
   @override
   List<Object?> get props => [
     markers,
+    trails,
+    tokens,
     camera,
     minZoom,
     maxZoom,
@@ -55,5 +67,7 @@ final class MapSurfaceSpec extends Equatable {
     required this.maxZoom,
     required this.cameraAnimationDuration,
     required this.onMarkerTap,
+    this.trails = const [],
+    this.tokens = const [],
   });
 }

@@ -9,6 +9,8 @@ import 'package:e3dad_khodam_2026/src/map_engine/map_marker_spec.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/map_surface_builder.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/map_surface_spec.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/map_surface_state_mixin.dart';
+import 'package:e3dad_khodam_2026/src/map_engine/map_token_spec.dart';
+import 'package:e3dad_khodam_2026/src/map_engine/map_trail_spec.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/mapbox/mapbox_gl_js.dart'
     as gl;
 import 'package:e3dad_khodam_2026/src/map_engine/mapbox/mapbox_style.dart';
@@ -19,6 +21,9 @@ import 'package:e3dad_khodam_2026/src/map_engine/markers/marker_layer.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/markers/marker_sprite.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/pixel_style/pixel_sprite.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/pixel_style/pixel_tuning.dart';
+import 'package:e3dad_khodam_2026/src/map_engine/tokens/token_layer.dart';
+import 'package:e3dad_khodam_2026/src/map_engine/tokens/token_sprite.dart';
+import 'package:e3dad_khodam_2026/src/map_engine/trails/trail_layer.dart';
 import 'package:flutter/widgets.dart';
 import 'package:web/web.dart' as web;
 
@@ -84,6 +89,16 @@ class _MapboxMapSurfaceWebState extends State<MapboxMapSurfaceWeb>
   @override
   void pushMarkers(List<MapMarkerSpec> markers) {
     _pushMarkers(markers);
+  }
+
+  @override
+  void pushTrails(List<MapTrailSpec> trails) {
+    _setSourceData(TrailLayer.sourceId, TrailLayer.featureCollection(trails));
+  }
+
+  @override
+  void pushTokens(List<MapTokenSpec> tokens) {
+    _pushTokens(tokens);
   }
 
   @override
@@ -159,7 +174,11 @@ class _MapboxMapSurfaceWebState extends State<MapboxMapSurfaceWeb>
 
       return;
     }
-    final style = await PixelStyleSource.load(markers: widget.spec.markers);
+    final style = await PixelStyleSource.load(
+      markers: widget.spec.markers,
+      trails: widget.spec.trails,
+      tokens: widget.spec.tokens,
+    );
     if (!mounted) {
       return;
     }
@@ -211,6 +230,26 @@ class _MapboxMapSurfaceWebState extends State<MapboxMapSurfaceWeb>
       _addSprite(sprite, scale: _patternScale);
     }
     await _addMarkerSprites(MarkerLayer.stylesOf(widget.spec.markers));
+    if (mounted) {
+      await _addTokenSprites(TokenLayer.stylesOf(widget.spec.tokens));
+    }
+  }
+
+  Future<void> _addTokenSprites(List<MapTokenStyle> styles) async {
+    final map = _map;
+    if (map == null) {
+      return;
+    }
+    for (final tokenStyle in styles) {
+      if (map.hasImage(tokenStyle.id)) {
+        continue;
+      }
+      final sprite = await TokenSprite.render(tokenStyle);
+      if (!mounted) {
+        return;
+      }
+      _addSprite(sprite, scale: TokenSprite.scale);
+    }
   }
 
   Future<void> _addMarkerSprites(List<MapMarkerStyle> styles) async {
@@ -257,11 +296,34 @@ class _MapboxMapSurfaceWebState extends State<MapboxMapSurfaceWeb>
     if (!mounted) {
       return;
     }
-    map
-        .getSource(MarkerLayer.sourceId)
-        ?.setData(
-          _jsonParse(jsonEncode(MarkerLayer.featureCollection(markers))),
-        );
+    _setSourceData(
+      MarkerLayer.sourceId,
+      MarkerLayer.featureCollection(markers),
+    );
+  }
+
+  /// Replaces the token source's features, registering artwork for any
+  /// character the map has not drawn before.
+  Future<void> _pushTokens(List<MapTokenSpec> tokens) async {
+    final map = _map;
+    if (map == null || !_styleLoaded) {
+      return;
+    }
+    await _addTokenSprites(TokenLayer.stylesOf(tokens));
+    if (!mounted) {
+      return;
+    }
+    _setSourceData(TokenLayer.sourceId, TokenLayer.featureCollection(tokens));
+  }
+
+  /// Swaps a `geojson` source's features, going through the browser's own
+  /// JSON parser rather than converting a Dart map member by member.
+  void _setSourceData(String sourceId, Map<String, Object?> data) {
+    final map = _map;
+    if (map == null || !_styleLoaded) {
+      return;
+    }
+    map.getSource(sourceId)?.setData(_jsonParse(jsonEncode(data)));
   }
 
   /// A [FitBoundsCameraTarget] goes straight to `fitBounds`, which knows

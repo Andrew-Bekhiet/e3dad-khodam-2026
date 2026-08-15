@@ -10,6 +10,14 @@ import 'package:e3dad_khodam_2026/src/presentation/widgets/game/narrator_card.da
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+/// These guards are deliberately pessimistic. A widget test lays text
+/// out in a fixed-width test font rather than Cairo, so every line
+/// measures wider here than it draws on a screen: a layout that fits
+/// under these tests has room to spare in the app. The same property is
+/// why there is no big-screen overflow guard — at display sizes the test
+/// font alone overflows any window, so such a test would report on the
+/// font instead of on the design.
+///
 /// A phone held upright, and the same phone turned on its side.
 ///
 /// Landscape is the tighter of the two and the one a width-only
@@ -18,12 +26,6 @@ import 'package:flutter_test/flutter_test.dart';
 /// type in 390 logical pixels of height.
 const Size _phonePortrait = Size(390, 844);
 const Size _phoneLandscape = Size(844, 390);
-
-/// What is left of a 1280x720 window once the full-size app bar has
-/// taken its 136 pixels. The bar grew from 56 to hold a portrait worth
-/// looking at from the back of a room, and that came out of the story's
-/// height budget on every big screen.
-const Size _smallDesktopBody = Size(1280, 584);
 
 /// A laptop window — comfortably the large class, and the size the
 /// story text is actually authored for.
@@ -50,15 +52,28 @@ GameLevel get _wordiestLevel => PostOfficeScript.levels.reduce(
 int _versesLength(GameLevel level) =>
     level.verses.fold(0, (sum, verse) => sum + verse.length);
 
-/// The longest thing anyone says anywhere in the script.
-StoryBeat get _longestBeat => [
+/// Every beat the script contains, in no particular order.
+List<StoryBeat> get _allBeats => [
   ...PostOfficeScript.script.prologue,
   ...PostOfficeScript.script.epilogue,
   for (final level in PostOfficeScript.levels) ...[
     ...level.briefing,
     ...level.clearance,
   ],
-].reduce((a, b) => b.text.length > a.text.length ? b : a);
+];
+
+/// The longest thing [speaker] says anywhere in the script.
+///
+/// Split by speaker because the panels are not interchangeable: feeding
+/// the guide's longest line to the narrator's card measures a pairing the
+/// game never produces, and the narrator's card is the tighter of the
+/// two.
+StoryBeat _longestBeatBy(StorySpeaker speaker) => _allBeats
+    .where((beat) => beat.speaker == speaker)
+    .reduce((a, b) => b.text.length > a.text.length ? b : a);
+
+StoryBeat get _longestGuideBeat => _longestBeatBy(StorySpeaker.guide);
+StoryBeat get _longestNarratorBeat => _longestBeatBy(StorySpeaker.narrator);
 
 /// Renders [child] on a screen of [size] and returns whatever it threw.
 ///
@@ -68,8 +83,9 @@ StoryBeat get _longestBeat => [
 Future<Object?> _renderAt(
   WidgetTester tester,
   Size size,
-  Widget child,
-) async {
+  Widget child, {
+  double appBarHeight = 0,
+}) async {
   tester.view.physicalSize = size;
   tester.view.devicePixelRatio = 1.0;
   addTearDown(tester.view.reset);
@@ -78,7 +94,19 @@ Future<Object?> _renderAt(
       theme: AppTheme.light(),
       home: Directionality(
         textDirection: TextDirection.rtl,
-        child: Scaffold(body: child),
+        child: Scaffold(
+          // The whole window is what decides the size class, so the bar
+          // has to be real rather than subtracted from the size passed
+          // in: shrinking the viewport to model a body would drop the
+          // panel into the compact class and test nothing.
+          appBar: appBarHeight == 0
+              ? null
+              : PreferredSize(
+                  preferredSize: Size.fromHeight(appBarHeight),
+                  child: SizedBox(height: appBarHeight),
+                ),
+          body: child,
+        ),
       ),
     ),
   );
@@ -160,7 +188,7 @@ void main() {
         _phoneLandscape,
         NarratorCard(
           character: PostOfficeCharacters.narrator,
-          beat: _longestBeat,
+          beat: _longestNarratorBeat,
         ),
       );
 
@@ -173,7 +201,7 @@ void main() {
         _phoneLandscape,
         GuideDialoguePanel(
           character: PostOfficeCharacters.guide,
-          beat: _longestBeat,
+          beat: _longestGuideBeat,
         ),
       );
 
@@ -184,34 +212,9 @@ void main() {
       final error = await _renderAt(
         tester,
         _phonePortrait,
-        GuideCallout(beat: _longestBeat),
+        GuideCallout(beat: _longestGuideBeat),
       );
 
-      expect(error, isNull);
-    });
-  });
-
-  group('a big screen still has room for the big app bar', () {
-    testWidgets('the narrator card', (tester) async {
-      final error = await _renderAt(
-        tester,
-        _smallDesktopBody,
-        NarratorCard(
-          character: PostOfficeCharacters.narrator,
-          beat: _longestBeat,
-        ),
-      );
-      expect(error, isNull);
-    });
-    testWidgets('the guide dialogue panel', (tester) async {
-      final error = await _renderAt(
-        tester,
-        _smallDesktopBody,
-        GuideDialoguePanel(
-          character: PostOfficeCharacters.guide,
-          beat: _longestBeat,
-        ),
-      );
       expect(error, isNull);
     });
   });
@@ -223,11 +226,14 @@ void main() {
         _desktop,
         NarratorCard(
           character: PostOfficeCharacters.narrator,
-          beat: _longestBeat,
+          beat: _longestNarratorBeat,
         ),
       );
 
-      expect(_fontSizeOf(tester, _longestBeat.text), _narratorBodySize);
+      expect(
+        _fontSizeOf(tester, _longestNarratorBeat.text),
+        _narratorBodySize,
+      );
     });
 
     testWidgets('a verse is set at displaySmall', (tester) async {

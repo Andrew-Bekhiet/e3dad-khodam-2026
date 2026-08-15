@@ -1,12 +1,15 @@
 import 'package:e3dad_khodam_2026/src/app/app_strings.dart';
 import 'package:e3dad_khodam_2026/src/domain/game/game_sounds.dart';
 import 'package:e3dad_khodam_2026/src/domain/game/level_script_repository.dart';
+import 'package:e3dad_khodam_2026/src/domain/game/story_beat.dart';
 import 'package:e3dad_khodam_2026/src/presentation/cubit/game_journey_cubit.dart';
 import 'package:e3dad_khodam_2026/src/presentation/cubit/game_journey_state.dart';
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/character_portrait.dart';
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/destination_card.dart';
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/game_map_view.dart';
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/game_screen_size.dart';
+import 'package:e3dad_khodam_2026/src/presentation/widgets/game/guide_dialogue_panel.dart'
+    show GuideDialoguePanel;
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/pixel_panel.dart';
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/story_overlay.dart';
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/sweep_overlay.dart';
@@ -53,9 +56,12 @@ class _GameJourneyViewState extends State<_GameJourneyView>
   /// measured off the laid-out box rather than assumed, so it follows
   /// this on its own.
   ///
-  /// A toolbar-sized 40 in the hand. On a big screen she is the face of
-  /// the game being read from the back of a room, and 40 logical pixels
-  /// on a projector is a smudge — so she is given room to be looked at.
+  /// She is only given the larger size on a big screen and only while a
+  /// bubble is hanging off her, because the height comes out of the map
+  /// and out of whatever else is on screen. A `BeatEmphasis.panel` beat
+  /// is deliberately not counted: that panel carries its own portrait at
+  /// [GuideDialoguePanel] size, so growing the bar behind its scrim would
+  /// cost height to show a second, smaller copy of the same face.
   static const double _guideAvatarCompact = 40.0;
   static const double _guideAvatarLarge = 120.0;
 
@@ -102,10 +108,17 @@ class _GameJourneyViewState extends State<_GameJourneyView>
   Widget build(BuildContext context) {
     final cubit = context.watch<GameJourneyCubit>();
     final state = cubit.state;
-    final guideAvatarSize = GameScreenSize.of(context).pick(
-      compact: _guideAvatarCompact,
-      large: _guideAvatarLarge,
-    );
+    final beat = state.beat;
+    final guideHasABubbleUp =
+        beat != null &&
+        beat.speaker == StorySpeaker.guide &&
+        beat.emphasis == BeatEmphasis.callout;
+    final guideAvatarSize = guideHasABubbleUp
+        ? GameScreenSize.of(context).pick(
+            compact: _guideAvatarCompact,
+            large: _guideAvatarLarge,
+          )
+        : _guideAvatarCompact;
     // After the frame, because the portrait has not been laid out yet
     // while this is running.
     WidgetsBinding.instance.addPostFrameCallback((_) => _findGuideAvatar());

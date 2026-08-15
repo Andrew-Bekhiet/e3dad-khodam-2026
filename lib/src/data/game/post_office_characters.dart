@@ -29,7 +29,7 @@ final class PostOfficeCharacters {
   static const GameCharacter grandma = GameCharacter(
     id: 'grandma',
     name: 'تيتا',
-    portraitAsset: 'assets/characters/grandma-avatar.png',
+    portraitAsset: 'assets/characters/grandma-avatar.jpeg',
   );
 
   /// The writer of every letter in the game. He has no token on the map

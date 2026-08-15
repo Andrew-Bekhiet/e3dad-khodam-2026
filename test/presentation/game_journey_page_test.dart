@@ -55,6 +55,23 @@ final class _GameUnderTest extends StatelessWidget {
 GameJourneyCubit _cubitOf(WidgetTester tester) =>
     tester.element(find.byType(Scaffold)).read<GameJourneyCubit>();
 
+/// Steps the script until a beat of [emphasis] is showing.
+void _advanceUntil(WidgetTester tester, BeatEmphasis emphasis) {
+  final cubit = _cubitOf(tester);
+  for (var press = 0; press < 60; press++) {
+    if (cubit.state.beat?.emphasis == emphasis) {
+      return;
+    }
+    cubit.forward();
+  }
+  fail('never reached a $emphasis beat');
+}
+
+/// The app bar's height as the page asked for it; an unset height is
+/// `kToolbarHeight`, which is what the page means by leaving it alone.
+double _appBarHeight(WidgetTester tester) =>
+    tester.widget<AppBar>(find.byType(AppBar)).toolbarHeight ?? kToolbarHeight;
+
 void main() {
   testWidgets('GameJourneyPage_theOpeningShot_saysNothing', (tester) async {
     await tester.pumpWidget(const _GameUnderTest());
@@ -124,5 +141,44 @@ void main() {
       inInclusiveRange(avatar.left, avatar.right),
       reason: 'the tail should point at the guide, not past her',
     );
+  });
+
+  group('the guide only takes the extra height while she is talking', () {
+    /// Big enough to be the large class in both dimensions.
+    const Size bigScreen = Size(1400, 1000);
+
+    Future<void> pumpBig(WidgetTester tester) async {
+      tester.view.physicalSize = bigScreen;
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(const _GameUnderTest());
+      await tester.pump();
+    }
+
+    testWidgets('the opening shot leaves the bar alone', (tester) async {
+      await pumpBig(tester);
+
+      expect(_appBarHeight(tester), kToolbarHeight);
+    });
+
+    testWidgets('a callout raises it', (tester) async {
+      await pumpBig(tester);
+      _advanceUntil(tester, BeatEmphasis.callout);
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
+
+      expect(_appBarHeight(tester), greaterThan(kToolbarHeight));
+    });
+
+    testWidgets('a panel beat does not, having its own portrait', (
+      tester,
+    ) async {
+      await pumpBig(tester);
+      _advanceUntil(tester, BeatEmphasis.panel);
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
+
+      expect(_appBarHeight(tester), kToolbarHeight);
+    });
   });
 }

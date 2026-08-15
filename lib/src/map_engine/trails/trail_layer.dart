@@ -2,7 +2,6 @@ import 'dart:ui';
 
 import 'package:e3dad_khodam_2026/src/map_engine/map_trail_spec.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/pixel_style/pixel_style_builder.dart';
-import 'package:e3dad_khodam_2026/src/map_engine/trails/trail_curve.dart';
 
 /// Builds the GeoJSON source and line layer the travelled routes are
 /// drawn by.
@@ -71,16 +70,18 @@ final class TrailLayer {
     ],
   };
 
-  /// The stops become a curve here rather than in the spec: a trail is
-  /// authored as the places someone actually stopped at, and how that
-  /// route is drawn between them is a rendering decision.
+  /// The points are drawn exactly as given. They used to be smoothed
+  /// here, back when a trail was authored as the handful of stops
+  /// someone halted at. A trail now arrives as real route geometry — a
+  /// road from the directions service, or a charted sea lane — and
+  /// running a spline through a road would only bend it off the road.
   static JsonMap _feature(MapTrailSpec trail) => {
     'type': 'Feature',
     'id': trail.id,
     'geometry': <String, Object?>{
       'type': 'LineString',
       'coordinates': [
-        for (final point in TrailCurve.through(trail.points))
+        for (final point in trail.points)
           <double>[point.longitude, point.latitude],
       ],
     },

@@ -34,10 +34,18 @@ final class GameLevel extends Equatable {
   /// quotes them. Revealed one at a time on the level's city card.
   final List<String> verses;
 
-  /// Artwork for the level's city card, shown over the map while the
-  /// level is being played. May point at a file that does not exist yet:
-  /// the card falls back to the city's name alone.
+  /// Artwork for the level's destination card, shown over the map while
+  /// the level is being played. May point at a file that does not exist
+  /// yet: the card falls back to a placeholder carrying the name alone.
   final String imageAsset;
+
+  /// The year the letter was written, in AD, shown beside the
+  /// destination's name on the card's sign.
+  ///
+  /// Null where no year is claimed for it. Every letter carries one
+  /// today, but the play script only dates تسالونيكي, so a level with
+  /// nothing to say about when it happened must be able to say nothing.
+  final int? year;
 
   /// The place this level is about: where its leading group stands.
   JourneyStop get destination => placements.first.stop;
@@ -51,6 +59,7 @@ final class GameLevel extends Equatable {
     clearance,
     verses,
     imageAsset,
+    year,
   ];
 
   /// Creates a level.
@@ -67,5 +76,6 @@ final class GameLevel extends Equatable {
     this.briefing = const [],
     this.clearance = const [],
     this.verses = const [],
+    this.year,
   });
 }

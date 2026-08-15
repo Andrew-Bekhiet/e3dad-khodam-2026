@@ -85,10 +85,20 @@ _Avoid_: waypoint, station, node
 The Stop a given Level is about — where its leading group stands, and what the camera frames.
 
 **Destination Card**:
-The artwork panel shown over the map during a Level, carrying the Letter's title, its Verses as they
-are revealed, and the Letter Writer's portrait. Named for the Destination, not for a city — several
-Destinations are provinces, not cities.
+The panel shown over the map during a Level, in the middle of the screen. It only ever grows, one
+press at a time: first the Sign, then the Letter's artwork as its background, then the Verses. Named
+for the Destination, not for a city — several Destinations are provinces, not cities.
 _Avoid_: city card, level card
+
+**Sign (لافتة)**:
+The Destination's name and the Letter's year, at the top of the Destination Card — `تسالونيكي ٥٢م`.
+The Play Script's own word for it, and the only place the game names where the player is. It
+replaced a panel that showed the Letter's title and a progress bar.
+
+**Reveal**:
+How far the Destination Card is open on the current Step: nothing, the Sign, the artwork, then one
+more for each Verse shown. A single number, because the Card only ever grows — which is what lets
+forward and backward walk it with the same ±1 they use on Steps.
 
 **Verse (شاهد)**:
 A scripture citation the Play Script quotes for a Letter. Revealed one at a time on the Destination
@@ -139,8 +149,20 @@ The Story Beats played once the player has passed a Level. A Level that has been
 and its Stop is drawn as such.
 
 **Trail**:
-The dashed line marking where a Courier has already been. One per Courier on the move.
+The dashed line marking where a Courier has already been. One per Courier on the move. Drawn along
+Route Geometry, and while a Sweep is flying it reaches only as far as the Courier has walked.
 _Avoid_: route, path, track
+
+**Leg**:
+The stretch of the Journey between two consecutive Stops. Every Leg is either a **Land Leg** or a
+**Sea Leg** — a fact about how Paul travelled it, and the reason only two of the ten can be asked of
+a road service. A Leg travelled the other way is the same Leg read backwards, not a second one.
+
+**Route Geometry**:
+The fixed line a Leg is drawn along. Generated once and stored with the app: Land Legs from a road
+service, Sea Legs from waypoints charted by hand along the coast. Never fetched while the game is
+running.
+_Avoid_: polyline, path
 
 ### Shared
 
@@ -173,8 +195,18 @@ A round portrait drawn on the map for a *Character standing somewhere*. Distinct
 Marker is a place, a Token is a person.
 
 **Camera Target**:
-Where the Map Surface's camera should be looking, expressed either as a centre with a zoom or as
-bounds to fit.
+Where the Map Surface's camera should be looking, expressed as a centre with a zoom, as bounds to
+fit, or as a Sweep.
+
+**Sweep**:
+The camera movement the game makes when the Journey reaches a new Destination: out to the Sweep
+Frame, a pause, then in on the new Destination. A Camera Target rather than something anyone
+performs, so the playthrough stays a flat list of Steps — the widest point is not a Step and nobody
+can stop on it.
+
+**Sweep Frame**:
+The bounds a Sweep pulls out to at its widest, showing the Mediterranean. Not required to contain
+every Destination, and it does not: أورشليم falls outside it.
 
 **Pixel Style**:
 The pixel-art treatment of the basemap — the palette and sprite recipes that give the whole app its

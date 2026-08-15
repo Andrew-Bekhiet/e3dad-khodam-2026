@@ -6,7 +6,6 @@ import 'package:e3dad_khodam_2026/src/domain/game/journey_stop.dart';
 import 'package:e3dad_khodam_2026/src/domain/game/level_script.dart';
 import 'package:e3dad_khodam_2026/src/domain/game/level_script_repository.dart';
 import 'package:e3dad_khodam_2026/src/domain/geo_bounds.dart';
-import 'package:e3dad_khodam_2026/src/domain/geo_position.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/map_camera_target.dart';
 import 'package:e3dad_khodam_2026/src/presentation/cubit/character_trail.dart';
 import 'package:e3dad_khodam_2026/src/presentation/cubit/game_journey_state.dart';
@@ -19,34 +18,52 @@ import 'package:flutter/widgets.dart';
 /// each level, then epilogue beats — is flattened once into a list of
 /// [GameStep]s, so both the arrow keys and the on-screen arrows are the
 /// same `±1` on one index no matter what the next thing happens to be.
+///
+/// The cubit stays synchronous. A sweep takes nearly two seconds, but it
+/// is emitted as a [SweepCameraTarget] for the surface to fly rather than
+/// timed here — a timer would make the widest point a state the player
+/// could stop on, and would put fake async into every test in the suite.
 final class GameJourneyCubit extends Cubit<GameJourneyState> {
-  /// Screen-space inset used while the map is unobstructed.
-  static const EdgeInsets _mapPadding = EdgeInsets.only(
+  /// The frame every sweep pulls out to before diving on its
+  /// destination.
+  ///
+  /// Provisionally the same four numbers as the cross map's root bounds.
+  /// It is a constant of its own because the two maps are not the same
+  /// map: the cross map's bounds come from mnemonic placements, which are
+  /// deliberately not real positions, and the journey must not inherit
+  /// them by accident. Changing this is a one-line change.
+  static const GeoBounds sweepFrame = GeoBounds(
+    south: 30.89,
+    west: 10.00,
+    north: 43.57,
+    east: 26.00,
+  );
+
+  /// Zoom the camera settles on over a destination. High enough to make
+  /// the city the subject, low enough to keep its coastline in frame.
+  static const double arrivalZoom = 8.0;
+
+  /// The three parts of a sweep. Coming in is longer than going out on
+  /// purpose: going out is travel, coming in is arrival.
+  static const Duration sweepOut = Duration(milliseconds: 700);
+
+  /// How long the camera rests at [sweepFrame]. Without this pause the
+  /// Mediterranean never registers.
+  static const Duration sweepHold = Duration(milliseconds: 150);
+
+  /// How long the camera takes to come in on its destination.
+  static const Duration sweepIn = Duration(milliseconds: 900);
+
+  /// Screen-space inset used when framing the whole journey, which only
+  /// happens in the prologue and the epilogue.
+  static const EdgeInsets _overviewPadding = EdgeInsets.only(
     top: 120,
     left: 64,
     right: 64,
     bottom: 104,
   );
 
-  /// Screen-space inset used while a story overlay is up: the dialogue
-  /// panel owns the lower part of the screen, so the stops are fitted
-  /// into what is left above it.
-  static const EdgeInsets _storyPadding = EdgeInsets.only(
-    top: 104,
-    left: 56,
-    right: 56,
-    bottom: 300,
-  );
-
-  /// Degrees a single stop's zero-area box is padded by on every edge, so
-  /// a lone city is framed as a region rather than zoomed to a point.
-  static const double _singleStopPadding = 3.0;
-
-  /// Degrees of breathing room around a multi-stop box.
-  static const double _routeMargin = 1.0;
-
-  /// One duration for every step: no direction of travel through the
-  /// script is more "familiar" than the other.
+  /// Duration for a camera move that is not a sweep.
   static const Duration _stepDuration = Duration(milliseconds: 550);
 
   /// Flattens [script] into the ordered steps the playthrough walks.
@@ -65,11 +82,17 @@ final class GameJourneyCubit extends Cubit<GameJourneyState> {
   ];
 
   /// Builds the state showing step [index] of [steps].
+  ///
+  /// [backward] opens the card fully on arrival: someone stepping back is
+  /// returning to something they have already seen, and making them press
+  /// through five verses again to reach the line before them is a way of
+  /// losing the room.
   static GameJourneyState _stateAt(
     LevelScript script,
     List<GameStep> steps,
-    int index,
-  ) {
+    int index, {
+    required bool backward,
+  }) {
     final step = steps[index];
     final levels = script.levels;
     final levelIndex = _levelIndexOf(step, levels.length);
@@ -83,24 +106,43 @@ final class GameJourneyCubit extends Cubit<GameJourneyState> {
       GamePhase.clearance => levelIndex + 1,
       _ => levelIndex,
     };
+    final isLevelOpening = _isLevelOpening(steps, index);
 
-    return GameJourneyState(
+    final state = GameJourneyState(
       step: step,
       stepIndex: index,
       stepCount: steps.length,
       level: step.levelIndex == null ? null : levels[levelIndex],
       levelNumber: step.levelIndex == null ? 0 : levelIndex + 1,
       levelCount: levels.length,
+      isLevelOpening: isLevelOpening,
       clearedStops: _clearedStops(levels, clearedCount, currentStop),
       currentStop: currentStop,
       nextStop: _nextStop(levels, levelIndex, step),
       trails: _trailsThrough(levels, levelIndex),
-      camera: _cameraFor(
-        _focusPositions(levels, levelIndex, step),
-        step.beat == null ? _mapPadding : _storyPadding,
-      ),
+      camera: _cameraFor(levels, levelIndex, step),
       cameraAnimationDuration: _stepDuration,
     );
+
+    if (backward) {
+      return state.withReveal(state.maxReveal);
+    }
+
+    // A level opens on a blank map: the sweep owns the screen until the
+    // next press acknowledges the arrival.
+    return state.withReveal(
+      isLevelOpening ? 0 : GameJourneyState.signReveal,
+    );
+  }
+
+  /// Whether step [index] is the first of its level.
+  static bool _isLevelOpening(List<GameStep> steps, int index) {
+    final levelIndex = steps[index].levelIndex;
+    if (levelIndex == null) {
+      return false;
+    }
+
+    return index == 0 || steps[index - 1].levelIndex != levelIndex;
   }
 
   /// The level a step draws the map for: its own, or the first level for
@@ -171,41 +213,49 @@ final class GameJourneyCubit extends Cubit<GameJourneyState> {
     ];
   }
 
-  /// What the camera must contain: the whole route while no level is
-  /// showing, otherwise the hop just made — where the journey came from
-  /// and where it is now.
-  static List<GeoPosition> _focusPositions(
+  /// Where the camera looks for a step.
+  ///
+  /// Every step of a level answers the same thing, so the camera moves
+  /// once per level and then holds while the guide talks and the verses
+  /// are read. Reaching a new destination is a sweep; staying in the same
+  /// city is not, since a sweep between the two letters to تسالونيكي
+  /// would fly out to the whole basin and come back to the identical
+  /// view.
+  static MapCameraTarget _cameraFor(
     List<GameLevel> levels,
     int levelIndex,
     GameStep step,
   ) {
     if (step.levelIndex == null) {
-      return [for (final level in levels) level.destination.position];
+      return FitBoundsCameraTarget(
+        bounds: GeoBounds.containing([
+          for (final level in levels) level.destination.position,
+        ]),
+        padding: _overviewPadding,
+      );
     }
-    final current = levels[levelIndex].destination;
+
+    final destination = levels[levelIndex].destination;
+    final arrival = CenterZoomCameraTarget(
+      center: destination.position,
+      zoom: arrivalZoom,
+    );
     final previous = levelIndex == 0
         ? null
         : levels[levelIndex - 1].destination;
+    if (previous != null && previous.id == destination.id) {
+      return arrival;
+    }
 
-    return [
-      current.position,
-      if (previous != null && previous.id != current.id) previous.position,
-    ];
-  }
-
-  static MapCameraTarget _cameraFor(
-    List<GeoPosition> positions,
-    EdgeInsets padding,
-  ) {
-    final bounds = GeoBounds.containing(positions);
-    final isDegenerate =
-        bounds.north == bounds.south || bounds.east == bounds.west;
-
-    return FitBoundsCameraTarget(
-      bounds: bounds.padded(
-        isDegenerate ? _singleStopPadding : _routeMargin,
+    return SweepCameraTarget(
+      widest: const FitBoundsCameraTarget(
+        bounds: sweepFrame,
+        padding: EdgeInsets.zero,
       ),
-      padding: padding,
+      arrival: arrival,
+      outLeg: sweepOut,
+      hold: sweepHold,
+      inLeg: sweepIn,
     );
   }
 
@@ -219,7 +269,7 @@ final class GameJourneyCubit extends Cubit<GameJourneyState> {
   /// The character credited on the narrator overlay.
   GameCharacter get narrator => _script.narrator;
 
-  /// Whose words the city cards' verses are.
+  /// Whose words the destination cards' verses are.
   GameCharacter get letterWriter => _script.letterWriter;
 
   /// Loads the script once and starts on its first step.
@@ -242,57 +292,60 @@ final class GameJourneyCubit extends Cubit<GameJourneyState> {
   ) : _script = script,
       _sounds = sounds,
       _steps = steps,
-      super(_stateAt(script, steps, 0));
+      super(_stateAt(script, steps, 0, backward: false));
 
-  /// Advances one step: the next line, the next level, or nothing at all
-  /// once the epilogue has been reached.
+  /// Advances one press: opens the card a little further if it has
+  /// anything left to show, otherwise moves to the next step.
   void forward() {
-    if (!state.isPlaying || !state.hasMoreVerses) {
-      _goTo(state.stepIndex + 1);
+    if (state.hasMoreReveal) {
+      emit(state.withReveal(state.reveal + 1));
 
       return;
     }
-
-    emit(state.withVersesShown(state.versesShown + 1));
+    _goTo(state.stepIndex + 1, backward: false);
   }
 
-  /// Steps back one, down to the very first beat.
+  /// Steps back one press, closing the card a part at a time before
+  /// leaving the step.
   void backward() {
-    if (!state.isPlaying || state.versesShown == 0) {
-      _goTo(state.stepIndex - 1);
+    final floor = state.isLevelOpening ? 0 : GameJourneyState.signReveal;
+    if (state.reveal > floor) {
+      emit(state.withReveal(state.reveal - 1));
 
       return;
     }
-
-    emit(state.withVersesShown(state.versesShown - 1));
+    _goTo(state.stepIndex - 1, backward: true);
   }
 
   /// Returns to the opening beat.
   void restart() {
-    _goTo(0);
+    _goTo(0, backward: false);
   }
 
-  /// Reveals the next verse on the level's city card. Only meaningful
-  /// while the level is being played — the verses belong to the card,
-  /// not to the dialogue over it.
-  void revealNextVerse() {
-    if (!state.isPlaying || !state.hasMoreVerses) {
+  /// Opens the card one part further — the sign, then the artwork, then
+  /// the verses one at a time. Does nothing once it is fully open.
+  void revealNext() {
+    if (!state.hasMoreReveal) {
       return;
     }
-    emit(state.withVersesShown(state.versesShown + 1));
+    emit(state.withReveal(state.reveal + 1));
   }
 
-  /// Takes the last revealed verse back off the card.
-  void hideLastVerse() {
-    if (state.versesShown == 0) {
+  /// Closes the last part of the card again.
+  void revealPrevious() {
+    if (state.reveal == 0) {
       return;
     }
-    emit(state.withVersesShown(state.versesShown - 1));
+    emit(state.withReveal(state.reveal - 1));
   }
 
-  /// Jumps to the playable map of the level whose destination is
-  /// [stopId], as long as the journey has already reached it — tapping a
-  /// city ahead of the story does nothing.
+  /// Jumps to the level whose destination is [stopId], as long as the
+  /// journey has already reached it — tapping a city ahead of the story
+  /// does nothing.
+  ///
+  /// Lands on the level's *first* step rather than its map, so the jump
+  /// arrives the way the story does: a sweep, then the sign, then the
+  /// guide.
   void goToStop(String stopId) {
     final reached = switch (state.step.phase) {
       GamePhase.prologue => 0,
@@ -301,26 +354,25 @@ final class GameJourneyCubit extends Cubit<GameJourneyState> {
     };
     final target = _steps.indexWhere(
       (step) =>
-          step.phase == GamePhase.playing &&
           step.levelIndex != null &&
           step.levelIndex! < reached &&
           _script.levels[step.levelIndex!].destination.id == stopId,
     );
     if (target >= 0) {
-      _goTo(target);
+      _goTo(target, backward: false);
     }
   }
 
   /// Moves to [index], ignoring anything outside the script, and rings
   /// the clearance sound when a level is passed going forwards.
-  void _goTo(int index) {
+  void _goTo(int index, {required bool backward}) {
     if (index < 0 || index >= _steps.length || index == state.stepIndex) {
       return;
     }
     if (index > state.stepIndex && _isFirstClearanceStep(index)) {
       _sounds.playLevelCleared();
     }
-    emit(_stateAt(_script, _steps, index));
+    emit(_stateAt(_script, _steps, index, backward: backward));
   }
 
   /// Whether [index] is the moment a level is cleared: its first

@@ -1,3 +1,4 @@
+import 'package:e3dad_khodam_2026/src/data/game/letter_years.dart';
 import 'package:e3dad_khodam_2026/src/data/game/post_office_placements.dart';
 import 'package:e3dad_khodam_2026/src/domain/game/game_level.dart';
 import 'package:e3dad_khodam_2026/src/domain/game/story_beat.dart';
@@ -20,6 +21,7 @@ final class PostOfficeRoadLevels {
     id: 'thessalonians-1',
     title: 'الرسالة الأولى لتسالونيكي',
     imageAsset: 'assets/levels/thessalonians-1.png',
+    year: LetterYears.thessalonians1,
     placements: PostOfficePlacements.thessalonica,
     briefing: [
       StoryBeat.guide(
@@ -39,6 +41,7 @@ final class PostOfficeRoadLevels {
     id: 'thessalonians-2',
     title: 'الرسالة التانية لتسالونيكي',
     imageAsset: 'assets/levels/thessalonians-2.png',
+    year: LetterYears.thessalonians2,
     placements: PostOfficePlacements.thessalonica,
     briefing: [
       StoryBeat.narrator(
@@ -60,6 +63,7 @@ final class PostOfficeRoadLevels {
     id: 'corinthians-1',
     title: 'رسالة كورنثوس',
     imageAsset: 'assets/levels/corinthians-1.png',
+    year: LetterYears.corinthians1,
     placements: PostOfficePlacements.corinth,
     briefing: [
       StoryBeat.guide(
@@ -77,6 +81,7 @@ final class PostOfficeRoadLevels {
     id: 'corinthians-2',
     title: 'رسالة كورنثوس الثانية',
     imageAsset: 'assets/levels/corinthians-2.png',
+    year: LetterYears.corinthians2,
     placements: PostOfficePlacements.corinth,
   );
 
@@ -85,6 +90,7 @@ final class PostOfficeRoadLevels {
     id: 'galatians',
     title: 'رسالة غلاطية',
     imageAsset: 'assets/levels/galatians.png',
+    year: LetterYears.galatians,
     placements: PostOfficePlacements.galatia,
     verses: [
       'بُولُسُ، رَسُولٌ لَا مِنَ النَّاسِ وَلَا بِإِنْسَانٍ، بَلْ بِيَسُوعَ الْمَسِيحِ وَاللهِ الآبِ الَّذِي أَقَامَهُ مِنَ الأَمْوَاتِ.',
@@ -98,6 +104,7 @@ final class PostOfficeRoadLevels {
     id: 'romans',
     title: 'الرسالة الى رومية',
     imageAsset: 'assets/levels/romans.png',
+    year: LetterYears.romans,
     placements: PostOfficePlacements.rome,
     verses: [
       '"إذ معرفة الله ظاهرة فيهم... لأن أموره غير المنظورة تُرى منذ خلق العالم." (رومية 1: 19-20)',
@@ -110,6 +117,7 @@ final class PostOfficeRoadLevels {
     id: 'philippians',
     title: 'رسالة فيلبي',
     imageAsset: 'assets/levels/philippians.png',
+    year: LetterYears.philippians,
     placements: PostOfficePlacements.philippi,
     verses: [
       '"لأن لي الحياة هي المسيح والموت هو ربح"',

@@ -6,14 +6,22 @@ import 'package:e3dad_khodam_2026/src/presentation/cubit/character_trail.dart';
 import 'package:e3dad_khodam_2026/src/presentation/cubit/game_step.dart';
 import 'package:equatable/equatable.dart';
 
-/// A snapshot of the guided playthrough: which step is showing, what the
-/// map should draw for it, and where the camera should look.
+/// A snapshot of the guided playthrough: which step is showing, how much
+/// of the destination card is open, what the map should draw, and where
+/// the camera should look.
 final class GameJourneyState extends Equatable {
+  /// Reveal at which the card shows its sign — the destination's name
+  /// and year.
+  static const int signReveal = 1;
+
+  /// Reveal at which the card's background artwork appears. Every reveal
+  /// above this one is a verse.
+  static const int imageReveal = 2;
+
   /// The step currently showing.
   final GameStep step;
 
-  /// Position of [step] in the flat list of steps, and the total — what
-  /// the progress bar is drawn from.
+  /// Position of [step] in the flat list of steps, and the total.
   final int stepIndex;
 
   /// How many steps the whole playthrough has.
@@ -28,6 +36,10 @@ final class GameJourneyState extends Equatable {
 
   /// How many levels the script has.
   final int levelCount;
+
+  /// Whether [step] is the first step of its level — the one the sweep
+  /// runs on, and the only one that starts with a blank screen.
+  final bool isLevelOpening;
 
   /// Stops already delivered to, drawn as cleared markers.
   final List<JourneyStop> clearedStops;
@@ -46,24 +58,57 @@ final class GameJourneyState extends Equatable {
   /// Where the map should be looking.
   final MapCameraTarget camera;
 
-  /// How long the map surface should take to animate to [camera].
+  /// How long the map surface should take to animate to [camera]. A
+  /// [SweepCameraTarget] ignores this and times its own three parts.
   final Duration cameraAnimationDuration;
 
-  /// How many of the level's verses have been revealed on its city card.
-  /// Reset to zero on every step, and raised one at a time by the down
-  /// arrow while the level is being played.
-  final int versesShown;
+  /// How far the destination card is open on this step.
+  ///
+  /// `0` is nothing at all, then the sign, then the artwork, then one
+  /// more for each verse. A single number because the card only ever
+  /// grows, and because that lets forward and backward walk it with the
+  /// same `±1` they use on steps.
+  final int reveal;
+
+  /// The highest [reveal] this step can reach. Beyond it, a press moves
+  /// to the next step instead.
+  int get maxReveal => switch (step.phase) {
+    GamePhase.prologue ||
+    GamePhase.epilogue ||
+    GamePhase.clearance => 0,
+    GamePhase.briefing => signReveal,
+    GamePhase.playing => imageReveal + (level?.verses.length ?? 0),
+  };
+
+  /// Whether the level has been entered but not yet acknowledged: the
+  /// camera is sweeping in, or has just landed, and the screen carries
+  /// nothing over the map.
+  bool get isArriving => isLevelOpening && reveal == 0;
+
+  /// Whether the card is showing its destination name and year.
+  bool get showsSign => reveal >= signReveal;
+
+  /// Whether the card is showing its background artwork.
+  bool get showsImage => reveal >= imageReveal;
+
+  /// How many of the level's verses are on the card.
+  int get versesShown =>
+      (reveal - imageReveal).clamp(0, level?.verses.length ?? 0);
 
   /// The verses revealed so far, in the order the script quotes them.
   List<String> get revealedVerses =>
       (level?.verses ?? const <String>[]).take(versesShown).toList();
 
-  /// Whether the level has a verse left to reveal.
-  bool get hasMoreVerses => versesShown < (level?.verses.length ?? 0);
+  /// Whether this step still has something left to open.
+  bool get hasMoreReveal => reveal < maxReveal;
 
-  /// The line to show over the map, or null while the level's map is
-  /// being played with no overlay.
-  StoryBeat? get beat => step.beat;
+  /// The sweep this step runs, or null when the camera holds still.
+  SweepCameraTarget? get sweep =>
+      camera is SweepCameraTarget ? camera as SweepCameraTarget : null;
+
+  /// The line to show over the map. Nothing speaks while the level is
+  /// still arriving: the sweep owns the screen until it is acknowledged.
+  StoryBeat? get beat => isArriving ? null : step.beat;
 
   /// Whether the map is currently unobstructed.
   bool get isPlaying => step.phase == GamePhase.playing;
@@ -74,9 +119,6 @@ final class GameJourneyState extends Equatable {
   /// Whether there is anything after this step.
   bool get isAtEnd => stepIndex >= stepCount - 1;
 
-  /// Playthrough progress in `0..1`, for the HUD's progress bar.
-  double get progress => stepCount <= 1 ? 1 : stepIndex / (stepCount - 1);
-
   @override
   List<Object?> get props => [
     step,
@@ -85,13 +127,14 @@ final class GameJourneyState extends Equatable {
     level,
     levelNumber,
     levelCount,
+    isLevelOpening,
     clearedStops,
     currentStop,
     nextStop,
     trails,
     camera,
     cameraAnimationDuration,
-    versesShown,
+    reveal,
   ];
 
   /// Creates a playthrough state.
@@ -101,24 +144,27 @@ final class GameJourneyState extends Equatable {
     required this.stepCount,
     required this.levelNumber,
     required this.levelCount,
+    required this.isLevelOpening,
     required this.clearedStops,
     required this.trails,
     required this.camera,
     required this.cameraAnimationDuration,
+    this.reveal = 0,
     this.level,
     this.currentStop,
     this.nextStop,
-    this.versesShown = 0,
   });
 
-  /// The same state with [count] verses revealed. Nothing else can
-  /// change while reading verses, so this is the one copy the game needs.
-  GameJourneyState withVersesShown(int count) => GameJourneyState(
+  /// The same state with the card opened to [reveal]. Nothing else can
+  /// change while the card is opening, so this is the one copy the game
+  /// needs.
+  GameJourneyState withReveal(int reveal) => GameJourneyState(
     step: step,
     stepIndex: stepIndex,
     stepCount: stepCount,
     levelNumber: levelNumber,
     levelCount: levelCount,
+    isLevelOpening: isLevelOpening,
     clearedStops: clearedStops,
     trails: trails,
     camera: camera,
@@ -126,6 +172,6 @@ final class GameJourneyState extends Equatable {
     level: level,
     currentStop: currentStop,
     nextStop: nextStop,
-    versesShown: count,
+    reveal: reveal.clamp(0, maxReveal),
   );
 }

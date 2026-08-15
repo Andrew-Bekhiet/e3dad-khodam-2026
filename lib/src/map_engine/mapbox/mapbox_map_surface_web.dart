@@ -67,6 +67,15 @@ class _MapboxMapSurfaceWebState extends State<MapboxMapSurfaceWeb>
   static const Duration _snapDuration = Duration(milliseconds: 120);
   static const double _zoomEpsilon = 1e-3;
 
+  /// How hard the map is blurred at the height of a sweep, in CSS
+  /// pixels. Enough to read as speed, light enough that the coastline
+  /// never stops being a coastline.
+  static const double _sweepBlurPixels = 3.0;
+
+  /// How long the blur takes to come and go, so it is never switched on
+  /// or off in one frame.
+  static const Duration _blurFade = Duration(milliseconds: 260);
+
   static bool _viewFactoryRegistered = false;
 
   /// Containers created by the view factory, by platform view id.
@@ -329,12 +338,57 @@ class _MapboxMapSurfaceWebState extends State<MapboxMapSurfaceWeb>
   /// A [FitBoundsCameraTarget] goes straight to `fitBounds`, which knows
   /// the real viewport and projection.
   void _moveCamera(MapCameraTarget target, Duration duration) {
+    if (target is SweepCameraTarget) {
+      _flySweep(target);
+
+      return;
+    }
+    _flyLeg(target, duration);
+  }
+
+  /// Flies a sweep as its three parts, and blurs the map while it runs.
+  ///
+  /// The blur is a CSS filter on the map's own container. Flutter cannot
+  /// blur this: the map is a platform view, so its pixels are never
+  /// Flutter's to filter — `ImageFiltered` and `BackdropFilter` both
+  /// stop at the boundary. The element is already held here, so the real
+  /// map blurs on the web build and only there.
+  Future<void> _flySweep(SweepCameraTarget sweep) async {
+    _flyLeg(sweep.widest, sweep.outLeg);
+    _blur(_sweepBlurPixels);
+    await Future<void>.delayed(sweep.outLeg + sweep.hold);
+    if (!mounted) {
+      return;
+    }
+    _flyLeg(sweep.arrival, sweep.inLeg);
+    await Future<void>.delayed(sweep.inLeg);
+    if (!mounted) {
+      return;
+    }
+    _blur(0);
+  }
+
+  /// Sets the map container's blur in CSS pixels; zero clears it.
+  void _blur(double pixels) {
+    final container = _containers[_viewId];
+    if (container == null) {
+      return;
+    }
+    container.style.filter = pixels <= 0 ? '' : 'blur(${pixels}px)';
+    container.style.transition = 'filter ${_blurFade.inMilliseconds}ms linear';
+  }
+
+  /// Moves the camera to one plain target over [duration].
+  void _flyLeg(MapCameraTarget target, Duration duration) {
     final map = _map;
     if (map == null || !_styleLoaded) {
       return;
     }
     final millis = duration.inMilliseconds.toDouble();
     switch (target) {
+      // A sweep is three legs, never one; `_moveCamera` splits it first.
+      case SweepCameraTarget():
+        throw StateError('a sweep is not a leg');
       case CenterZoomCameraTarget(:final center, :final zoom):
         final options = gl.GlCameraOptions(
           zoom: zoom,

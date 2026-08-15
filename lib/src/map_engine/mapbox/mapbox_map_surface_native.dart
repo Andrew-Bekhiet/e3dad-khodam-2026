@@ -326,11 +326,39 @@ class _MapboxMapSurfaceNativeState extends State<MapboxMapSurfaceNative>
   /// `cameraForCoordinateBounds`, which knows the real viewport and
   /// projection, so nothing here reimplements Web Mercator.
   Future<void> _moveCamera(MapCameraTarget target, Duration duration) async {
+    if (target is SweepCameraTarget) {
+      await _flySweep(target);
+
+      return;
+    }
+    await _flyLeg(target, duration);
+  }
+
+  /// Flies a sweep as its three parts: out to the whole basin, a pause,
+  /// then in on the destination.
+  ///
+  /// Sequenced here rather than handed to `flyTo`'s own arc because that
+  /// arc's height depends on the distance — a short hop would barely
+  /// leave the ground — and because the native SDK exposes no way to ask
+  /// for a given zoom at the peak of the flight.
+  Future<void> _flySweep(SweepCameraTarget sweep) async {
+    await _flyLeg(sweep.widest, sweep.outLeg);
+    await Future<void>.delayed(sweep.outLeg + sweep.hold);
+    if (!mounted) {
+      return;
+    }
+    await _flyLeg(sweep.arrival, sweep.inLeg);
+  }
+
+  /// Moves the camera to one plain target over [duration].
+  Future<void> _flyLeg(MapCameraTarget target, Duration duration) async {
     final map = _map;
     if (map == null || !_styleLoaded) {
       return;
     }
     final camera = switch (target) {
+      // A sweep is three legs, never one; `_moveCamera` splits it first.
+      SweepCameraTarget() => throw StateError('a sweep is not a leg'),
       CenterZoomCameraTarget(:final center, :final zoom) => CameraOptions(
         center: center.toMapboxPoint(),
         zoom: zoom,

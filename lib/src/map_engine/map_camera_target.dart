@@ -5,6 +5,7 @@ import 'package:flutter/widgets.dart';
 
 part 'center_zoom_camera_target.dart';
 part 'fit_bounds_camera_target.dart';
+part 'sweep_camera_target.dart';
 
 /// Where a map surface's camera should be, expressed provider-agnostically
 /// so a map-surface widget can diff camera changes across rebuilds and

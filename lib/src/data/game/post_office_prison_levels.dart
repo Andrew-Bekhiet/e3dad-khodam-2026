@@ -1,3 +1,4 @@
+import 'package:e3dad_khodam_2026/src/data/game/letter_years.dart';
 import 'package:e3dad_khodam_2026/src/data/game/post_office_placements.dart';
 import 'package:e3dad_khodam_2026/src/domain/game/game_level.dart';
 
@@ -14,6 +15,7 @@ final class PostOfficePrisonLevels {
     id: 'philemon',
     title: 'فيلمون',
     imageAsset: 'assets/levels/philemon.png',
+    year: LetterYears.philemon,
     placements: PostOfficePlacements.colossae,
     verses: [
       '1 بُولُسُ، أَسِيرُ يَسُوعَ الْمَسِيحِ، وَتِيمُوثَاوُسُ الأَخُ، إِلَى فِلِيمُونَ الْمَحْبُوبِ وَالْعَامِلِ مَعَنَا',
@@ -27,6 +29,7 @@ final class PostOfficePrisonLevels {
     id: 'colossians',
     title: 'كولوسي',
     imageAsset: 'assets/levels/colossians.png',
+    year: LetterYears.colossians,
     placements: PostOfficePlacements.colossae,
   );
 
@@ -35,6 +38,7 @@ final class PostOfficePrisonLevels {
     id: 'ephesians',
     title: 'افسس',
     imageAsset: 'assets/levels/ephesians.png',
+    year: LetterYears.ephesians,
     placements: PostOfficePlacements.ephesus,
   );
 
@@ -43,6 +47,7 @@ final class PostOfficePrisonLevels {
     id: 'titus',
     title: 'تيطس',
     imageAsset: 'assets/levels/titus.png',
+    year: LetterYears.titus,
     placements: PostOfficePlacements.crete,
   );
 
@@ -51,6 +56,7 @@ final class PostOfficePrisonLevels {
     id: 'timothy-1',
     title: 'تيمثاوس ١',
     imageAsset: 'assets/levels/timothy-1.png',
+    year: LetterYears.timothy1,
     placements: PostOfficePlacements.ephesus,
   );
 
@@ -59,6 +65,7 @@ final class PostOfficePrisonLevels {
     id: 'hebrews',
     title: 'عبرانيين',
     imageAsset: 'assets/levels/hebrews.png',
+    year: LetterYears.hebrews,
     placements: PostOfficePlacements.jerusalem,
   );
 
@@ -67,6 +74,7 @@ final class PostOfficePrisonLevels {
     id: 'timothy-2',
     title: 'تيمثاوس ٢',
     imageAsset: 'assets/levels/timothy-2.png',
+    year: LetterYears.timothy2,
     placements: PostOfficePlacements.ephesus,
     verses: [
       'فَلاَ تَخْجَلْ بِشَهَادَةِ رَبِّنَا، وَلاَ بِي أَنَا أَسِيرَهُ، بَلِ اشْتَرِكْ فِي احْتِمَالِ الْمَشَقَّاتِ لأَجْلِ الإِنْجِيلِ بِحَسَبِ قُوَّةِ اللهِ',

@@ -190,8 +190,59 @@ stay under ~700ms so it reads as "quick"):
    the pan settles rather than popping in mid-flight. Stagger each child by **40ms** (max 3-4
    children per level → ≤160ms total stagger spread).
 
-Keep it tasteful: no bounce/elastic curves, no rotation, no overshoot — this is a Bible-study
-reference tool, not a game.
+Keep it tasteful: no bounce/elastic curves, no rotation, no overshoot — the Cross Map is a
+Bible-study reference tool, not a game.
+
+**This paragraph governs the Cross Map only.** The Post Office Game has its own motion rules in §5a
+and is deliberately allowed everything ruled out here. See `docs/adr/0003-the-game-has-its-own-motion-rules.md`.
+
+---
+
+## 5a. Camera animation — the Post Office Game
+
+The game is played from a laptop onto a projector in front of a room, advanced one key press at a
+time. Motion here has to read from the back of that room, which is a different job from §5.
+
+### The Sweep
+
+Reaching a new Destination pulls the camera out to the whole Mediterranean, holds, then dives on the
+new city. Mirrored as named constants on `GameJourneyCubit` — change both or neither.
+
+| | Value | Why |
+|---|---|---|
+| Sweep Frame | `SW (30.89, 10.00)`, `NE (43.57, 26.00)` | Provisional: the same four numbers as the Cross Map's root bounds, but its own constant. Does **not** contain أورشليم, غلاطية or كولوسي, which is accepted. |
+| Arrival | centre on the Destination, zoom **8.0**, no padding | The city is the subject; its coastline stays in frame. |
+| Out leg | **700ms** | Going out is travel. |
+| Hold | **150ms** | Without a pause the Mediterranean never registers. |
+| In leg | **900ms** | Coming in is arrival, and arrival is the part worth watching. |
+
+Runs on the **first step of a level only**, so the camera moves once and then holds while the guide
+talks. No sweep when the destination has not changed (levels ١→٢, ٣→٤). Backward steps and marker
+taps sweep the same way.
+
+### While a sweep is flying
+
+- The screen carries nothing over the map — no card, no story beat.
+- The couriers walk their last leg along its Route Geometry, and the trail draws itself to where
+  they stand. Both are timed to the **in leg alone**, so they land with the camera.
+- `SweepOverlay` paints streaks from the centre plus a vignette, strongest at the midpoint
+  (`sin(progress · π)`) and gone by the time the camera settles.
+- On web only, the map container takes a **3px** CSS blur, faded over **260ms**. Flutter cannot blur
+  the map — it is a platform view — so `ImageFiltered` and `BackdropFilter` are not options here.
+  Native gets the overlay alone.
+- Presses made mid-sweep are **queued**, not dropped and not applied early.
+
+### The Destination Card
+
+Centred, and it only ever grows: **sign → artwork → verses**, one press each, `AnimatedSize` over
+**260ms** on `easeOutBack`. Overshoot is deliberate and is the thing §5 forbids on the Cross Map.
+
+- Sign: destination name at **34px**, year at **19px** in accent.
+- Open height **400px** (`DestinationCard._openHeight`). Set it to the viewport height and the card
+  covers the whole map — that one number is the full-screen switch.
+- Artwork fills the card behind a scrim; a missing file draws a flat stand-in carrying the name, so
+  the press count never depends on whether a picture exists.
+- There is no level counter and no progress bar. The sign is the only thing naming where you are.
 
 ---
 

@@ -74,7 +74,7 @@ void _curveTests() {
 }
 
 void _layerTests() {
-  test('TrailLayer_feature_carriesTheCurveNotTheRawStops', () {
+  test('TrailLayer_feature_drawsThePointsExactlyAsGiven', () {
     const trail = MapTrailSpec(
       id: 'courier1',
       points: [_a, _b, _c],
@@ -83,9 +83,15 @@ void _layerTests() {
 
     final coordinates = _coordinatesOf(const [trail]);
 
-    expect(coordinates, hasLength(TrailCurve.through(trail.points).length));
-    expect(coordinates.first, [_a.longitude, _a.latitude]);
-    expect(coordinates.last, [_c.longitude, _c.latitude]);
+    // The layer used to run a spline through these, back when a trail
+    // was the handful of stops someone halted at. A trail now arrives as
+    // real route geometry — a road, or a charted sea lane — and smoothing
+    // a road only bends it off the road.
+    expect(coordinates, [
+      [_a.longitude, _a.latitude],
+      [_b.longitude, _b.latitude],
+      [_c.longitude, _c.latitude],
+    ]);
   });
 
   test('TrailLayer_featureCollection_dropsSingleStopTrails', () {

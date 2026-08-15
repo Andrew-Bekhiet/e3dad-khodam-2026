@@ -293,10 +293,18 @@ class _MapboxMapSurfaceNativeState extends State<MapboxMapSurfaceNative>
       if (!_registeredImages.add(markerStyle.id)) {
         continue;
       }
-      await _addSprite(
-        await MarkerSprite.render(markerStyle),
-        scale: MarkerSprite.scale,
-      );
+      try {
+        await _addSprite(
+          await MarkerSprite.render(markerStyle),
+          scale: MarkerSprite.scale,
+        );
+      } on Object {
+        // A claim that never became an image would hide this marker for
+        // the rest of the session: the set is only cleared by a style
+        // load, so nothing would ever try again.
+        _registeredImages.remove(markerStyle.id);
+        rethrow;
+      }
       if (!mounted) {
         return;
       }

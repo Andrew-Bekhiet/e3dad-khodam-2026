@@ -26,7 +26,10 @@ final class GameJourneyPage extends StatelessWidget {
       context.read<LevelScriptRepository>(),
       sounds: context.read<GameSounds>(),
     ),
-    child: const _GameJourneyView(),
+    // Resolved here, where a context certainly has one, rather than
+    // looked up inside the view: the view has to silence the travelling
+    // loop from `dispose`, by which point its own context is gone.
+    child: _GameJourneyView(sounds: context.read<GameSounds>()),
   );
 }
 
@@ -34,7 +37,9 @@ final class GameJourneyPage extends StatelessWidget {
 /// the sweep's clock while `GameJourneyPage` stays the stateless provider
 /// boundary.
 final class _GameJourneyView extends StatefulWidget {
-  const _GameJourneyView();
+  final GameSounds sounds;
+
+  const _GameJourneyView({required this.sounds});
 
   @override
   State<_GameJourneyView> createState() => _GameJourneyViewState();
@@ -65,9 +70,11 @@ class _GameJourneyViewState extends State<_GameJourneyView>
   /// deaf, so they are held and applied the moment the sweep lands.
   int _pressesDuringSweep = 0;
 
-  /// Held rather than read on demand: the loop has to be stopped from
-  /// [dispose], where the context is already on its way out.
-  late final GameSounds _sounds = context.read<GameSounds>();
+  /// The step the camera last moved for, so a move can tell which way it
+  /// went.
+  int _cameraStep = 0;
+
+  GameSounds get _sounds => widget.sounds;
 
   @override
   Widget build(BuildContext context) {
@@ -162,6 +169,8 @@ class _GameJourneyViewState extends State<_GameJourneyView>
   /// exactly where the movement does — including the parked branch, which
   /// is how a journey cut short still falls silent.
   void _onCameraChanged(GameJourneyState state) {
+    final arriving = state.stepIndex > _cameraStep;
+    _cameraStep = state.stepIndex;
     final sweep = state.sweep;
     if (sweep == null) {
       _sounds.stopWalking();
@@ -171,22 +180,30 @@ class _GameJourneyViewState extends State<_GameJourneyView>
 
       return;
     }
+    // The loop rides the movement either way, because the movement is on
+    // screen either way. The arrival sting does not: see [_onSweepLanded].
     _sounds.startWalking();
     _sweep
       ..duration = sweep.total
-      ..forward(from: 0).then((_) => _onSweepLanded());
+      ..forward(from: 0).then((_) => _onSweepLanded(arriving: arriving));
   }
 
-  /// The party has arrived. A `TickerFuture` only completes when the
-  /// animation runs its whole course, so an interrupted sweep never gets
-  /// here — which is the point: nothing was reached.
-  void _onSweepLanded() {
+  /// The party has stopped moving. A `TickerFuture` only completes when
+  /// the animation runs its whole course, so an interrupted sweep never
+  /// gets here — which is the point: nothing was reached.
+  ///
+  /// Only a forward move *arrives* anywhere. Stepping back re-flies a
+  /// sweep already seen, and ringing the arrival again would contradict
+  /// the clearance and departure stings, which the cubit deliberately
+  /// keeps quiet when the journey is being reviewed rather than lived.
+  void _onSweepLanded({required bool arriving}) {
     if (!mounted) {
       return;
     }
-    _sounds
-      ..stopWalking()
-      ..playLevelReached();
+    _sounds.stopWalking();
+    if (arriving) {
+      _sounds.playLevelReached();
+    }
     _drainPresses();
   }
 

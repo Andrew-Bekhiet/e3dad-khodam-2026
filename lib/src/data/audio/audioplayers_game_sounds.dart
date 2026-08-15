@@ -44,7 +44,11 @@ final class AudioPlayersGameSounds implements GameSounds {
 
   static Future<AudioPlayer> _prepare(String asset, {bool loop = false}) async {
     final player = AudioPlayer();
-    await player.setPlayerMode(PlayerMode.lowLatency);
+    // Deliberately not `PlayerMode.lowLatency`, tempting though it is for
+    // game effects: that mode has no seeking and no playback-completion
+    // event, so `_ring` could not rewind a sting that had already played
+    // — each would sound once per session — and looping, which is built
+    // on that event, would be unreliable.
     await player.setReleaseMode(loop ? ReleaseMode.loop : ReleaseMode.stop);
     await player.setSource(AssetSource(asset));
 

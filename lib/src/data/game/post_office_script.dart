@@ -1,6 +1,7 @@
 import 'package:e3dad_khodam_2026/src/data/game/post_office_characters.dart';
 import 'package:e3dad_khodam_2026/src/data/game/post_office_prison_levels.dart';
 import 'package:e3dad_khodam_2026/src/data/game/post_office_road_levels.dart';
+import 'package:e3dad_khodam_2026/src/data/journey_stops.dart';
 import 'package:e3dad_khodam_2026/src/domain/game/game_level.dart';
 import 'package:e3dad_khodam_2026/src/domain/game/level_script.dart';
 import 'package:e3dad_khodam_2026/src/domain/game/level_script_repository.dart';
@@ -25,6 +26,7 @@ final class PostOfficeScript {
     narrator: PostOfficeCharacters.narrator,
     letterWriter: PostOfficeCharacters.paul,
     couriers: PostOfficeCharacters.couriers,
+    home: JourneyStops.ismailia,
     prologue: [
       // The one line that sets the whole game up, so it takes the screen
       // rather than arriving as an aside from the app bar.

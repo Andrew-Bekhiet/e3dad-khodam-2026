@@ -2,6 +2,7 @@ import 'package:e3dad_khodam_2026/src/data/game/route_geometry.dart';
 import 'package:e3dad_khodam_2026/src/data/journey_stops.dart';
 import 'package:e3dad_khodam_2026/src/domain/game/journey_leg.dart';
 import 'package:e3dad_khodam_2026/src/domain/game/leg_kind.dart';
+import 'package:e3dad_khodam_2026/src/domain/game/leg_trail.dart';
 import 'package:e3dad_khodam_2026/src/domain/geo_position.dart';
 
 /// Every leg the post-office journey travels, and how each was travelled.
@@ -207,6 +208,24 @@ final class JourneyLegs {
     ephesusToCrete,
     ephesusToJerusalem,
   ];
+
+  /// Legs the journey crosses without tracing anything.
+  ///
+  /// Only the opening hop. The couriers set out from home in
+  /// الإسماعيلية, and the story starts at تسالونيكي — the distance
+  /// between the two is how they got to work, not part of the journey
+  /// the map is a record of.
+  static const Set<String> undrawnLegIds = {'ismailia>thessalonica'};
+
+  /// Whether the leg between [fromId] and [toId] leaves a line behind it.
+  ///
+  /// Direction-insensitive, like [geometryBetween]: the same stretch read
+  /// backwards is the same stretch.
+  static LegTrail trailOf(String fromId, String toId) =>
+      undrawnLegIds.contains('$fromId>$toId') ||
+          undrawnLegIds.contains('$toId>$fromId')
+      ? LegTrail.undrawn
+      : LegTrail.drawn;
 
   /// The line to draw between the stops [fromId] and [toId], or null
   /// when no leg joins them.

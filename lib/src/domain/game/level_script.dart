@@ -1,5 +1,6 @@
 import 'package:e3dad_khodam_2026/src/domain/game/game_character.dart';
 import 'package:e3dad_khodam_2026/src/domain/game/game_level.dart';
+import 'package:e3dad_khodam_2026/src/domain/game/journey_stop.dart';
 import 'package:e3dad_khodam_2026/src/domain/game/story_beat.dart';
 import 'package:equatable/equatable.dart';
 
@@ -23,6 +24,14 @@ final class LevelScript extends Equatable {
   /// route and this is who is on it.
   final List<GameCharacter> couriers;
 
+  /// Where the couriers set out from, and where the map opens.
+  ///
+  /// Not a level and never a destination: it is the post office they work
+  /// out of, so the map starts framed on it and the hop to the first city
+  /// is how they got to work rather than part of the journey the trail is
+  /// a record of.
+  final JourneyStop home;
+
   /// Beats played once, before the first level's briefing.
   final List<StoryBeat> prologue;
 
@@ -38,6 +47,7 @@ final class LevelScript extends Equatable {
     narrator,
     letterWriter,
     couriers,
+    home,
     prologue,
     levels,
     epilogue,
@@ -49,6 +59,7 @@ final class LevelScript extends Equatable {
     required this.narrator,
     required this.letterWriter,
     required this.couriers,
+    required this.home,
     required this.prologue,
     required this.levels,
     required this.epilogue,

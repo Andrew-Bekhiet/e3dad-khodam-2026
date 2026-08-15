@@ -141,12 +141,63 @@ void _mapContentTests() {
       cubit.state.party.couriers,
       PostOfficeCharacters.couriers,
     );
-    expect(cubit.state.party.stops, [JourneyStops.thessalonica]);
+    // They set out from the post office, so it is the first stop even
+    // though no letter was ever addressed to it.
+    expect(cubit.state.party.stops, [
+      JourneyStops.ismailia,
+      JourneyStops.thessalonica,
+    ]);
     expect(cubit.state.party.destination, JourneyStops.thessalonica);
-    // Nobody has anywhere to have come from yet.
-    expect(cubit.state.party.isUnderway, isFalse);
+    expect(cubit.state.party.isUnderway, isTrue);
     // The city after this one is previewed, but no further.
     expect(cubit.state.nextStop, JourneyStops.thessalonica);
+  });
+
+  test('GameJourneyCubit_theHopFromHome_leavesNoTrail', () {
+    final cubit = GameJourneyCubit(_repository);
+    addTearDown(cubit.close);
+
+    _pressUntil(cubit, () => cubit.state.levelNumber == 1);
+    final arrived = cubit.state.party.trailAt(1);
+
+    // A line needs two points; the opening hop contributes none, so
+    // there is nothing between الإسماعيلية and تسالونيكي to draw.
+    expect(arrived.points.length, lessThan(2));
+    expect(arrived.position, JourneyStops.thessalonica.position);
+  });
+
+  test('GameJourneyCubit_whileTheCameraFliesFromHome_nobodyWalks', () {
+    final cubit = GameJourneyCubit(_repository);
+    addTearDown(cubit.close);
+
+    _pressUntil(cubit, () => cubit.state.levelNumber == 1);
+
+    // The party waits at the post office for the whole flight and is
+    // simply at تسالونيكي once it lands.
+    for (final progress in [0.0, 0.25, 0.5, 0.99]) {
+      expect(
+        cubit.state.party.trailAt(progress).position,
+        JourneyStops.ismailia.position,
+        reason: 'at $progress the party should still be at home',
+      );
+    }
+    expect(
+      cubit.state.party.trailAt(1).position,
+      JourneyStops.thessalonica.position,
+    );
+  });
+
+  test('GameJourneyCubit_theDrawnRoute_startsAtTheFirstCityNotAtHome', () {
+    final cubit = GameJourneyCubit(_repository);
+    addTearDown(cubit.close);
+
+    _pressUntil(cubit, () => cubit.state.levelNumber == 3);
+    final points = cubit.state.party.trailAt(1).points;
+
+    // The line begins where the story does. Carrying on from home would
+    // stretch it across Egypt and the Mediterranean.
+    expect(points.first, JourneyStops.thessalonica.position);
+    expect(points, isNot(contains(JourneyStops.ismailia.position)));
   });
 
   test('GameJourneyCubit_secondLevelInTheSameCity_doesNotRepeatTheStop', () {
@@ -156,8 +207,11 @@ void _mapContentTests() {
     _pressUntil(cubit, () => cubit.state.levelNumber == 2);
 
     // Both Thessalonian letters are delivered to one city, so the route
-    // is still a single point and the city is not drawn twice.
-    expect(cubit.state.party.stops, [JourneyStops.thessalonica]);
+    // does not gain a second point and the city is not drawn twice.
+    expect(cubit.state.party.stops, [
+      JourneyStops.ismailia,
+      JourneyStops.thessalonica,
+    ]);
     expect(cubit.state.clearedStops, isEmpty);
     expect(cubit.state.currentStop, JourneyStops.thessalonica);
   });
@@ -170,6 +224,7 @@ void _mapContentTests() {
 
     expect(cubit.state.currentStop, JourneyStops.corinth);
     expect(cubit.state.party.stops, [
+      JourneyStops.ismailia,
       JourneyStops.thessalonica,
       JourneyStops.corinth,
     ]);
@@ -186,9 +241,11 @@ void _mapContentTests() {
 
     // One line for everyone, walked in order. أفسس is returned to twice
     // and so appears three times, but a city holding two letters in a
-    // row is one point rather than two.
+    // row is one point rather than two. الإسماعيلية is the tenth: they
+    // set out from it, though nothing is ever delivered there.
+    expect(path.first, JourneyStops.ismailia);
     expect(path.last, JourneyStops.ephesus);
-    expect(path.map((stop) => stop.id).toSet(), hasLength(9));
+    expect(path.map((stop) => stop.id).toSet(), hasLength(10));
     for (var index = 1; index < path.length; index++) {
       expect(path[index].id, isNot(path[index - 1].id));
     }
@@ -270,12 +327,20 @@ void _sweepTests() {
     expect(cubit.state.currentStop, JourneyStops.thessalonica);
   });
 
-  test('GameJourneyCubit_thePrologue_framesTheWholeJourney', () {
+  test('GameJourneyCubit_thePrologue_opensOnThePostOffice', () {
     final cubit = GameJourneyCubit(_repository);
     addTearDown(cubit.close);
 
-    expect(cubit.state.camera, isA<FitBoundsCameraTarget>());
+    // Already there rather than flying to it: an arrival needs somewhere
+    // to have arrived from.
+    expect(cubit.state.camera, isA<CenterZoomCameraTarget>());
+    expect(
+      (cubit.state.camera as CenterZoomCameraTarget).center,
+      JourneyStops.ismailia.position,
+    );
     expect(cubit.state.sweep, isNull);
+    // And nobody has set off, so the party is still at home alone.
+    expect(cubit.state.party.stops, [JourneyStops.ismailia]);
   });
 }
 

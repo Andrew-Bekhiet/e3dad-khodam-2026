@@ -4,6 +4,14 @@ import 'package:e3dad_khodam_2026/src/domain/game/journey_stop.dart';
 /// Every place the post-office journey stops at, named and positioned
 /// from the gazetteer in [StopPositions].
 final class JourneyStops {
+  /// الإسماعيلية — where the couriers work, and where the map opens.
+  /// Never a destination: no letter was ever addressed here.
+  static const JourneyStop ismailia = JourneyStop(
+    id: 'ismailia',
+    label: 'الإسماعيلية',
+    position: StopPositions.ismailia,
+  );
+
   /// تسالونيكي — the first two letters.
   static const JourneyStop thessalonica = JourneyStop(
     id: 'thessalonica',

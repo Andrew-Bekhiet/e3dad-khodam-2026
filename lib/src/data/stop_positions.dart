@@ -18,6 +18,13 @@ import 'package:e3dad_khodam_2026/src/domain/geo_position.dart';
 /// mnemonic placements, not the real location of anything, so they stay in
 /// their branch files. See `docs/adr/0001`.
 final class StopPositions {
+  /// الإسماعيلية — the couriers' own post office, and the only place
+  /// here that Paul never went. From 30°35'53.3"N 32°16'12.2"E.
+  static const GeoPosition ismailia = GeoPosition(
+    latitude: 30.598139,
+    longitude: 32.270056,
+  );
+
   /// تسالونيكي.
   static const GeoPosition thessalonica = GeoPosition(
     latitude: 40.6401,

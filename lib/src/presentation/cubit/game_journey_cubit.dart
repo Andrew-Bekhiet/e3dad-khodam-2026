@@ -123,8 +123,8 @@ final class GameJourneyCubit extends Cubit<GameJourneyState> {
       clearedStops: _clearedStops(levels, clearedCount, currentStop),
       currentStop: currentStop,
       nextStop: _nextStop(levels, levelIndex, step),
-      party: _partyThrough(script.couriers, levels, levelIndex),
-      camera: _cameraFor(levels, levelIndex, step),
+      party: _partyThrough(script, levelIndex, step),
+      camera: _cameraFor(script, levelIndex, step),
       cameraAnimationDuration: _stepDuration,
       carriedVerses: _carriedVerses(levels, levelIndex, step),
     );
@@ -221,18 +221,25 @@ final class GameJourneyCubit extends Cubit<GameJourneyState> {
   /// One journey, because everyone travels together — the roster is the
   /// script's and does not change from level to level.
   static CourierParty _partyThrough(
-    List<GameCharacter> couriers,
-    List<GameLevel> levels,
+    LevelScript script,
     int levelIndex,
+    GameStep step,
   ) {
-    final stops = <JourneyStop>[];
-    for (final level in levels.take(levelIndex + 1)) {
-      if (stops.isEmpty || stops.last.id != level.destination.id) {
-        stops.add(level.destination);
+    // The journey starts at the post office, and during the prologue that
+    // is all of it: nobody has set off yet.
+    final stops = <JourneyStop>[script.home];
+    if (step.phase != GamePhase.prologue) {
+      for (final level in script.levels.take(levelIndex + 1)) {
+        if (stops.last.id != level.destination.id) {
+          stops.add(level.destination);
+        }
       }
     }
 
-    return CourierParty(couriers: couriers, stops: List.unmodifiable(stops));
+    return CourierParty(
+      couriers: script.couriers,
+      stops: List.unmodifiable(stops),
+    );
   }
 
   /// Where the camera looks for a step.
@@ -244,10 +251,20 @@ final class GameJourneyCubit extends Cubit<GameJourneyState> {
   /// would fly out to the whole basin and come back to the identical
   /// view.
   static MapCameraTarget _cameraFor(
-    List<GameLevel> levels,
+    LevelScript script,
     int levelIndex,
     GameStep step,
   ) {
+    final levels = script.levels;
+    // The map opens on the post office rather than flying to it: this is
+    // where the couriers already are, and an arrival needs somewhere to
+    // have arrived from.
+    if (step.phase == GamePhase.prologue) {
+      return CenterZoomCameraTarget(
+        center: script.home.position,
+        zoom: arrivalZoom,
+      );
+    }
     if (step.levelIndex == null) {
       return FitBoundsCameraTarget(
         bounds: GeoBounds.containing([

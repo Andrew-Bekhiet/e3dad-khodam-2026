@@ -106,33 +106,30 @@ class _GameJourneyViewState extends State<_GameJourneyView> {
     if (event is! KeyDownEvent && event is! KeyRepeatEvent) {
       return KeyEventResult.ignored;
     }
+
     switch (event.logicalKey) {
       case LogicalKeyboardKey.arrowRight:
       case LogicalKeyboardKey.space:
       case LogicalKeyboardKey.enter:
+      case LogicalKeyboardKey.arrowDown:
         _step(cubit, forward: true);
 
         return KeyEventResult.handled;
+
       case LogicalKeyboardKey.arrowLeft:
       case LogicalKeyboardKey.backspace:
+      case LogicalKeyboardKey.arrowUp:
         _step(cubit, forward: false);
 
         return KeyEventResult.handled;
-      case LogicalKeyboardKey.arrowDown:
-        cubit.revealNextVerse();
 
-        return KeyEventResult.handled;
-      case LogicalKeyboardKey.arrowUp:
-        cubit.hideLastVerse();
-
-        return KeyEventResult.handled;
       case LogicalKeyboardKey.escape:
         Navigator.of(context).maybePop();
 
         return KeyEventResult.handled;
-      default:
-        return KeyEventResult.ignored;
     }
+
+    return KeyEventResult.ignored;
   }
 
   /// Steps the script and takes the keyboard focus back, so a tap on the

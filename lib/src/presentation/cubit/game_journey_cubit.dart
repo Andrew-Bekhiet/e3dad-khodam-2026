@@ -247,12 +247,24 @@ final class GameJourneyCubit extends Cubit<GameJourneyState> {
   /// Advances one step: the next line, the next level, or nothing at all
   /// once the epilogue has been reached.
   void forward() {
-    _goTo(state.stepIndex + 1);
+    if (!state.isPlaying || !state.hasMoreVerses) {
+      _goTo(state.stepIndex + 1);
+
+      return;
+    }
+
+    emit(state.withVersesShown(state.versesShown + 1));
   }
 
   /// Steps back one, down to the very first beat.
   void backward() {
-    _goTo(state.stepIndex - 1);
+    if (!state.isPlaying || state.versesShown == 0) {
+      _goTo(state.stepIndex - 1);
+
+      return;
+    }
+
+    emit(state.withVersesShown(state.versesShown - 1));
   }
 
   /// Returns to the opening beat.

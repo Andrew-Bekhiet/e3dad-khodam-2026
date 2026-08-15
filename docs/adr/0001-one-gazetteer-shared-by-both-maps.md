@@ -4,7 +4,7 @@ The app draws two maps over the same part of the world — the mnemonic cross an
 game — and for a while each kept its own copy of where the shared cities are. They drifted: غلاطية
 ended up ~48 km apart between the two, and كولوسي ~11 km, with the cross also silently deviating from
 the coordinate appendix in `docs/design.md` that both were supposed to follow. We now keep a single
-gazetteer, `StopPositions` in `lib/src/data/journey_stops.dart`, and both maps read the shared places
+gazetteer, `StopPositions` in `lib/src/data/stop_positions.dart`, and both maps read the shared places
 off it.
 
 ## Considered Options
@@ -23,11 +23,12 @@ its countries are not in it and must not be added: those are mnemonic placements
 equal-armed cross render nicely, explicitly "not the real location of anything". Only entries that
 answer "where is this place, really?" belong.
 
-`StopPositions` is separate from `JourneyStops` — a class of bare `GeoPosition`s alongside the class
-of `JourneyStop`s — purely because Dart forbids reading a field off a const object inside a const
-expression. The cross needs a `GeoPosition` in a `const PlaceNode(...)`, and it cannot get there via
-`JourneyStops.galatia.position`. Merging the two classes would mean restating every coordinate, which
-is the thing this ADR exists to prevent.
+`StopPositions` (`stop_positions.dart`) is separate from `JourneyStops` (`journey_stops.dart`) — bare
+`GeoPosition`s in one, `JourneyStop`s built on them in the other — purely because Dart forbids reading
+a field off a const object inside a const expression. The cross needs a `GeoPosition` in a
+`const PlaceNode(...)`, and it cannot get there via `JourneyStops.galatia.position`. Merging the two
+would mean restating every coordinate, which is the thing this ADR exists to prevent, so the split is
+load-bearing rather than organisational.
 
 `docs/design.md`'s appendix was amended to match, and now carries full-precision coordinates for the
 shared places rather than the 2-decimal values it originally supplied. That appendix and the

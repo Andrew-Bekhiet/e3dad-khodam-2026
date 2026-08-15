@@ -334,7 +334,7 @@ the implementing agent doesn't have to invent these.
 
 **Amended.** The city and island rows now carry full-precision coordinates and are the *record* of
 the gazetteer, not its source: they live in code at `StopPositions`
-(`lib/src/data/journey_stops.dart`), shared by both the mnemonic cross and the post-office game. Change
+(`lib/src/data/stop_positions.dart`), shared by both the mnemonic cross and the post-office game. Change
 the two together. غلاطية moved from the 39.5/32.9 originally given here to its capital Ancyra, since it
 is a Roman province and needed one nameable point; كولوسي moved to its archaeological site. See
 `docs/adr/0001`.

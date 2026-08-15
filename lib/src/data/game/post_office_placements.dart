@@ -1,5 +1,5 @@
-import 'package:e3dad_khodam_2026/src/data/game/journey_stops.dart';
 import 'package:e3dad_khodam_2026/src/data/game/post_office_characters.dart';
+import 'package:e3dad_khodam_2026/src/data/journey_stops.dart';
 import 'package:e3dad_khodam_2026/src/domain/game/character_placement.dart';
 
 /// Where the cast stands in each level of the post-office game.

@@ -332,24 +332,44 @@ would invalidate the projection every marker position and the whole cross layout
 Not explicitly requested but needed downstream for "true coordinates" (decision #2) — included so
 the implementing agent doesn't have to invent these.
 
+**Amended.** The city and island rows now carry full-precision coordinates and are the *record* of
+the gazetteer, not its source: they live in code at `StopPositions`
+(`lib/src/data/journey_stops.dart`), shared by both the mnemonic cross and the post-office game. Change
+the two together. غلاطية moved from the 39.5/32.9 originally given here to its capital Ancyra, since it
+is a Roman province and needed one nameable point; كولوسي moved to its archaeological site. See
+`docs/adr/0001`.
+
 | Node | lat | lng |
 |---|---|---|
-| أسيا (continent) | 39.0 | 35.0 |
-| أفريقيا (continent) | 32.0 | 10.0 |
-| أوروبا (continent) | 42.0 | 15.0 |
-| البحر المتوسط (sea) | 35.0 | 18.0 |
+| كريت (island) | 35.2401 | 24.8093 |
+| غلاطية (city) | 39.9334 | 32.8597 |
+| أفسس (city) | 37.9395 | 27.3417 |
+| كولوسي (city) | 37.7543 | 29.2598 |
+| فيلبي (city) | 41.0131 | 24.2864 |
+| كورنثوس (city) | 37.9061 | 22.8783 |
+| تسالونيكي (city) | 40.6401 | 22.9444 |
+| رومية (city) | 41.8925 | 12.4853 |
+| أورشليم (city) | 31.7683 | 35.2137 |
+
+أورشليم is game-only — the mnemonic cross never lists it — but it is a real place, so it belongs in the
+gazetteer with the rest.
+
+### Mnemonic placements (not gazetteer entries)
+
+These are chosen to make the cross read well, not to say where anything really is, so they stay in
+their branch files and are **not** in `StopPositions`. The values below are what the branch files
+actually use; where they differ from an earlier draft of this appendix, the code is correct.
+
+| Node | lat | lng |
+|---|---|---|
+| أسيا (continent) | 38.5 | 38.0 |
+| أفريقيا (continent) | 29.0 | 21.0 |
+| أوروبا (continent) | 46.0 | 15.0 |
+| البحر المتوسط (sea) | 34.5 | 18.0 |
 | بحر إيجه (sea) | 38.5 | 25.0 |
-| البحر الأدرياتيكي (sea) | 43.0 | 15.5 |
-| كريت (island) | 35.24 | 24.81 |
-| قبرص (island) | 35.13 | 33.43 |
-| مالطة (island) | 35.94 | 14.38 |
-| آسيا الصغرى (country) | 38.5 | 32.0 |
-| اليونان (country) | 39.5 | 22.0 |
+| البحر الأدرياتيكي (sea) | 43.0 | 15.3 |
+| قبرص (island) | 35.1264 | 33.4299 |
+| مالطة (island) | 35.9375 | 14.3754 |
+| آسيا الصغرى (country) | 38.6 | 31.0 |
+| اليونان (country) | 39.0 | 22.0 |
 | إيطاليا (country) | 42.5 | 12.5 |
-| غلاطية (city) | 39.5 | 32.9 |
-| أفسس (city) | 37.94 | 27.34 |
-| كولوسي (city) | 37.78 | 29.38 |
-| فيلبي (city) | 41.01 | 24.29 |
-| كورنثوس (city) | 37.91 | 22.88 |
-| تسالونيكي (city) | 40.64 | 22.94 |
-| رومية (city) | 41.90 | 12.50 |

@@ -1,18 +1,20 @@
+import 'package:e3dad_khodam_2026/src/data/stop_positions.dart';
 import 'package:e3dad_khodam_2026/src/domain/cross_arm.dart';
 import 'package:e3dad_khodam_2026/src/domain/geo_position.dart';
 import 'package:e3dad_khodam_2026/src/domain/map_node.dart';
 import 'package:e3dad_khodam_2026/src/domain/place_kind.dart';
 
 /// The "جزر" (islands) root category and its leaf children.
+///
+/// كريت reads its coordinates from `StopPositions`, the app's one
+/// gazetteer, since the journey stops there too. قبرص and مالطة are
+/// cross-only, so they keep their coordinates here.
 final class IslandsBranch {
   static const GeoPosition _islandsPosition = GeoPosition(
     latitude: 36.5,
     longitude: 34.0,
   );
-  static const GeoPosition _cretePosition = GeoPosition(
-    latitude: 35.2401,
-    longitude: 24.8093,
-  );
+  static const GeoPosition _cretePosition = StopPositions.crete;
   static const GeoPosition _cyprusPosition = GeoPosition(
     latitude: 35.1264,
     longitude: 33.4299,

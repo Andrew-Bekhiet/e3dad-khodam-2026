@@ -1,3 +1,4 @@
+import 'package:e3dad_khodam_2026/src/data/stop_positions.dart';
 import 'package:e3dad_khodam_2026/src/domain/cross_arm.dart';
 import 'package:e3dad_khodam_2026/src/domain/geo_position.dart';
 import 'package:e3dad_khodam_2026/src/domain/map_node.dart';
@@ -5,6 +6,10 @@ import 'package:e3dad_khodam_2026/src/domain/place_kind.dart';
 
 /// The "بلاد" (countries) root category and its two levels of children:
 /// countries, then the cities within Asia Minor, Greece, and Italy.
+///
+/// The cities read their coordinates from `JourneyStops`, the app's one
+/// gazetteer, so they cannot drift from where the game puts them. The
+/// country positions below are mnemonic placements and stay here.
 final class CountriesBranch {
   static const GeoPosition _countriesPosition = GeoPosition(
     latitude: 31.0,
@@ -22,34 +27,13 @@ final class CountriesBranch {
     latitude: 42.5,
     longitude: 12.5,
   );
-  static const GeoPosition _galatiaPosition = GeoPosition(
-    latitude: 39.9334,
-    longitude: 32.8597,
-  );
-  static const GeoPosition _ephesusPosition = GeoPosition(
-    latitude: 37.9395,
-    longitude: 27.3417,
-  );
-  static const GeoPosition _colossaePosition = GeoPosition(
-    latitude: 37.7543,
-    longitude: 29.2598,
-  );
-  static const GeoPosition _philippiPosition = GeoPosition(
-    latitude: 41.0131,
-    longitude: 24.2864,
-  );
-  static const GeoPosition _corinthPosition = GeoPosition(
-    latitude: 37.9061,
-    longitude: 22.8783,
-  );
-  static const GeoPosition _thessalonicaPosition = GeoPosition(
-    latitude: 40.6401,
-    longitude: 22.9444,
-  );
-  static const GeoPosition _romePosition = GeoPosition(
-    latitude: 41.8925,
-    longitude: 12.4853,
-  );
+  static const GeoPosition _galatiaPosition = StopPositions.galatia;
+  static const GeoPosition _ephesusPosition = StopPositions.ephesus;
+  static const GeoPosition _colossaePosition = StopPositions.colossae;
+  static const GeoPosition _philippiPosition = StopPositions.philippi;
+  static const GeoPosition _corinthPosition = StopPositions.corinth;
+  static const GeoPosition _thessalonicaPosition = StopPositions.thessalonica;
+  static const GeoPosition _romePosition = StopPositions.rome;
 
   /// The root category node, positioned as the bottom arm of the cross.
   /// This is a mnemonic cross anchor, not the real location of anything.

@@ -40,8 +40,8 @@ final class NarratorCard extends StatelessWidget {
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: _maxWidth),
             child: PixelPanel(
-              color: GamePalette.narratorInk,
-              border: GamePalette.accent,
+              color: GamePalette.narratorVellum,
+              border: GamePalette.narratorOchre,
               padding: const EdgeInsets.fromLTRB(26, 0, 26, 20),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -49,7 +49,7 @@ final class NarratorCard extends StatelessWidget {
                   const Divider(
                     thickness: NarratorCard._ruleHeight,
                     height: NarratorCard._ruleHeight,
-                    color: GamePalette.accent,
+                    color: GamePalette.narratorGilt,
                     endIndent: 0,
                     indent: 0,
                   ),
@@ -57,7 +57,7 @@ final class NarratorCard extends StatelessWidget {
                   CharacterPortrait(
                     character: character,
                     size: _portraitSize,
-                    background: GamePalette.narratorInk,
+                    background: GamePalette.narratorVellum,
                   ),
                   const SizedBox(height: 12),
                   Text(
@@ -65,7 +65,7 @@ final class NarratorCard extends StatelessWidget {
                     style: text.titleLarge?.copyWith(
                       letterSpacing: 1,
                       fontWeight: FontWeight.w600,
-                      color: GamePalette.narratorText.withValues(alpha: 0.7),
+                      color: GamePalette.narratorOchre,
                     ),
                   ),
                   if (title != null) ...[
@@ -75,7 +75,7 @@ final class NarratorCard extends StatelessWidget {
                       textAlign: TextAlign.center,
                       style: text.headlineLarge?.copyWith(
                         fontWeight: FontWeight.w700,
-                        color: GamePalette.narratorText,
+                        color: GamePalette.narratorOchre,
                       ),
                     ),
                   ],
@@ -88,13 +88,13 @@ final class NarratorCard extends StatelessWidget {
                         style: text.displaySmall?.copyWith(
                           height: 1.7,
                           fontStyle: FontStyle.italic,
-                          color: GamePalette.narratorText,
+                          color: GamePalette.narratorSepia,
                         ),
                       ),
                     ),
                   ),
                   const SizedBox(height: 10),
-                  const ContinueChevron(color: GamePalette.narratorText),
+                  const ContinueChevron(color: GamePalette.narratorOchre),
                 ],
               ),
             ),

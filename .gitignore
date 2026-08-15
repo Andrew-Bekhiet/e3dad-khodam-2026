@@ -56,3 +56,6 @@ app.*.map.json
 # token as a --dart-define, and that must not be committed. Pass it on
 # the command line instead (see README).
 .vscode/
+
+# Firebase Hosting deploy cache
+.firebase/

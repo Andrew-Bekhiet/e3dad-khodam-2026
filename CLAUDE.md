@@ -17,6 +17,13 @@ plugin-aware and equivalent; passing `paths` drops the plugin diagnostics the sa
 
 More detail in `docs/agents/linting.md`.
 
+## Comments
+
+Write few or no comments. Keep only rationale that the code cannot state itself — why a value is
+what it is, or why an obvious approach was rejected. Do not narrate what the code does.
+
+This applies to new and changed code; existing comments are not to be stripped just to comply.
+
 ## Where to work
 
 Work in the main checkout. Do **not** run `EnterWorktree` unless the user asks for a worktree by

@@ -230,6 +230,47 @@ the step list, which is precisely what sealing makes safe; and `signReveal ==
 imageReveal == 1` today means `showsSign` and `showsImage` are silently the same
 predicate.
 
+## As built — deviations from the above
+
+Implemented on `feat/map-perf-and-story`. Four things ended up different, each
+for a reason found during the work:
+
+1. **Narrator gilt is decoration, not text.** The agreed palette gave gilt the name
+   and title. Measured, gilt on vellum is **2.0:1** — against 14.5:1 for the guide's
+   ink on parchment. Ochre took the name and title at 4.3:1, which carries large
+   text; gilt is left to the inner rule where nothing has to be read.
+2. **No `AudioPool`.** A pool exists to overlap a sound with *itself*, which this
+   game never does. One `AudioPlayer` per sound is simpler and still lets a
+   clearance sting ring over the travelling loop.
+3. **`RepositoryProvider.value` was left alone.** The claim that it leaks was wrong:
+   `gameSounds` is injected into `E3dadKhodamApp` from outside, so the app does not
+   own it and must not dispose it. `AudioPlayersGameSounds.dispose()` exists for
+   whoever constructs it.
+4. **S5 was fixed twice.** The first attempt cached the applied size and made things
+   worse — resizing once, too early, then suppressing every later correction. The
+   real fix is a `ResizeObserver` on the container: Flutter's `LayoutBuilder` reports
+   the widget's size, not the DOM element's, which is what GL JS actually measures.
+
+Also, the guide callout's tail is tied to her portrait with a `LayerLink` rather
+than positioned by hand. The first attempt assumed the app-bar title starts at the
+start edge; it was centred, so the tail pointed at nothing.
+
+**Known cost:** `LevelScript` now takes 8 constructor parameters and trips
+`number_of_parameters` (analyzer total 26 → 27). Fix is to group `couriers` + `home`
+into a value type, which the architecture survey wants anyway.
+
+## Not done
+
+**The guide's line explaining the departure has not been written.** S4 puts the party
+at الإسماعيلية and flies them to تسالونيكي, but no beat was added narrating it —
+that is Arabic content authoring in the script's Egyptian colloquial register, and
+the wording should be the author's, not invented. Add it as the first briefing beat
+of level 1, e.g.:
+
+```dart
+StoryBeat.guide('احنا خرجنا من الإسماعيلية ووصلنا تسالونيكي، أول محطة في الرحلة')
+```
+
 ## Also outstanding (not in this spec)
 
 - `JourneyMapPage` pushes the game as a `MaterialPageRoute` without disposing the

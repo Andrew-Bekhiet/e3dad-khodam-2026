@@ -8,6 +8,7 @@ environment:
   sdk: ^3.12.2
 
 dependencies:
+  audioplayers: ^6.8.1
   bloc: ^9.2.1
   collection: ^1.19.1
   equatable: ^2.1.0

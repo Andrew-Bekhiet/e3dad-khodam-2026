@@ -385,16 +385,27 @@ final class GameJourneyCubit extends Cubit<GameJourneyState> {
     }
   }
 
-  /// Moves to [index], ignoring anything outside the script, and rings
-  /// the clearance sound when a level is passed going forwards.
+  /// Moves to [index], ignoring anything outside the script, and sounds
+  /// what the move means — a level passed, or the party setting off.
+  ///
+  /// Both only going forwards. Stepping back over a moment is reviewing
+  /// it, not living it again, and the sounds would pile up on an operator
+  /// nudging back and forth to find their place.
   void _goTo(int index, {required bool backward}) {
     if (index < 0 || index >= _steps.length || index == state.stepIndex) {
       return;
     }
-    if (index > state.stepIndex && _isFirstClearanceStep(index)) {
+    final forward = index > state.stepIndex;
+    if (forward && _isFirstClearanceStep(index)) {
       _sounds.playLevelCleared();
     }
-    emit(_stateAt(_script, _steps, index, backward: backward));
+    final next = _stateAt(_script, _steps, index, backward: backward);
+    // A sweep the camera is already holding is the same departure seen
+    // from a later step, not a second one.
+    if (forward && next.sweep != null && next.camera != state.camera) {
+      _sounds.playDeparture();
+    }
+    emit(next);
   }
 
   /// Whether [index] is the moment a level is cleared: its first

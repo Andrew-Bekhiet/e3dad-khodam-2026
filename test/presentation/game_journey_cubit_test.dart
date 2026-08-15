@@ -12,13 +12,37 @@ import 'package:flutter_test/flutter_test.dart';
 // indirection, not isolation.
 const _repository = StaticLevelScriptRepository();
 
-/// Counts clearance stings instead of playing them.
+/// Counts the game's sounds instead of playing them.
 final class _CountingSounds implements GameSounds {
   int cleared = 0;
+  int reached = 0;
+  int departures = 0;
+  int walkStarts = 0;
+  int walkStops = 0;
 
   @override
   void playLevelCleared() {
     cleared++;
+  }
+
+  @override
+  void playLevelReached() {
+    reached++;
+  }
+
+  @override
+  void playDeparture() {
+    departures++;
+  }
+
+  @override
+  void startWalking() {
+    walkStarts++;
+  }
+
+  @override
+  void stopWalking() {
+    walkStops++;
   }
 }
 
@@ -511,6 +535,43 @@ void _clearanceAndJumpTests() {
     _pressUntil(cubit, () => cubit.state.step.phase == GamePhase.clearance);
 
     expect(sounds.cleared, 1);
+  });
+
+  test('GameJourneyCubit_settingOffForANewCity_soundsTheDepartureOnce', () {
+    final sounds = _CountingSounds();
+    final cubit = GameJourneyCubit(_repository, sounds: sounds);
+    addTearDown(cubit.close);
+
+    _pressUntil(cubit, () => cubit.state.sweep != null);
+
+    expect(sounds.departures, 1);
+  });
+
+  test('GameJourneyCubit_holdingInTheSameCity_doesNotSoundADeparture', () {
+    final sounds = _CountingSounds();
+    final cubit = GameJourneyCubit(_repository, sounds: sounds);
+    addTearDown(cubit.close);
+
+    // The sweep's own step and every step after it that stays put: the
+    // camera holds, so nobody is setting off.
+    _pressUntil(cubit, () => cubit.state.sweep != null);
+    final afterArriving = sounds.departures;
+    cubit.forward();
+
+    expect(sounds.departures, afterArriving);
+  });
+
+  test('GameJourneyCubit_steppingBackOverADeparture_doesNotSoundAgain', () {
+    final sounds = _CountingSounds();
+    final cubit = GameJourneyCubit(_repository, sounds: sounds);
+    addTearDown(cubit.close);
+
+    _pressUntil(cubit, () => cubit.state.sweep != null);
+    cubit
+      ..backward()
+      ..backward();
+
+    expect(sounds.departures, 1);
   });
 
   test('GameJourneyCubit_steppingBackOverAClearance_doesNotRingAgain', () {

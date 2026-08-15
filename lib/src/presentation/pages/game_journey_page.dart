@@ -55,6 +55,10 @@ class _GameJourneyViewState extends State<_GameJourneyView>
   /// deaf, so they are held and applied the moment the sweep lands.
   int _pressesDuringSweep = 0;
 
+  /// Held rather than read on demand: the loop has to be stopped from
+  /// [dispose], where the context is already on its way out.
+  late final GameSounds _sounds = context.read<GameSounds>();
+
   @override
   Widget build(BuildContext context) {
     final cubit = context.watch<GameJourneyCubit>();
@@ -117,6 +121,7 @@ class _GameJourneyViewState extends State<_GameJourneyView>
 
   @override
   void dispose() {
+    _sounds.stopWalking();
     _sweep.dispose();
     _focusNode.dispose();
     super.dispose();
@@ -124,18 +129,37 @@ class _GameJourneyViewState extends State<_GameJourneyView>
 
   /// Starts the sweep clock when the camera is given one to fly, and
   /// parks it otherwise so nothing is drawn over a still map.
+  ///
+  /// The travelling loop rides the same clock, so it starts and stops
+  /// exactly where the movement does — including the parked branch, which
+  /// is how a journey cut short still falls silent.
   void _onCameraChanged(GameJourneyState state) {
     final sweep = state.sweep;
     if (sweep == null) {
+      _sounds.stopWalking();
       _sweep
         ..stop()
         ..value = 0;
 
       return;
     }
+    _sounds.startWalking();
     _sweep
       ..duration = sweep.total
-      ..forward(from: 0).then((_) => _drainPresses());
+      ..forward(from: 0).then((_) => _onSweepLanded());
+  }
+
+  /// The party has arrived. A `TickerFuture` only completes when the
+  /// animation runs its whole course, so an interrupted sweep never gets
+  /// here — which is the point: nothing was reached.
+  void _onSweepLanded() {
+    if (!mounted) {
+      return;
+    }
+    _sounds
+      ..stopWalking()
+      ..playLevelReached();
+    _drainPresses();
   }
 
   /// Applies whatever was pressed while the camera was flying.

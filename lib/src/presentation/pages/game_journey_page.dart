@@ -83,7 +83,11 @@ class _GameJourneyViewState extends State<_GameJourneyView>
             children: [
               GameMapView(sweepProgress: _sweep),
               SweepOverlay(progress: _sweep),
-              if (state.level != null && !state.isArriving)
+              // Gated on the card being open, not merely on there being
+              // a level: a cleared level still has one, and its card
+              // must be gone before the clearance line and the next
+              // sweep.
+              if (state.level != null && state.showsSign)
                 DestinationCard(
                   level: state.level!,
                   destinationLabel: state.currentStop?.label ?? '',
@@ -184,9 +188,13 @@ class _GameJourneyViewState extends State<_GameJourneyView>
   /// Steps the script and takes the keyboard focus back, so a tap on the
   /// map or a button does not leave the arrow keys dead afterwards.
   ///
-  /// A press made mid-sweep is queued rather than applied: the sweep is
-  /// one movement and cutting it short mid-flight leaves the camera
+  /// A forward press made mid-sweep is queued rather than applied: the
+  /// sweep is one movement, and cutting it short leaves the camera
   /// somewhere nobody asked for.
+  ///
+  /// A backward press mid-sweep is dropped, not queued. Queueing it
+  /// would land the camera and immediately fly it back out again, which
+  /// is worse than ignoring a key pressed during a second of animation.
   void _step(GameJourneyCubit cubit, {required bool forward}) {
     _focusNode.requestFocus();
     if (_sweep.isAnimating) {

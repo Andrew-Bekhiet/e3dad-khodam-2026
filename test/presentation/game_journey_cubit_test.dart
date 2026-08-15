@@ -345,6 +345,20 @@ void _revealTests() {
     expect(cubit.state.revealedVerses, verses);
   });
 
+  test('GameJourneyCubit_aClearedLevel_closesItsCard', () {
+    final cubit = GameJourneyCubit(_repository);
+    addTearDown(cubit.close);
+
+    _pressUntil(cubit, () => cubit.state.step.phase == GamePhase.clearance);
+
+    // The level is cleared but still the current one, so the card has to
+    // be closed by something other than the level going away — otherwise
+    // it is still standing over the map for the next sweep to fly under.
+    expect(cubit.state.level, isNotNull);
+    expect(cubit.state.showsSign, isFalse);
+    expect(cubit.state.revealedVerses, isEmpty);
+  });
+
   test('GameJourneyCubit_revealNext_doesNothingDuringDialogue', () {
     final cubit = GameJourneyCubit(_repository);
     addTearDown(cubit.close);

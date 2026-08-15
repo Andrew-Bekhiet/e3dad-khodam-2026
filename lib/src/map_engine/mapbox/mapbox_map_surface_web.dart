@@ -87,6 +87,19 @@ class _MapboxMapSurfaceWebState extends State<MapboxMapSurfaceWeb>
   PixelStyle? _style;
   bool _styleLoaded = false;
 
+  /// The size layout last gave the surface, and the size the map has
+  /// actually been told about.
+  ///
+  /// The map is built several awaits into [_onPlatformViewCreated], so it
+  /// does not exist for the post-frame callback of the layout that made
+  /// its platform view — and GL JS keeps whatever size the container held
+  /// when it was constructed, which is why the map opened tiny and only
+  /// filled out once some later rebuild resized it. Holding both sizes
+  /// lets the map be measured the moment it exists, and lets every frame
+  /// that would only repeat itself be skipped.
+  Size? _viewportSize;
+  Size? _sizedTo;
+
   /// Ids of the images already handed to GL JS.
   ///
   /// `hasImage` is cheap here, but rendering a sprite is not and the
@@ -173,12 +186,28 @@ class _MapboxMapSurfaceWebState extends State<MapboxMapSurfaceWeb>
     if (size.isEmpty) {
       return;
     }
+    _viewportSize = size;
+    if (size == _sizedTo) {
+      return;
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) {
         return;
       }
-      _map?.resize();
+      _measure(size);
     });
+  }
+
+  /// Has the map read its container again. Does nothing until the map
+  /// exists — [_onPlatformViewCreated] measures it itself on arrival,
+  /// with whatever size layout has reached by then.
+  void _measure(Size size) {
+    final map = _map;
+    if (map == null) {
+      return;
+    }
+    _sizedTo = size;
+    map.resize();
   }
 
   Future<void> _onPlatformViewCreated(int viewId) async {
@@ -235,6 +264,14 @@ class _MapboxMapSurfaceWebState extends State<MapboxMapSurfaceWeb>
     map.on('moveend', ((JSAny? _) => _onMoveEnd()).toJS);
     map.onLayer('click', MarkerLayer.layerId, _onMarkerClicked.toJS);
     _map = map;
+    // Every layout so far happened while the map was still being built,
+    // so it has never been measured. Do it now rather than wait for a
+    // rebuild that may not come — on the hierarchy page nothing animates,
+    // and the map would sit at its opening size.
+    final size = _viewportSize;
+    if (size != null) {
+      _measure(size);
+    }
   }
 
   Future<void> _onStyleLoaded() async {

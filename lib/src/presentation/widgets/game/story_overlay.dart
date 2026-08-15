@@ -33,6 +33,9 @@ final class StoryOverlay extends StatelessWidget {
   /// The character shown for [StorySpeaker.guide] beats.
   final GameCharacter guide;
 
+  /// Ties a guide callout's tail to her portrait in the app bar.
+  final LayerLink guideLink;
+
   /// The character shown for [StorySpeaker.narrator] beats.
   final GameCharacter narrator;
 
@@ -45,6 +48,7 @@ final class StoryOverlay extends StatelessWidget {
   /// Creates the story layer.
   const StoryOverlay({
     required this.guide,
+    required this.guideLink,
     required this.narrator,
     required this.onAdvance,
     this.beat,
@@ -71,7 +75,10 @@ final class StoryOverlay extends StatelessWidget {
             // what she says arrives as a bubble from her. The panel is
             // for the lines that earn the whole screen.
             StorySpeaker.guide => switch (current.emphasis) {
-              BeatEmphasis.callout => GuideCallout(beat: current),
+              BeatEmphasis.callout => GuideCallout(
+                link: guideLink,
+                beat: current,
+              ),
               BeatEmphasis.panel => GuideDialoguePanel(
                 character: guide,
                 beat: current,

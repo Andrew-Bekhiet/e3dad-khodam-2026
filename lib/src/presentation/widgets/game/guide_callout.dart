@@ -11,9 +11,10 @@ import 'package:flutter/material.dart';
 /// for the lines that deserve the screen; which one a beat gets is
 /// [StoryBeat.emphasis], chosen in the script.
 ///
-/// Anchored to the start edge because the avatar sits at the start of the
-/// app bar's title, which is the one position that holds under RTL without
-/// measuring anything.
+/// The tail is tied to the portrait through a [LayerLink] rather than
+/// positioned by hand. An app bar's layout is not ours to predict — the
+/// leading button may or may not be there, the title may or may not be
+/// centred — and a tail that points at empty space is worse than no tail.
 final class GuideCallout extends StatelessWidget {
   /// Width of the tail's base.
   static const double _tailWidth = 22.0;
@@ -21,84 +22,89 @@ final class GuideCallout extends StatelessWidget {
   /// How far the tail stands above the bubble.
   static const double _tailHeight = 12.0;
 
-  /// Distance from the start edge to the middle of the tail — half the
-  /// app-bar avatar, so the tail rises towards the middle of her face.
-  static const double _tailCentreInset = 30.0;
+  /// Pushes the tail clear of the app bar's bottom edge, which the body
+  /// clips against.
+  static const double _tailDrop = 8.0;
 
   static const double _maxWidth = 520.0;
+
+  /// Ties the tail to the guide's portrait in the app bar.
+  final LayerLink link;
 
   /// The line being spoken.
   final StoryBeat beat;
 
   /// Creates the guide's speech bubble.
-  const GuideCallout({required this.beat, super.key});
+  const GuideCallout({required this.link, required this.beat, super.key});
 
   @override
   Widget build(BuildContext context) {
     final title = beat.title;
     final text = TextTheme.of(context);
 
-    return SafeArea(
-      child: Align(
-        alignment: AlignmentDirectional.topStart,
-        child: Padding(
-          padding: const EdgeInsetsDirectional.fromSTEB(12, 4, 12, 12),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: _maxWidth),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Padding(
-                  padding: EdgeInsetsDirectional.only(
-                    start: _tailCentreInset - _tailWidth / 2,
-                  ),
-                  child: CustomPaint(
-                    size: Size(_tailWidth, _tailHeight),
-                    painter: _CalloutTail(),
-                  ),
-                ),
-                Flexible(
-                  child: PixelPanel(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (title != null) ...[
-                          Text(
-                            title,
-                            style: text.headlineSmall?.copyWith(
-                              fontWeight: FontWeight.w700,
-                              color: GamePalette.ink,
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                        ],
-                        Flexible(
-                          child: SingleChildScrollView(
-                            child: Text(
-                              beat.text,
-                              style: text.headlineSmall?.copyWith(
-                                height: 1.5,
-                                color: GamePalette.ink,
-                              ),
-                            ),
+    return Stack(
+      children: [
+        SafeArea(
+          child: Align(
+            alignment: AlignmentDirectional.topStart,
+            child: Padding(
+              padding: const EdgeInsetsDirectional.fromSTEB(
+                12,
+                _tailDrop + _tailHeight,
+                12,
+                12,
+              ),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: _maxWidth),
+                child: PixelPanel(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (title != null) ...[
+                        Text(
+                          title,
+                          style: text.headlineSmall?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: GamePalette.ink,
                           ),
                         ),
                         const SizedBox(height: 6),
-                        const Align(
-                          alignment: AlignmentDirectional.centerEnd,
-                          child: ContinueChevron(),
-                        ),
                       ],
-                    ),
+                      Flexible(
+                        child: SingleChildScrollView(
+                          child: Text(
+                            beat.text,
+                            style: text.headlineSmall?.copyWith(
+                              height: 1.5,
+                              color: GamePalette.ink,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      const Align(
+                        alignment: AlignmentDirectional.centerEnd,
+                        child: ContinueChevron(),
+                      ),
+                    ],
                   ),
                 ),
-              ],
+              ),
             ),
           ),
         ),
-      ),
+        CompositedTransformFollower(
+          link: link,
+          targetAnchor: Alignment.bottomCenter,
+          followerAnchor: Alignment.topCenter,
+          offset: const Offset(0, _tailDrop),
+          child: const CustomPaint(
+            size: Size(_tailWidth, _tailHeight),
+            painter: _CalloutTail(),
+          ),
+        ),
+      ],
     );
   }
 }

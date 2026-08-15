@@ -49,6 +49,10 @@ class _GameJourneyViewState extends State<_GameJourneyView>
 
   final FocusNode _focusNode = FocusNode(debugLabel: 'game-journey-keys');
 
+  /// Ties the guide's speech bubble to her portrait above it, so the tail
+  /// points at her wherever the app bar decides to put her.
+  final LayerLink _guideLink = LayerLink();
+
   /// Runs from 0 to 1 across a whole sweep. Drives the couriers walking,
   /// their trail drawing itself behind them, and the streaks over the
   /// map — all three are the same movement, so they share one clock.
@@ -75,15 +79,19 @@ class _GameJourneyViewState extends State<_GameJourneyView>
       listener: (context, state) => _onCameraChanged(state),
       child: Scaffold(
         appBar: AppBar(
-          // The guide rides in the title rather than in the actions: the
-          // title's start edge is the one spot that stays put under RTL,
-          // and `GuideCallout` aims its tail at it without measuring.
+          // Left where the title starts rather than centred: the bubble
+          // hangs from the start edge, and a centred portrait would leave
+          // its tail pointing across the middle of the screen at it.
+          centerTitle: false,
           title: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              CharacterPortrait(
-                character: cubit.guide,
-                size: _guideAvatarSize,
+              CompositedTransformTarget(
+                link: _guideLink,
+                child: CharacterPortrait(
+                  character: cubit.guide,
+                  size: _guideAvatarSize,
+                ),
               ),
               const SizedBox(width: 12),
               const Flexible(child: Text(AppStrings.gameTitle)),
@@ -122,6 +130,7 @@ class _GameJourneyViewState extends State<_GameJourneyView>
                 ),
               StoryOverlay(
                 guide: cubit.guide,
+                guideLink: _guideLink,
                 narrator: cubit.narrator,
                 beat: state.beat,
                 onAdvance: () => _step(cubit, forward: true),

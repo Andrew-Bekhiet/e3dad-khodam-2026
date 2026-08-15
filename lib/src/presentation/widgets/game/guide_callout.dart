@@ -1,6 +1,7 @@
 import 'package:e3dad_khodam_2026/src/domain/game/story_beat.dart';
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/continue_chevron.dart';
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/game_palette.dart';
+import 'package:e3dad_khodam_2026/src/presentation/widgets/game/game_screen_size.dart';
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/pixel_panel.dart';
 import 'package:flutter/material.dart';
 
@@ -31,7 +32,13 @@ final class GuideCallout extends StatelessWidget {
   /// clips against.
   static const double _tailDrop = 8.0;
 
-  static const double _maxWidthRatio = 0.65;
+  /// How much of the screen's width the bubble may take.
+  ///
+  /// Wider on a phone: two thirds of a big screen is still a generous
+  /// column, but two thirds of 390 pixels is a gutter, and the bubble
+  /// would be taller than the map it is meant to be talking over.
+  static const double _maxWidthRatioLarge = 0.65;
+  static const double _maxWidthRatioCompact = 0.92;
 
   /// Where the guide's portrait is, in global x. Null until she has been
   /// measured, which costs the tail its first frame and nothing else.
@@ -48,6 +55,7 @@ final class GuideCallout extends StatelessWidget {
     final title = beat.title;
     final text = TextTheme.of(context);
     final anchor = tailCentreX;
+    final screen = GameScreenSize.of(context);
 
     return Stack(
       children: [
@@ -63,7 +71,12 @@ final class GuideCallout extends StatelessWidget {
               ),
               child: ConstrainedBox(
                 constraints: BoxConstraints(
-                  maxWidth: MediaQuery.widthOf(context) * _maxWidthRatio,
+                  maxWidth:
+                      MediaQuery.widthOf(context) *
+                      screen.pick(
+                        compact: _maxWidthRatioCompact,
+                        large: _maxWidthRatioLarge,
+                      ),
                 ),
                 child: PixelPanel(
                   child: Column(
@@ -73,19 +86,26 @@ final class GuideCallout extends StatelessWidget {
                       if (title != null) ...[
                         Text(
                           title,
-                          style: text.headlineSmall?.copyWith(
-                            fontWeight: FontWeight.w700,
-                            color: GamePalette.ink,
-                          ),
+                          style: screen
+                              .pick(
+                                compact: text.titleMedium,
+                                large: text.headlineSmall,
+                              )
+                              ?.copyWith(
+                                fontWeight: FontWeight.w700,
+                                color: GamePalette.ink,
+                              ),
                         ),
                         const SizedBox(height: 6),
                       ],
                       Text(
                         beat.text,
-                        style: text.headlineLarge?.copyWith(
-                          height: 1.5,
-                          color: GamePalette.ink,
-                        ),
+                        style: screen
+                            .pick(
+                              compact: text.titleMedium,
+                              large: text.headlineLarge,
+                            )
+                            ?.copyWith(height: 1.5, color: GamePalette.ink),
                       ),
                       const SizedBox(height: 6),
                       const Align(

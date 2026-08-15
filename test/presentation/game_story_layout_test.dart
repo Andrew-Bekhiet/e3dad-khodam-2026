@@ -1,0 +1,240 @@
+import 'package:e3dad_khodam_2026/src/app/app_theme.dart';
+import 'package:e3dad_khodam_2026/src/data/game/post_office_characters.dart';
+import 'package:e3dad_khodam_2026/src/data/game/post_office_script.dart';
+import 'package:e3dad_khodam_2026/src/domain/game/game_level.dart';
+import 'package:e3dad_khodam_2026/src/domain/game/story_beat.dart';
+import 'package:e3dad_khodam_2026/src/presentation/widgets/game/destination_card.dart';
+import 'package:e3dad_khodam_2026/src/presentation/widgets/game/guide_callout.dart';
+import 'package:e3dad_khodam_2026/src/presentation/widgets/game/guide_dialogue_panel.dart';
+import 'package:e3dad_khodam_2026/src/presentation/widgets/game/narrator_card.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+/// A phone held upright, and the same phone turned on its side.
+///
+/// Landscape is the tighter of the two and the one a width-only
+/// breakpoint gets wrong: it is the *wider* viewport of the pair, so a
+/// rule reading width alone calls it a desktop and hands it projector
+/// type in 390 logical pixels of height.
+const Size _phonePortrait = Size(390, 844);
+const Size _phoneLandscape = Size(844, 390);
+
+/// What is left of a 1280x720 window once the full-size app bar has
+/// taken its 136 pixels. The bar grew from 56 to hold a portrait worth
+/// looking at from the back of a room, and that came out of the story's
+/// height budget on every big screen.
+const Size _smallDesktopBody = Size(1280, 584);
+
+/// A laptop window — comfortably the large class, and the size the
+/// story text is actually authored for.
+const Size _desktop = Size(1440, 900);
+
+/// What the room is shown, in logical pixels.
+///
+/// Written as numbers rather than read back off the theme: the promise
+/// is that a big screen keeps these *absolute* sizes, so a change to
+/// which `TextTheme` slot a panel reaches for must fail this, not follow
+/// it silently.
+const double _narratorBodySize = 45.0;
+const double _verseSize = 36.0;
+
+/// The level whose verses run longest, found rather than named.
+///
+/// The guard has to follow the script: naming تسالونيكي here would keep
+/// passing on the day someone writes a longer letter, which is the exact
+/// day it is meant to fail.
+GameLevel get _wordiestLevel => PostOfficeScript.levels.reduce(
+  (a, b) => _versesLength(b) > _versesLength(a) ? b : a,
+);
+
+int _versesLength(GameLevel level) =>
+    level.verses.fold(0, (sum, verse) => sum + verse.length);
+
+/// The longest thing anyone says anywhere in the script.
+StoryBeat get _longestBeat => [
+  ...PostOfficeScript.script.prologue,
+  ...PostOfficeScript.script.epilogue,
+  for (final level in PostOfficeScript.levels) ...[
+    ...level.briefing,
+    ...level.clearance,
+  ],
+].reduce((a, b) => b.text.length > a.text.length ? b : a);
+
+/// Renders [child] on a screen of [size] and returns whatever it threw.
+///
+/// An overflowing `RenderFlex` reports through the error handler rather
+/// than by throwing out of `pump`, so the check is `takeException`, not
+/// a `try`.
+Future<Object?> _renderAt(
+  WidgetTester tester,
+  Size size,
+  Widget child,
+) async {
+  tester.view.physicalSize = size;
+  tester.view.devicePixelRatio = 1.0;
+  addTearDown(tester.view.reset);
+  await tester.pumpWidget(
+    MaterialApp(
+      theme: AppTheme.light(),
+      home: Directionality(
+        textDirection: TextDirection.rtl,
+        child: Scaffold(body: child),
+      ),
+    ),
+  );
+
+  return tester.takeException();
+}
+
+/// Renders [level]'s card fully open — artwork showing, every verse
+/// revealed — and returns whatever it threw.
+///
+/// Wrapped up as one call rather than a widget-returning helper so the
+/// card is built where it is used; a bare function handing back a widget
+/// is an anti-pattern the linter is right about.
+Future<Object?> _renderCardAt(
+  WidgetTester tester,
+  Size size,
+  GameLevel level,
+) => _renderAt(
+  tester,
+  size,
+  DestinationCard(
+    level: level,
+    destinationLabel: level.destination.label,
+    showsImage: true,
+    verses: level.verses,
+    versesSpeaker: PostOfficeCharacters.paul,
+    hasMore: false,
+    onReveal: _neverRevealed,
+  ),
+);
+
+/// Passed where the card wants a reveal callback it will never call:
+/// `hasMore` is false, so the card is already as open as it goes.
+void _neverRevealed() {
+  assert(false, 'a fully open card has nothing left to reveal');
+}
+
+/// The rendered size of [text]'s font, as laid out.
+double? _fontSizeOf(WidgetTester tester, String text) =>
+    tester.widget<Text>(find.text(text)).style?.fontSize;
+
+void main() {
+  group('DestinationCard', () {
+    testWidgets('the wordiest level fits a phone held upright', (tester) async {
+      final error = await _renderCardAt(
+        tester,
+        _phonePortrait,
+        _wordiestLevel,
+      );
+
+      expect(error, isNull);
+    });
+
+    testWidgets('the wordiest level fits a phone on its side', (tester) async {
+      final error = await _renderCardAt(
+        tester,
+        _phoneLandscape,
+        _wordiestLevel,
+      );
+
+      expect(error, isNull);
+    });
+
+    testWidgets('every level fits a phone, not merely the worst', (
+      tester,
+    ) async {
+      for (final level in PostOfficeScript.levels) {
+        final error = await _renderCardAt(tester, _phonePortrait, level);
+
+        expect(error, isNull, reason: 'level ${level.id} overflowed');
+      }
+    });
+  });
+
+  group('story panels fit a phone', () {
+    testWidgets('the narrator card', (tester) async {
+      final error = await _renderAt(
+        tester,
+        _phoneLandscape,
+        NarratorCard(
+          character: PostOfficeCharacters.narrator,
+          beat: _longestBeat,
+        ),
+      );
+
+      expect(error, isNull);
+    });
+
+    testWidgets('the guide dialogue panel', (tester) async {
+      final error = await _renderAt(
+        tester,
+        _phoneLandscape,
+        GuideDialoguePanel(
+          character: PostOfficeCharacters.guide,
+          beat: _longestBeat,
+        ),
+      );
+
+      expect(error, isNull);
+    });
+
+    testWidgets('the guide callout', (tester) async {
+      final error = await _renderAt(
+        tester,
+        _phonePortrait,
+        GuideCallout(beat: _longestBeat),
+      );
+
+      expect(error, isNull);
+    });
+  });
+
+  group('a big screen still has room for the big app bar', () {
+    testWidgets('the narrator card', (tester) async {
+      final error = await _renderAt(
+        tester,
+        _smallDesktopBody,
+        NarratorCard(
+          character: PostOfficeCharacters.narrator,
+          beat: _longestBeat,
+        ),
+      );
+      expect(error, isNull);
+    });
+    testWidgets('the guide dialogue panel', (tester) async {
+      final error = await _renderAt(
+        tester,
+        _smallDesktopBody,
+        GuideDialoguePanel(
+          character: PostOfficeCharacters.guide,
+          beat: _longestBeat,
+        ),
+      );
+      expect(error, isNull);
+    });
+  });
+
+  group('a big screen keeps the sizes the room was shown', () {
+    testWidgets('the narrator speaks at displayMedium', (tester) async {
+      await _renderAt(
+        tester,
+        _desktop,
+        NarratorCard(
+          character: PostOfficeCharacters.narrator,
+          beat: _longestBeat,
+        ),
+      );
+
+      expect(_fontSizeOf(tester, _longestBeat.text), _narratorBodySize);
+    });
+
+    testWidgets('a verse is set at displaySmall', (tester) async {
+      final level = _wordiestLevel;
+      await _renderCardAt(tester, _desktop, level);
+
+      expect(_fontSizeOf(tester, level.verses.first), _verseSize);
+    });
+  });
+}

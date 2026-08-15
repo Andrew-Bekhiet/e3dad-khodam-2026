@@ -3,6 +3,7 @@ import 'package:e3dad_khodam_2026/src/domain/game/story_beat.dart';
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/character_portrait.dart';
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/continue_chevron.dart';
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/game_palette.dart';
+import 'package:e3dad_khodam_2026/src/presentation/widgets/game/game_screen_size.dart';
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/pixel_panel.dart';
 import 'package:flutter/material.dart';
 
@@ -12,7 +13,10 @@ import 'package:flutter/material.dart';
 /// The narrator gets a deliberately different treatment
 /// (`NarratorCard`) so the two voices are never confused for each other.
 final class GuideDialoguePanel extends StatelessWidget {
-  static const double _portraitSize = 180.0;
+  /// She stands beside her words rather than above them, so on a phone
+  /// the portrait is competing with the line for width, not height.
+  static const double _portraitSizeLarge = 180.0;
+  static const double _portraitSizeCompact = 104.0;
   static const double _maxWidth = 900.0;
 
   /// Who is speaking.
@@ -32,6 +36,7 @@ final class GuideDialoguePanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final title = beat.title;
     final text = TextTheme.of(context);
+    final screen = GameScreenSize.of(context);
 
     return Center(
       child: SafeArea(
@@ -46,7 +51,10 @@ final class GuideDialoguePanel extends StatelessWidget {
                 children: [
                   CharacterPortrait(
                     character: character,
-                    size: _portraitSize,
+                    size: screen.pick(
+                      compact: _portraitSizeCompact,
+                      large: _portraitSizeLarge,
+                    ),
                   ),
                   const SizedBox(width: 20),
                   Flexible(
@@ -65,19 +73,26 @@ final class GuideDialoguePanel extends StatelessWidget {
                           const SizedBox(height: 6),
                           Text(
                             title,
-                            style: text.headlineLarge?.copyWith(
-                              fontWeight: FontWeight.w700,
-                              color: GamePalette.ink,
-                            ),
+                            style: screen
+                                .pick(
+                                  compact: text.titleLarge,
+                                  large: text.headlineLarge,
+                                )
+                                ?.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                  color: GamePalette.ink,
+                                ),
                           ),
                         ],
                         const SizedBox(height: 10),
                         Text(
                           beat.text,
-                          style: text.headlineMedium?.copyWith(
-                            height: 1.6,
-                            color: GamePalette.ink,
-                          ),
+                          style: screen
+                              .pick(
+                                compact: text.titleMedium,
+                                large: text.headlineMedium,
+                              )
+                              ?.copyWith(height: 1.6, color: GamePalette.ink),
                         ),
                         const SizedBox(height: 8),
                         const Align(

@@ -3,6 +3,7 @@ import 'package:e3dad_khodam_2026/src/domain/game/game_character.dart';
 import 'package:e3dad_khodam_2026/src/domain/game/game_level.dart';
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/continue_chevron.dart';
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/game_palette.dart';
+import 'package:e3dad_khodam_2026/src/presentation/widgets/game/game_screen_size.dart';
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/pixel_panel.dart';
 import 'package:flutter/material.dart';
 
@@ -21,7 +22,13 @@ final class DestinationCard extends StatelessWidget {
   /// How tall the card stands once its artwork is showing. Set this to
   /// the viewport height and the card covers the whole map — that is the
   /// single number the full-screen question turns on.
-  static const double _openHeight = 400.0;
+  ///
+  /// A constant on a big screen, where 400 is a comfortable third of the
+  /// window. On a phone it is a share of the viewport instead: 400 fixed
+  /// pixels is most of a phone held sideways, and this is only a *floor*
+  /// — the verses push past it and would have nowhere to go.
+  static const double _openHeightLarge = 400.0;
+  static const double _openHeightCompactRatio = 0.55;
 
   static const Duration _growDuration = Duration(milliseconds: 260);
 
@@ -59,77 +66,82 @@ final class DestinationCard extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) => Center(
-    child: SafeArea(
-      child: AnimatedSize(
-        duration: _growDuration,
-        curve: Curves.easeOutBack,
-        child: GestureDetector(
-          onTap: hasMore ? onReveal : null,
-          child: PixelPanel(
-            padding: EdgeInsets.zero,
-            color: showsImage ? GamePalette.ink : GamePalette.parchment,
-            child: Stack(
-              fit: StackFit.passthrough,
-              children: [
-                if (showsImage)
-                  Positioned.fill(
-                    child: _Artwork(
-                      asset: level.imageAsset,
-                      label: destinationLabel,
+  Widget build(BuildContext context) {
+    final screen = GameScreenSize.of(context);
+    final openHeight = screen.pick(
+      compact: MediaQuery.sizeOf(context).height * _openHeightCompactRatio,
+      large: _openHeightLarge,
+    );
+
+    return Center(
+      child: SafeArea(
+        child: AnimatedSize(
+          duration: _growDuration,
+          curve: Curves.easeOutBack,
+          child: GestureDetector(
+            onTap: hasMore ? onReveal : null,
+            child: PixelPanel(
+              padding: EdgeInsets.zero,
+              color: showsImage ? GamePalette.ink : GamePalette.parchment,
+              child: Stack(
+                fit: StackFit.passthrough,
+                children: [
+                  if (showsImage)
+                    Positioned.fill(
+                      child: _Artwork(
+                        asset: level.imageAsset,
+                        label: destinationLabel,
+                      ),
                     ),
-                  ),
-                if (showsImage)
-                  const Positioned.fill(
-                    child: ColoredBox(color: GamePalette.scrim),
-                  ),
-                ConstrainedBox(
-                  constraints: BoxConstraints(
-                    minHeight: showsImage ? DestinationCard._openHeight : 0,
-                    minWidth: showsImage ? double.infinity : 0,
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 22,
+                  if (showsImage)
+                    const Positioned.fill(
+                      child: ColoredBox(color: GamePalette.scrim),
                     ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        _Sign(
-                          destinationLabel: destinationLabel,
-                          year: level.year,
-                          onImage: showsImage,
-                        ),
-                        // Scrolls rather than overflows: a city collecting two
-                        // letters' verses can outgrow the card's height cap, and a
-                        // clipped verse in front of a room is worse than a drag.
-                        _Verses(
-                          verses: verses,
-                          speaker: versesSpeaker,
-                          onImage: showsImage,
-                        ),
-                        if (hasMore) ...[
-                          const SizedBox(height: 10),
-                          const Center(
-                            widthFactor: 1,
-                            child: ContinueChevron(
-                              icon: Icons.keyboard_arrow_down,
-                            ),
+                  ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minHeight: showsImage ? openHeight : 0,
+                      minWidth: showsImage ? double.infinity : 0,
+                    ),
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: screen.pick(compact: 8, large: 22),
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          _Sign(
+                            destinationLabel: destinationLabel,
+                            year: level.year,
+                            onImage: showsImage,
                           ),
+                          _Verses(
+                            verses: verses,
+                            speaker: versesSpeaker,
+                            onImage: showsImage,
+                          ),
+                          if (hasMore) ...[
+                            const SizedBox(height: 10),
+                            const Center(
+                              widthFactor: 1,
+                              child: ContinueChevron(
+                                icon: Icons.keyboard_arrow_down,
+                              ),
+                            ),
+                          ],
                         ],
-                      ],
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
       ),
-    ),
-  );
+    );
+  }
 }
 
 /// The لافتة: where the letter was delivered, and when it was written.
@@ -152,6 +164,7 @@ final class _Sign extends StatelessWidget {
   Widget build(BuildContext context) {
     final ink = onImage ? GamePalette.parchment : GamePalette.ink;
     final text = TextTheme.of(context);
+    final screen = GameScreenSize.of(context);
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -159,21 +172,25 @@ final class _Sign extends StatelessWidget {
         Text(
           destinationLabel,
           textAlign: TextAlign.center,
-          style: text.displaySmall?.copyWith(
-            fontWeight: FontWeight.w700,
-            height: 1.2,
-            color: ink,
-          ),
+          style: screen
+              .pick(compact: text.headlineSmall, large: text.displaySmall)
+              ?.copyWith(
+                fontWeight: FontWeight.w700,
+                height: 1.2,
+                color: ink,
+              ),
         ),
         if (year != null) ...[
           const SizedBox(height: 4),
           Text(
             '${ArabicNumerals.format(year!)} م',
             textAlign: TextAlign.center,
-            style: text.titleLarge?.copyWith(
-              fontWeight: FontWeight.w700,
-              color: GamePalette.accent,
-            ),
+            style: screen
+                .pick(compact: text.titleMedium, large: text.titleLarge)
+                ?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: GamePalette.accent,
+                ),
           ),
         ],
       ],
@@ -197,7 +214,9 @@ final class _Verses extends StatelessWidget {
   Widget build(BuildContext context) => Column(
     mainAxisSize: MainAxisSize.min,
     children: [
-      const SizedBox(height: 14),
+      SizedBox(
+        height: GameScreenSize.of(context).pick(compact: 4.0, large: 14.0),
+      ),
       AnimatedSize(
         duration: DestinationCard._growDuration,
         curve: Curves.easeOutCubic,
@@ -223,9 +242,11 @@ final class _Verse extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ink = onImage ? GamePalette.parchment : GamePalette.ink;
+    final theme = TextTheme.of(context);
+    final screen = GameScreenSize.of(context);
 
     return Padding(
-      padding: const EdgeInsets.only(top: 10),
+      padding: EdgeInsets.only(top: screen.pick(compact: 4, large: 10)),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -233,11 +254,16 @@ final class _Verse extends StatelessWidget {
           Text(
             text,
             textAlign: TextAlign.center,
-            style:
-                TextTheme.of(
-                  context,
-                ).displaySmall?.copyWith(
-                  height: 1.8,
+            // Verses are the one thing on this card that has no upper
+            // bound: a city can collect two letters' worth, and they all
+            // have to be on screen at once because nothing here scrolls.
+            // Hence the tighter leading on a phone as well as the
+            // smaller face — the line height is doing as much of the
+            // work as the size is.
+            style: screen
+                .pick(compact: theme.bodyLarge, large: theme.displaySmall)
+                ?.copyWith(
+                  height: screen.pick(compact: 1.3, large: 1.8),
                   color: ink,
                   fontWeight: FontWeight.w700,
                 ),

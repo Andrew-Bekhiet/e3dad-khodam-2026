@@ -87,18 +87,20 @@ class _MapboxMapSurfaceWebState extends State<MapboxMapSurfaceWeb>
   PixelStyle? _style;
   bool _styleLoaded = false;
 
-  /// The size layout last gave the surface, and the size the map has
-  /// actually been told about.
+  /// Watches the container so GL JS is told whenever it changes size.
   ///
-  /// The map is built several awaits into [_onPlatformViewCreated], so it
-  /// does not exist for the post-frame callback of the layout that made
-  /// its platform view — and GL JS keeps whatever size the container held
-  /// when it was constructed, which is why the map opened tiny and only
-  /// filled out once some later rebuild resized it. Holding both sizes
-  /// lets the map be measured the moment it exists, and lets every frame
-  /// that would only repeat itself be skipped.
-  Size? _viewportSize;
-  Size? _sizedTo;
+  /// GL JS measures its container once, at construction — and the map is
+  /// built several awaits into [_onPlatformViewCreated], by which time
+  /// the element it measured may still have been the wrong size, which is
+  /// why the map opened tiny. Flutter's own layout is the wrong thing to
+  /// ask: a `LayoutBuilder` reports the size of the *widget*, not of the
+  /// DOM element GL JS actually reads, and it fires on every rebuild
+  /// whether or not anything moved.
+  ///
+  /// The element itself is the honest source, so watch it directly. This
+  /// covers the first sizing, window resizes and anything else that
+  /// reflows the page, and costs nothing while the page is still.
+  web.ResizeObserver? _sizeWatch;
 
   /// Ids of the images already handed to GL JS.
   ///
@@ -143,20 +145,15 @@ class _MapboxMapSurfaceWebState extends State<MapboxMapSurfaceWeb>
       return const MissingAccessTokenNotice();
     }
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        _scheduleResize(constraints.biggest);
-
-        return HtmlElementView(
-          viewType: _viewType,
-          onPlatformViewCreated: _onPlatformViewCreated,
-        );
-      },
+    return HtmlElementView(
+      viewType: _viewType,
+      onPlatformViewCreated: _onPlatformViewCreated,
     );
   }
 
   @override
   void dispose() {
+    _sizeWatch?.disconnect();
     _map?.remove();
     _containers.remove(_viewId);
     super.dispose();
@@ -180,34 +177,17 @@ class _MapboxMapSurfaceWebState extends State<MapboxMapSurfaceWeb>
     });
   }
 
-  /// GL JS reads its size from the container, which Flutter resizes
-  /// during layout — so tell it after the frame, not mid-build.
-  void _scheduleResize(Size size) {
-    if (size.isEmpty) {
-      return;
-    }
-    _viewportSize = size;
-    if (size == _sizedTo) {
-      return;
-    }
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) {
-        return;
-      }
-      _measure(size);
-    });
-  }
-
-  /// Has the map read its container again. Does nothing until the map
-  /// exists — [_onPlatformViewCreated] measures it itself on arrival,
-  /// with whatever size layout has reached by then.
-  void _measure(Size size) {
-    final map = _map;
-    if (map == null) {
-      return;
-    }
-    _sizedTo = size;
-    map.resize();
+  /// Starts watching [container], and has the map measure it once now.
+  void _watchSize(web.HTMLElement container) {
+    _sizeWatch?.disconnect();
+    final watch = web.ResizeObserver(
+      (JSArray<JSObject> _, web.ResizeObserver __) {
+        _map?.resize();
+      }.toJS,
+    );
+    watch.observe(container);
+    _sizeWatch = watch;
+    _map?.resize();
   }
 
   Future<void> _onPlatformViewCreated(int viewId) async {
@@ -264,14 +244,11 @@ class _MapboxMapSurfaceWebState extends State<MapboxMapSurfaceWeb>
     map.on('moveend', ((JSAny? _) => _onMoveEnd()).toJS);
     map.onLayer('click', MarkerLayer.layerId, _onMarkerClicked.toJS);
     _map = map;
-    // Every layout so far happened while the map was still being built,
-    // so it has never been measured. Do it now rather than wait for a
-    // rebuild that may not come — on the hierarchy page nothing animates,
-    // and the map would sit at its opening size.
-    final size = _viewportSize;
-    if (size != null) {
-      _measure(size);
-    }
+    // GL JS measured the container when it was constructed, which may
+    // have been before Flutter gave the element its real size. Take that
+    // measurement again now, and keep taking it whenever the element
+    // moves.
+    _watchSize(container);
   }
 
   Future<void> _onStyleLoaded() async {

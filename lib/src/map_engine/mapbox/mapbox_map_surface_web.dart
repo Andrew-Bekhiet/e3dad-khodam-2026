@@ -87,6 +87,15 @@ class _MapboxMapSurfaceWebState extends State<MapboxMapSurfaceWeb>
   PixelStyle? _style;
   bool _styleLoaded = false;
 
+  /// Ids of the images already handed to GL JS.
+  ///
+  /// `hasImage` is cheap here, but rendering a sprite is not and the
+  /// check has an `await` after it — so two pushes in flight together
+  /// would both decide the image is missing and both rasterise it. This
+  /// is claimed before the first await instead. Cleared when a style
+  /// loads, which is what drops the map's own images.
+  final Set<String> _registeredImages = {};
+
   @override
   void initState() {
     super.initState();
@@ -210,13 +219,19 @@ class _MapboxMapSurfaceWebState extends State<MapboxMapSurfaceWeb>
       ),
     );
     // Listeners must return void: `toJS` rejects a Future signature.
-    map.on('load', (JSAny? _) {
-      _onStyleLoaded();
-    }.toJS);
+    map.on(
+      'load',
+      (JSAny? _) {
+        _onStyleLoaded();
+      }.toJS,
+    );
     // Same safety net as mobile: an absent image draws nothing at all.
-    map.on('styleimagemissing', (JSAny? _) {
-      _addSprites();
-    }.toJS);
+    map.on(
+      'styleimagemissing',
+      (JSAny? _) {
+        _addSprites();
+      }.toJS,
+    );
     map.on('moveend', ((JSAny? _) => _onMoveEnd()).toJS);
     map.onLayer('click', MarkerLayer.layerId, _onMarkerClicked.toJS);
     _map = map;
@@ -224,6 +239,7 @@ class _MapboxMapSurfaceWebState extends State<MapboxMapSurfaceWeb>
 
   Future<void> _onStyleLoaded() async {
     _styleLoaded = true;
+    _registeredImages.clear();
     await _addSprites();
     if (mounted) {
       _moveCamera(widget.spec.camera, Duration.zero);
@@ -251,11 +267,14 @@ class _MapboxMapSurfaceWebState extends State<MapboxMapSurfaceWeb>
       return;
     }
     for (final tokenStyle in styles) {
-      if (map.hasImage(tokenStyle.id)) {
+      if (map.hasImage(tokenStyle.id) ||
+          !_registeredImages.add(tokenStyle.id)) {
         continue;
       }
       final sprite = await TokenSprite.render(tokenStyle);
       if (!mounted) {
+        _registeredImages.remove(tokenStyle.id);
+
         return;
       }
       _addSprite(sprite, scale: TokenSprite.scale);
@@ -268,11 +287,14 @@ class _MapboxMapSurfaceWebState extends State<MapboxMapSurfaceWeb>
       return;
     }
     for (final markerStyle in styles) {
-      if (map.hasImage(markerStyle.id)) {
+      if (map.hasImage(markerStyle.id) ||
+          !_registeredImages.add(markerStyle.id)) {
         continue;
       }
       final sprite = await MarkerSprite.render(markerStyle);
       if (!mounted) {
+        _registeredImages.remove(markerStyle.id);
+
         return;
       }
       _addSprite(sprite, scale: MarkerSprite.scale);
@@ -293,6 +315,7 @@ class _MapboxMapSurfaceWebState extends State<MapboxMapSurfaceWeb>
       ),
       gl.GlImageOptions(pixelRatio: scale),
     );
+    _registeredImages.add(sprite.id);
   }
 
   /// Replaces the marker source's features, registering artwork for any

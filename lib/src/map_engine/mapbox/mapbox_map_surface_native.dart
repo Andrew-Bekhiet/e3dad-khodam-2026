@@ -81,6 +81,25 @@ class _MapboxMapSurfaceNativeState extends State<MapboxMapSurfaceNative>
   bool _styleRequested = false;
   bool _styleLoaded = false;
 
+  /// Ids of the images already handed to the renderer.
+  ///
+  /// Registration is idempotent and the styles in play are a handful,
+  /// known up front — so this answers "is it there?" locally instead of
+  /// asking the platform once per style per push. Cleared whenever a
+  /// style loads, which is what drops the renderer's own images.
+  final Set<String> _registeredImages = {};
+
+  /// Sources with a push already on the wire, by source id.
+  ///
+  /// The pushes are unawaited, so without this a surface rebuilt faster
+  /// than the channel drains simply queues more work — each entry
+  /// holding an encoded copy of the route until it is delivered.
+  final Set<String> _pushing = {};
+
+  /// The features waiting behind an outstanding push, by source id. At
+  /// most one per source: only the newest is worth drawing.
+  final Map<String, Map<String, Object?>> _queued = {};
+
   @override
   void initState() {
     super.initState();
@@ -180,6 +199,7 @@ class _MapboxMapSurfaceNativeState extends State<MapboxMapSurfaceNative>
   Future<void> _onStyleLoaded(StyleLoadedEventData _) async {
     _styleLoaded = true;
     // Loading a style clears every registered image.
+    _registeredImages.clear();
     await _addSprites();
     await _moveCamera(widget.spec.camera, Duration.zero);
   }
@@ -257,6 +277,7 @@ class _MapboxMapSurfaceNativeState extends State<MapboxMapSurfaceNative>
       [],
       null,
     );
+    _registeredImages.add(sprite.id);
   }
 
   /// Replaces the marker source's data, registering artwork for any
@@ -267,16 +288,18 @@ class _MapboxMapSurfaceNativeState extends State<MapboxMapSurfaceNative>
       return;
     }
     for (final markerStyle in MarkerLayer.stylesOf(markers)) {
-      if (await map.style.hasStyleImage(markerStyle.id)) {
+      // Claimed before the await, so two pushes in flight together do
+      // not both decide the artwork is missing and both rasterise it.
+      if (!_registeredImages.add(markerStyle.id)) {
         continue;
       }
       await _addSprite(
         await MarkerSprite.render(markerStyle),
         scale: MarkerSprite.scale,
       );
-    }
-    if (!mounted) {
-      return;
+      if (!mounted) {
+        return;
+      }
     }
     await _setSourceData(
       MarkerLayer.sourceId,
@@ -292,16 +315,16 @@ class _MapboxMapSurfaceNativeState extends State<MapboxMapSurfaceNative>
       return;
     }
     for (final tokenStyle in TokenLayer.stylesOf(tokens)) {
-      if (await map.style.hasStyleImage(tokenStyle.id)) {
+      if (!_registeredImages.add(tokenStyle.id)) {
         continue;
       }
       await _addSprite(
         await TokenSprite.render(tokenStyle),
         scale: TokenSprite.scale,
       );
-    }
-    if (!mounted) {
-      return;
+      if (!mounted) {
+        return;
+      }
     }
     await _setSourceData(
       TokenLayer.sourceId,
@@ -311,6 +334,12 @@ class _MapboxMapSurfaceNativeState extends State<MapboxMapSurfaceNative>
 
   /// Swaps a `geojson` source's features. The SDK takes the replacement
   /// as an encoded string, not as a map.
+  ///
+  /// One push per source is on the wire at a time. Asking again while
+  /// one is outstanding replaces whatever was waiting rather than
+  /// queueing behind it: the newest features are the only ones worth
+  /// drawing, and the older ones would each hold an encoded copy of the
+  /// route until the channel got to them.
   Future<void> _setSourceData(
     String sourceId,
     Map<String, Object?> data,
@@ -319,7 +348,29 @@ class _MapboxMapSurfaceNativeState extends State<MapboxMapSurfaceNative>
     if (map == null || !_styleLoaded) {
       return;
     }
-    await map.style.setStyleSourceProperty(sourceId, 'data', jsonEncode(data));
+    if (!_pushing.add(sourceId)) {
+      _queued[sourceId] = data;
+
+      return;
+    }
+    try {
+      var next = data;
+      while (true) {
+        await map.style.setStyleSourceProperty(
+          sourceId,
+          'data',
+          jsonEncode(next),
+        );
+        final waiting = mounted ? _queued.remove(sourceId) : null;
+        if (waiting == null) {
+          return;
+        }
+        next = waiting;
+      }
+    } finally {
+      _pushing.remove(sourceId);
+      _queued.remove(sourceId);
+    }
   }
 
   /// Moves the map's own camera. A [FitBoundsCameraTarget] is resolved by

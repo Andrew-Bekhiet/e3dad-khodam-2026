@@ -54,9 +54,16 @@ class _GameJourneyViewState extends State<_GameJourneyView>
 
   final FocusNode _focusNode = FocusNode(debugLabel: 'game-journey-keys');
 
-  /// Ties the guide's speech bubble to her portrait above it, so the tail
-  /// points at her wherever the app bar decides to put her.
-  final LayerLink _guideLink = LayerLink();
+  /// Finds the guide's portrait so her bubble's tail can point at it.
+  ///
+  /// Measured rather than linked: a `LayerLink` cannot reach from an app
+  /// bar into a body, because `Scaffold` paints the body first and the
+  /// bar over it, and a follower painted before its leader trips a
+  /// framework assertion that takes the whole overlay off the screen.
+  final GlobalKey _guideAvatarKey = GlobalKey();
+
+  /// Where that portrait sits, in global x.
+  double? _guideAnchorX;
 
   /// Runs from 0 to 1 across a whole sweep. Drives the couriers walking,
   /// their trail drawing itself behind them, and the streaks over the
@@ -80,6 +87,9 @@ class _GameJourneyViewState extends State<_GameJourneyView>
   Widget build(BuildContext context) {
     final cubit = context.watch<GameJourneyCubit>();
     final state = cubit.state;
+    // After the frame, because the portrait has not been laid out yet
+    // while this is running.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _findGuideAvatar());
 
     return BlocListener<GameJourneyCubit, GameJourneyState>(
       listenWhen: (previous, current) => previous.camera != current.camera,
@@ -93,12 +103,10 @@ class _GameJourneyViewState extends State<_GameJourneyView>
           title: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              CompositedTransformTarget(
-                link: _guideLink,
-                child: CharacterPortrait(
-                  character: cubit.guide,
-                  size: _guideAvatarSize,
-                ),
+              CharacterPortrait(
+                key: _guideAvatarKey,
+                character: cubit.guide,
+                size: _guideAvatarSize,
               ),
               const SizedBox(width: 12),
               const Flexible(child: Text(AppStrings.gameTitle)),
@@ -137,7 +145,7 @@ class _GameJourneyViewState extends State<_GameJourneyView>
                 ),
               StoryOverlay(
                 guide: cubit.guide,
-                guideLink: _guideLink,
+                guideAnchorX: _guideAnchorX,
                 narrator: cubit.narrator,
                 beat: state.beat,
                 onAdvance: () => _step(cubit, forward: true),
@@ -160,6 +168,24 @@ class _GameJourneyViewState extends State<_GameJourneyView>
     _sweep.dispose();
     _focusNode.dispose();
     super.dispose();
+  }
+
+  /// Notes where the guide's portrait ended up, so her bubble can point
+  /// at it. A no-op once it has settled, so this cannot chase its own
+  /// tail across frames.
+  void _findGuideAvatar() {
+    if (!mounted) {
+      return;
+    }
+    final box = _guideAvatarKey.currentContext?.findRenderObject();
+    if (box is! RenderBox || !box.hasSize) {
+      return;
+    }
+    final centre = box.localToGlobal(box.size.center(Offset.zero)).dx;
+    if (centre == _guideAnchorX) {
+      return;
+    }
+    setState(() => _guideAnchorX = centre);
   }
 
   /// Starts the sweep clock when the camera is given one to fly, and

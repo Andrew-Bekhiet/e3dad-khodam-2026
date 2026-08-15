@@ -78,15 +78,43 @@ void main() {
 }
 
 void _startAndStepTests() {
-  test('GameJourneyCubit_construction_startsOnThePrologue', () {
+  test('GameJourneyCubit_construction_startsOnTheStillOpeningShot', () {
     final cubit = GameJourneyCubit(_repository);
     addTearDown(cubit.close);
 
     expect(cubit.state.stepIndex, 0);
-    expect(cubit.state.step.phase, GamePhase.prologue);
+    expect(cubit.state.step.phase, GamePhase.opening);
     expect(cubit.state.level, isNull);
-    expect(cubit.state.beat, isNotNull);
+    // Nobody speaks over the post office: there is nothing to read yet,
+    // only somewhere to be.
+    expect(cubit.state.beat, isNull);
+    expect(cubit.state.showsCard, isFalse);
     expect(cubit.state.isAtStart, isTrue);
+  });
+
+  test('GameJourneyCubit_theGuideSpeaks_onlyOnceTheJourneyHasFlown', () {
+    final cubit = GameJourneyCubit(_repository);
+    addTearDown(cubit.close);
+
+    // The opening shot: home, silent, no flight yet.
+    expect(cubit.state.camera, isA<CenterZoomCameraTarget>());
+    expect(cubit.state.sweep, isNull);
+    expect(cubit.state.beat, isNull);
+
+    // One press sets them off. The sweep owns the screen, so still
+    // nobody talks over it.
+    cubit.forward();
+    expect(cubit.state.step.phase, GamePhase.prologue);
+    expect(cubit.state.sweep, isNotNull);
+    expect(cubit.state.beat, isNull, reason: 'the flight is not narrated');
+
+    // The next press acknowledges the arrival, and only then does the
+    // guide explain what just happened.
+    cubit.forward();
+    expect(cubit.state.step.phase, GamePhase.prologue);
+    expect(cubit.state.beat, isNotNull);
+    // ...and explains it over the map, not over a destination card.
+    expect(cubit.state.showsCard, isFalse);
   });
 
   test('GameJourneyCubit_backwardAtStart_staysPut', () {
@@ -682,7 +710,7 @@ void _clearanceAndJumpTests() {
     expect(cubit.state.sweep, isNotNull);
   });
 
-  test('GameJourneyCubit_restart_returnsToTheOpeningBeat', () {
+  test('GameJourneyCubit_restart_returnsToTheOpeningShot', () {
     final cubit = GameJourneyCubit(_repository);
     addTearDown(cubit.close);
 
@@ -690,6 +718,6 @@ void _clearanceAndJumpTests() {
     cubit.restart();
 
     expect(cubit.state.stepIndex, 0);
-    expect(cubit.state.step.phase, GamePhase.prologue);
+    expect(cubit.state.step.phase, GamePhase.opening);
   });
 }

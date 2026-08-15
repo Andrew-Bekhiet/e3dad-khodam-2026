@@ -72,8 +72,13 @@ final class GameJourneyCubit extends Cubit<GameJourneyState> {
 
   /// Flattens [script] into the ordered steps the playthrough walks.
   static List<GameStep> _buildSteps(LevelScript script) => [
+    // The map, framed on the post office, with nobody talking over it.
+    const GameStep(phase: GamePhase.opening),
+    // Belongs to the first level, so it opens that level -- which is what
+    // flies the couriers out of الإسماعيلية before a word is said. The
+    // guide explains the journey on arrival, not before it.
     for (final beat in script.prologue)
-      GameStep(phase: GamePhase.prologue, beat: beat),
+      GameStep(phase: GamePhase.prologue, levelIndex: 0, beat: beat),
     for (final (index, level) in script.levels.indexed) ...[
       for (final beat in level.briefing)
         GameStep(phase: GamePhase.briefing, levelIndex: index, beat: beat),
@@ -181,7 +186,7 @@ final class GameJourneyCubit extends Cubit<GameJourneyState> {
   /// to no level but still need somewhere to look.
   static int _levelIndexOf(GameStep step, int levelCount) =>
       step.levelIndex ??
-      (step.phase == GamePhase.prologue ? 0 : levelCount - 1);
+      (step.phase == GamePhase.opening ? 0 : levelCount - 1);
 
   /// Destinations of the levels already delivered to, in order, minus
   /// [currentStop] (which is drawn as the highlighted marker instead) and
@@ -228,7 +233,7 @@ final class GameJourneyCubit extends Cubit<GameJourneyState> {
     // The journey starts at the post office, and during the prologue that
     // is all of it: nobody has set off yet.
     final stops = <JourneyStop>[script.home];
-    if (step.phase != GamePhase.prologue) {
+    if (step.phase != GamePhase.opening) {
       for (final level in script.levels.take(levelIndex + 1)) {
         if (stops.last.id != level.destination.id) {
           stops.add(level.destination);
@@ -259,7 +264,7 @@ final class GameJourneyCubit extends Cubit<GameJourneyState> {
     // The map opens on the post office rather than flying to it: this is
     // where the couriers already are, and an arrival needs somewhere to
     // have arrived from.
-    if (step.phase == GamePhase.prologue) {
+    if (step.phase == GamePhase.opening) {
       return CenterZoomCameraTarget(
         center: script.home.position,
         zoom: arrivalZoom,

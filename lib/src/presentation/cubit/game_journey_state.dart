@@ -87,8 +87,10 @@ final class GameJourneyState extends Equatable {
   /// changed, so taking the card away and putting it back would flicker
   /// something the player is still reading.
   int get maxReveal => switch (step.phase) {
-    GamePhase.prologue || GamePhase.epilogue => 0,
-    GamePhase.briefing => signReveal,
+    GamePhase.opening || GamePhase.epilogue => 0,
+    // One press past the arrival, which is what takes the blank map away
+    // and lets the guide speak. Never further: the prologue has no card.
+    GamePhase.prologue || GamePhase.briefing => signReveal,
     GamePhase.playing ||
     GamePhase.clearance => imageReveal + (level?.verses.length ?? 0),
   };
@@ -106,6 +108,7 @@ final class GameJourneyState extends Equatable {
   /// player is part-way through reading that city, and dropping back to
   /// the bare sign would take away what they are still looking at.
   int get minReveal => switch (this) {
+    _ when step.phase == GamePhase.opening => 0,
     _ when opensBlank => 0,
     _ when carriedVerses.isNotEmpty => imageReveal,
     _ => signReveal,
@@ -128,9 +131,13 @@ final class GameJourneyState extends Equatable {
   /// nothing to wait for, so its sign rises on arrival as before — and a
   /// level that is not swept into keeps whatever card was already up,
   /// which is the rule against blinking.
+  /// The prologue is spoken over the first city on arrival and belongs to
+  /// that level, but it is the journey being introduced rather than the
+  /// letter — so it never raises the card.
   bool get showsCard =>
       level != null &&
       showsSign &&
+      step.phase != GamePhase.prologue &&
       !(opensBlank && step.phase == GamePhase.briefing);
 
   /// Whether the card is showing its background artwork.

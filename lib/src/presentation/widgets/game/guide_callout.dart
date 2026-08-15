@@ -11,10 +11,15 @@ import 'package:flutter/material.dart';
 /// for the lines that deserve the screen; which one a beat gets is
 /// [StoryBeat.emphasis], chosen in the script.
 ///
-/// The tail is tied to the portrait through a [LayerLink] rather than
-/// positioned by hand. An app bar's layout is not ours to predict — the
-/// leading button may or may not be there, the title may or may not be
-/// centred — and a tail that points at empty space is worse than no tail.
+/// The tail is put where the portrait actually is, measured rather than
+/// assumed: an app bar's layout is not ours to predict — the leading
+/// button may or may not be there, the title may or may not be centred —
+/// and a tail pointing at empty space is worse than no tail.
+///
+/// Measured, and not linked with a `LayerLink`, because a link cannot
+/// reach from an app bar into a body: `Scaffold` paints the body first
+/// and the bar over it, and a follower painted before its leader trips a
+/// framework assertion that takes the whole overlay off the screen.
 final class GuideCallout extends StatelessWidget {
   /// Width of the tail's base.
   static const double _tailWidth = 22.0;
@@ -28,19 +33,21 @@ final class GuideCallout extends StatelessWidget {
 
   static const double _maxWidth = 520.0;
 
-  /// Ties the tail to the guide's portrait in the app bar.
-  final LayerLink link;
+  /// Where the guide's portrait is, in global x. Null until she has been
+  /// measured, which costs the tail its first frame and nothing else.
+  final double? tailCentreX;
 
   /// The line being spoken.
   final StoryBeat beat;
 
   /// Creates the guide's speech bubble.
-  const GuideCallout({required this.link, required this.beat, super.key});
+  const GuideCallout({required this.beat, this.tailCentreX, super.key});
 
   @override
   Widget build(BuildContext context) {
     final title = beat.title;
     final text = TextTheme.of(context);
+    final anchor = tailCentreX;
 
     return Stack(
       children: [
@@ -94,16 +101,17 @@ final class GuideCallout extends StatelessWidget {
             ),
           ),
         ),
-        CompositedTransformFollower(
-          link: link,
-          targetAnchor: Alignment.bottomCenter,
-          followerAnchor: Alignment.topCenter,
-          offset: const Offset(0, _tailDrop),
-          child: const CustomPaint(
-            size: Size(_tailWidth, _tailHeight),
-            painter: _CalloutTail(),
+        if (anchor != null)
+          Positioned(
+            // Global x reads straight as local x: the body spans the
+            // window, so the stack's own left edge is the window's.
+            left: anchor - _tailWidth / 2,
+            top: _tailDrop,
+            child: const CustomPaint(
+              size: Size(_tailWidth, _tailHeight),
+              painter: _CalloutTail(),
+            ),
           ),
-        ),
       ],
     );
   }

@@ -3,7 +3,12 @@ import 'package:equatable/equatable.dart';
 
 /// Which part of the playthrough a [GameStep] belongs to.
 enum GamePhase {
-  /// Opening beats, before the first level.
+  /// The still opening shot: the couriers at home, before anyone sets
+  /// off. Carries no beat — there is nothing to read yet, only somewhere
+  /// to be.
+  opening,
+
+  /// Opening beats, spoken on arrival at the first city.
   prologue,
 
   /// Beats introducing the level the player is about to play.
@@ -41,8 +46,11 @@ final class GameStep extends Equatable {
   @override
   List<Object?> get props => [phase, levelIndex, beat];
 
-  /// Creates a step. A playing step carries no beat; every other phase
-  /// carries exactly one.
+  /// Creates a step. The opening shot and a playing step carry no beat;
+  /// every other phase carries exactly one.
   const GameStep({required this.phase, this.levelIndex, this.beat})
-    : assert((phase == GamePhase.playing) == (beat == null));
+    : assert(
+        (phase == GamePhase.playing || phase == GamePhase.opening) ==
+            (beat == null),
+      );
 }

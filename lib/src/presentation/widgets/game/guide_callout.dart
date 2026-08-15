@@ -31,7 +31,7 @@ final class GuideCallout extends StatelessWidget {
   /// clips against.
   static const double _tailDrop = 8.0;
 
-  static const double _maxWidth = 520.0;
+  static const double _maxWidthRatio = 0.65;
 
   /// Where the guide's portrait is, in global x. Null until she has been
   /// measured, which costs the tail its first frame and nothing else.
@@ -62,7 +62,9 @@ final class GuideCallout extends StatelessWidget {
                 12,
               ),
               child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: _maxWidth),
+                constraints: BoxConstraints(
+                  maxWidth: MediaQuery.widthOf(context) * _maxWidthRatio,
+                ),
                 child: PixelPanel(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -78,15 +80,11 @@ final class GuideCallout extends StatelessWidget {
                         ),
                         const SizedBox(height: 6),
                       ],
-                      Flexible(
-                        child: SingleChildScrollView(
-                          child: Text(
-                            beat.text,
-                            style: text.headlineSmall?.copyWith(
-                              height: 1.5,
-                              color: GamePalette.ink,
-                            ),
-                          ),
+                      Text(
+                        beat.text,
+                        style: text.headlineLarge?.copyWith(
+                          height: 1.5,
+                          color: GamePalette.ink,
                         ),
                       ),
                       const SizedBox(height: 6),

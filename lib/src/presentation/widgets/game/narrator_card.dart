@@ -80,17 +80,13 @@ final class NarratorCard extends StatelessWidget {
                     ),
                   ],
                   const SizedBox(height: 12),
-                  Flexible(
-                    child: SingleChildScrollView(
-                      child: Text(
-                        beat.text,
-                        textAlign: TextAlign.center,
-                        style: text.displaySmall?.copyWith(
-                          height: 1.7,
-                          fontStyle: FontStyle.italic,
-                          color: GamePalette.narratorSepia,
-                        ),
-                      ),
+                  Text(
+                    beat.text,
+                    textAlign: TextAlign.center,
+                    style: text.displayMedium?.copyWith(
+                      height: 1.7,
+                      fontStyle: FontStyle.italic,
+                      color: GamePalette.narratorSepia,
                     ),
                   ),
                   const SizedBox(height: 10),

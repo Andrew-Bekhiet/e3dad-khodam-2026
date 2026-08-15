@@ -18,7 +18,7 @@ final class ContinueChevron extends StatefulWidget {
 
   /// Creates the cue.
   const ContinueChevron({
-    this.icon = Icons.play_arrow,
+    this.icon = Icons.arrow_downward,
     this.color = GamePalette.ink,
     this.size = 22,
     super.key,

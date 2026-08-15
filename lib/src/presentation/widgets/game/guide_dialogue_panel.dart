@@ -72,15 +72,11 @@ final class GuideDialoguePanel extends StatelessWidget {
                           ),
                         ],
                         const SizedBox(height: 10),
-                        Flexible(
-                          child: SingleChildScrollView(
-                            child: Text(
-                              beat.text,
-                              style: text.headlineMedium?.copyWith(
-                                height: 1.6,
-                                color: GamePalette.ink,
-                              ),
-                            ),
+                        Text(
+                          beat.text,
+                          style: text.headlineMedium?.copyWith(
+                            height: 1.6,
+                            color: GamePalette.ink,
                           ),
                         ),
                         const SizedBox(height: 8),

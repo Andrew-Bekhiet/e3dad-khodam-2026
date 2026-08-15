@@ -1,6 +1,7 @@
 import 'package:e3dad_khodam_2026/src/domain/game/game_character.dart';
 import 'package:e3dad_khodam_2026/src/domain/game/story_beat.dart';
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/game_palette.dart';
+import 'package:e3dad_khodam_2026/src/presentation/widgets/game/guide_callout.dart';
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/guide_dialogue_panel.dart';
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/narrator_card.dart';
 import 'package:flutter/widgets.dart';
@@ -66,10 +67,16 @@ final class StoryOverlay extends StatelessWidget {
         child: ColoredBox(
           color: GamePalette.scrim,
           child: switch (current.speaker) {
-            StorySpeaker.guide => GuideDialoguePanel(
-              character: guide,
-              beat: current,
-            ),
+            // The guide is already on screen in the app bar, so most of
+            // what she says arrives as a bubble from her. The panel is
+            // for the lines that earn the whole screen.
+            StorySpeaker.guide => switch (current.emphasis) {
+              BeatEmphasis.callout => GuideCallout(beat: current),
+              BeatEmphasis.panel => GuideDialoguePanel(
+                character: guide,
+                beat: current,
+              ),
+            },
             StorySpeaker.narrator => NarratorCard(
               character: narrator,
               beat: current,

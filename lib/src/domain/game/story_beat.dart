@@ -13,18 +13,49 @@ final class StoryBeat extends Equatable {
   /// Optional heading above [text], e.g. a level name or "أحسنتم!".
   final String? title;
 
+  /// How much room the guide's line is given. Read only for
+  /// [StorySpeaker.guide]: the narrator is always staged as a cutscene.
+  final BeatEmphasis emphasis;
+
   @override
-  List<Object?> get props => [speaker, text, title];
+  List<Object?> get props => [speaker, text, title, emphasis];
 
   /// Creates a beat for [speaker].
-  const StoryBeat({required this.speaker, required this.text, this.title});
+  const StoryBeat({
+    required this.speaker,
+    required this.text,
+    this.emphasis = BeatEmphasis.callout,
+    this.title,
+  });
 
   /// A beat spoken by the in-world guide character.
-  const StoryBeat.guide(this.text, {this.title}) : speaker = StorySpeaker.guide;
+  const StoryBeat.guide(
+    this.text, {
+    this.emphasis = BeatEmphasis.callout,
+    this.title,
+  }) : speaker = StorySpeaker.guide;
 
   /// A beat spoken by the narrator.
   const StoryBeat.narrator(this.text, {this.title})
-    : speaker = StorySpeaker.narrator;
+    : speaker = StorySpeaker.narrator,
+      emphasis = BeatEmphasis.panel;
+}
+
+/// How much of the screen a guide's beat takes.
+///
+/// Chosen per beat by whoever writes the script rather than inferred from
+/// the text: Arabic character counts do not track rendered height —
+/// diacritics, ligatures and a variable font all break the correlation —
+/// so a measured guess would flip a line's staging on a reword.
+enum BeatEmphasis {
+  /// A speech bubble from the guide's portrait in the app bar. The
+  /// default: she is standing right there, and most of what she says is
+  /// an aside.
+  callout,
+
+  /// The full centred panel, for the lines that open and close the
+  /// journey and deserve the screen.
+  panel,
 }
 
 /// Who is talking in a [StoryBeat]. Each speaker gets its own overlay

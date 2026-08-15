@@ -3,6 +3,7 @@ import 'package:e3dad_khodam_2026/src/domain/game/game_sounds.dart';
 import 'package:e3dad_khodam_2026/src/domain/game/level_script_repository.dart';
 import 'package:e3dad_khodam_2026/src/presentation/cubit/game_journey_cubit.dart';
 import 'package:e3dad_khodam_2026/src/presentation/cubit/game_journey_state.dart';
+import 'package:e3dad_khodam_2026/src/presentation/widgets/game/character_portrait.dart';
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/destination_card.dart';
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/game_map_view.dart';
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/pixel_panel.dart';
@@ -41,6 +42,11 @@ final class _GameJourneyView extends StatefulWidget {
 
 class _GameJourneyViewState extends State<_GameJourneyView>
     with SingleTickerProviderStateMixin {
+  /// Edge of the guide's portrait in the app bar. Small enough to sit in
+  /// a toolbar, big enough to read as a face — and `GuideCallout` points
+  /// its tail at the middle of it.
+  static const double _guideAvatarSize = 40.0;
+
   final FocusNode _focusNode = FocusNode(debugLabel: 'game-journey-keys');
 
   /// Runs from 0 to 1 across a whole sweep. Drives the couriers walking,
@@ -69,7 +75,20 @@ class _GameJourneyViewState extends State<_GameJourneyView>
       listener: (context, state) => _onCameraChanged(state),
       child: Scaffold(
         appBar: AppBar(
-          title: const Text(AppStrings.gameTitle),
+          // The guide rides in the title rather than in the actions: the
+          // title's start edge is the one spot that stays put under RTL,
+          // and `GuideCallout` aims its tail at it without measuring.
+          title: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CharacterPortrait(
+                character: cubit.guide,
+                size: _guideAvatarSize,
+              ),
+              const SizedBox(width: 12),
+              const Flexible(child: Text(AppStrings.gameTitle)),
+            ],
+          ),
           actions: [
             IconButton(
               icon: const Icon(Icons.replay),

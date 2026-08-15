@@ -79,21 +79,25 @@ final class GameMapView extends StatelessWidget {
 
   /// How far along its last leg a courier has walked.
   ///
-  /// The walk belongs to the camera's inward leg alone: the couriers
-  /// stay put while the camera pulls out and holds, then travel as it
-  /// comes in, so the two movements land together.
+  /// The walk belongs to the hold, the stretch where the camera is out
+  /// at the sweep frame and the whole route is on screen. Walking during
+  /// the inward leg would hide the journey behind the very movement that
+  /// is meant to show it: by then the camera is already closing on one
+  /// city and the rest of the line is off the edge.
+  ///
+  /// So the order is: pull out, walk, dive.
   static double _walkProgress(SweepCameraTarget? sweep, double value) {
     if (sweep == null) {
       return 1;
     }
     final elapsed = value * sweep.total.inMilliseconds;
-    final start = (sweep.outLeg + sweep.hold).inMilliseconds;
-    final inLeg = sweep.inLeg.inMilliseconds;
-    if (inLeg == 0) {
+    final start = sweep.outLeg.inMilliseconds;
+    final hold = sweep.hold.inMilliseconds;
+    if (hold == 0) {
       return 1;
     }
 
-    return ((elapsed - start) / inLeg).clamp(0.0, 1.0);
+    return ((elapsed - start) / hold).clamp(0.0, 1.0);
   }
 
   /// One character's line and where they stand on it.

@@ -258,8 +258,11 @@ final class _Verses extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              // Keyed on the text so an already-revealed verse keeps its
+              // state when the next one arrives, and only the new one
+              // plays its entrance.
               for (final verse in verses)
-                _Verse(text: verse, onImage: onImage),
+                _Verse(key: ValueKey(verse), text: verse, onImage: onImage),
             ],
           ),
         ),
@@ -269,31 +272,74 @@ final class _Verses extends StatelessWidget {
 }
 
 /// One revealed verse, ruled off from the one before it.
-final class _Verse extends StatelessWidget {
+///
+/// It animates itself in rather than relying on the card growing around
+/// it. Once the artwork is showing, the card stands at a fixed height, so
+/// adding a verse no longer changes its size and `AnimatedSize` has
+/// nothing to animate — which is exactly why the reveal stopped reading
+/// as an event. This puts the movement on the verse itself, where it
+/// belongs, and it now works whether the card grows or not.
+final class _Verse extends StatefulWidget {
+  static const Duration _enterDuration = Duration(milliseconds: 420);
+
+  /// How far the verse rises as it fades in, in logical pixels.
+  static const double _rise = 18.0;
+
   final String text;
   final bool onImage;
 
-  const _Verse({required this.text, required this.onImage});
+  const _Verse({required this.text, required this.onImage, super.key});
+
+  @override
+  State<_Verse> createState() => _VerseState();
+}
+
+class _VerseState extends State<_Verse> with SingleTickerProviderStateMixin {
+  late final AnimationController _enter = AnimationController(
+    vsync: this,
+    duration: _Verse._enterDuration,
+  )..forward();
+
+  late final Animation<double> _eased = CurvedAnimation(
+    parent: _enter,
+    curve: Curves.easeOutCubic,
+  );
 
   @override
   Widget build(BuildContext context) {
-    final ink = onImage ? GamePalette.parchment : GamePalette.ink;
+    final ink = widget.onImage ? GamePalette.parchment : GamePalette.ink;
 
-    return Padding(
-      padding: const EdgeInsets.only(top: 10),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(height: 2, color: ink.withValues(alpha: 0.2)),
-          const SizedBox(height: 10),
-          Text(
-            text,
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 19, height: 1.8, color: ink),
+    return FadeTransition(
+      opacity: _eased,
+      child: AnimatedBuilder(
+        animation: _eased,
+        builder: (context, child) => Transform.translate(
+          offset: Offset(0, (1 - _eased.value) * _Verse._rise),
+          child: child,
+        ),
+        child: Padding(
+          padding: const EdgeInsets.only(top: 10),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(height: 2, color: ink.withValues(alpha: 0.2)),
+              const SizedBox(height: 10),
+              Text(
+                widget.text,
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 19, height: 1.8, color: ink),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _enter.dispose();
+    super.dispose();
   }
 }
 

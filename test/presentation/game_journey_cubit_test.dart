@@ -345,18 +345,43 @@ void _revealTests() {
     expect(cubit.state.revealedVerses, verses);
   });
 
-  test('GameJourneyCubit_aClearedLevel_closesItsCard', () {
+  test('GameJourneyCubit_aClearedLevel_keepsItsSignUp', () {
     final cubit = GameJourneyCubit(_repository);
     addTearDown(cubit.close);
 
     _pressUntil(cubit, () => cubit.state.step.phase == GamePhase.clearance);
 
-    // The level is cleared but still the current one, so the card has to
-    // be closed by something other than the level going away — otherwise
-    // it is still standing over the map for the next sweep to fly under.
-    expect(cubit.state.level, isNotNull);
-    expect(cubit.state.showsSign, isFalse);
+    // Still the same level, so the sign must not blink out and back.
+    // The artwork and verses do close; only the name and year stay.
+    expect(cubit.state.showsSign, isTrue);
+    expect(cubit.state.showsImage, isFalse);
     expect(cubit.state.revealedVerses, isEmpty);
+  });
+
+  test('GameJourneyCubit_anotherLetterToTheSameCity_keepsTheSignUp', () {
+    final cubit = GameJourneyCubit(_repository);
+    addTearDown(cubit.close);
+
+    // Levels ١ and ٢ are both تسالونيكي, so no sweep runs between them.
+    // With nothing flying, a blank screen would hide nothing and only
+    // flicker a sign that is about to say the same words again.
+    _pressUntil(cubit, () => cubit.state.levelNumber == 2);
+
+    expect(cubit.state.isLevelOpening, isTrue);
+    expect(cubit.state.isArriving, isFalse);
+    expect(cubit.state.showsSign, isTrue);
+  });
+
+  test('GameJourneyCubit_aSweptIntoLevel_startsBlank', () {
+    final cubit = GameJourneyCubit(_repository);
+    addTearDown(cubit.close);
+
+    // كورنثوس is a new city, so the camera flies and the screen clears.
+    _pressUntil(cubit, () => cubit.state.levelNumber == 3);
+
+    expect(cubit.state.sweep, isNotNull);
+    expect(cubit.state.isArriving, isTrue);
+    expect(cubit.state.showsSign, isFalse);
   });
 
   test('GameJourneyCubit_revealNext_doesNothingDuringDialogue', () {

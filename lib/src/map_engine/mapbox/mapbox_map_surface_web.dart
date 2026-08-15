@@ -3,6 +3,7 @@ import 'dart:js_interop';
 import 'dart:js_interop_unsafe';
 import 'dart:ui_web' as ui_web;
 
+import 'package:e3dad_khodam_2026/src/app/app_features.dart';
 import 'package:e3dad_khodam_2026/src/domain/geo_position.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/map_camera_target.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/map_marker_spec.dart';
@@ -370,6 +371,9 @@ class _MapboxMapSurfaceWebState extends State<MapboxMapSurfaceWeb>
 
   /// Sets the map container's blur in CSS pixels; zero clears it.
   void _blur(double pixels) {
+    if (!AppFeatures.sweepMotionBlur) {
+      return;
+    }
     final container = _containers[_viewId];
     if (container == null) {
       return;

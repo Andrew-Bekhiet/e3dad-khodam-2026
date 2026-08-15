@@ -213,8 +213,12 @@ new city. Mirrored as named constants on `GameJourneyCubit` — change both or n
 | Sweep Frame | `SW (30.89, 10.00)`, `NE (43.57, 26.00)` | Provisional: the same four numbers as the Cross Map's root bounds, but its own constant. Does **not** contain أورشليم, غلاطية or كولوسي, which is accepted. |
 | Arrival | centre on the Destination, zoom **8.0**, no padding | The city is the subject; its coastline stays in frame. |
 | Out leg | **700ms** | Going out is travel. |
-| Hold | **150ms** | Without a pause the Mediterranean never registers. |
+| Hold | **1400ms** | The couriers walk their leg during this pause, with the whole route on screen. This is what pulling out is *for*. |
 | In leg | **900ms** | Coming in is arrival, and arrival is the part worth watching. |
+
+The order is **out → walk → in**. Walking during the inward leg was tried and is wrong: by then the
+camera is already closing on one city and the rest of the route has left the screen, so the movement
+meant to show the journey hides it instead.
 
 Runs on the **first step of a level only**, so the camera moves once and then holds while the guide
 talks. No sweep when the destination has not changed (levels ١→٢, ٣→٤). Backward steps and marker
@@ -224,13 +228,25 @@ taps sweep the same way.
 
 - The screen carries nothing over the map — no card, no story beat.
 - The couriers walk their last leg along its Route Geometry, and the trail draws itself to where
-  they stand. Both are timed to the **in leg alone**, so they land with the camera.
+  they stand. Both are timed to the **hold alone**, so the whole journey plays while the whole
+  route is visible.
 - `SweepOverlay` paints streaks from the centre plus a vignette, strongest at the midpoint
   (`sin(progress · π)`) and gone by the time the camera settles.
 - On web only, the map container takes a **3px** CSS blur, faded over **260ms**. Flutter cannot blur
   the map — it is a platform view — so `ImageFiltered` and `BackdropFilter` are not options here.
   Native gets the overlay alone.
-- Presses made mid-sweep are **queued**, not dropped and not applied early.
+- Presses made mid-sweep are **queued**, not dropped and not applied early. Backward presses are the
+  exception and are dropped: landing the camera only to fly it straight back out is worse.
+
+Turn the map blur off with `AppFeatures.sweepMotionBlur`. The streaks and vignette keep running —
+they are Flutter's and are what carries the motion everywhere that is not web.
+
+### The card never blinks inside a level
+
+The screen only goes blank for a **swept-into** level. Two letters to the same city are not swept
+between, so the sign stays up rather than flickering out and back to say the same words. A cleared
+level keeps its sign too — the level has not changed, and the player is still looking at it. The
+artwork and verses do close on clearance; only the sign persists.
 
 ### The Destination Card
 

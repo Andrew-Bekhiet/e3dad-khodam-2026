@@ -47,9 +47,13 @@ final class GameJourneyCubit extends Cubit<GameJourneyState> {
   /// purpose: going out is travel, coming in is arrival.
   static const Duration sweepOut = Duration(milliseconds: 700);
 
-  /// How long the camera rests at [sweepFrame]. Without this pause the
-  /// Mediterranean never registers.
-  static const Duration sweepHold = Duration(milliseconds: 150);
+  /// How long the camera rests at [sweepFrame].
+  ///
+  /// This is the whole point of pulling out: the couriers walk their leg
+  /// during this pause, with the entire route on screen, and only then
+  /// does the camera dive. A short pause would show the Mediterranean
+  /// but not the journey across it.
+  static const Duration sweepHold = Duration(milliseconds: 1400);
 
   /// How long the camera takes to come in on its destination.
   static const Duration sweepIn = Duration(milliseconds: 900);
@@ -128,11 +132,10 @@ final class GameJourneyCubit extends Cubit<GameJourneyState> {
       return state.withReveal(state.maxReveal);
     }
 
-    // A level opens on a blank map: the sweep owns the screen until the
-    // next press acknowledges the arrival.
-    return state.withReveal(
-      isLevelOpening ? 0 : GameJourneyState.signReveal,
-    );
+    // A swept-into level opens on a blank map: the sweep owns the screen
+    // until the next press acknowledges the arrival. Everything else
+    // keeps its sign, so the card never blinks inside one level.
+    return state.withReveal(state.minReveal);
   }
 
   /// Whether step [index] is the first of its level.
@@ -308,8 +311,7 @@ final class GameJourneyCubit extends Cubit<GameJourneyState> {
   /// Steps back one press, closing the card a part at a time before
   /// leaving the step.
   void backward() {
-    final floor = state.isLevelOpening ? 0 : GameJourneyState.signReveal;
-    if (state.reveal > floor) {
+    if (state.reveal > state.minReveal) {
       emit(state.withReveal(state.reveal - 1));
 
       return;

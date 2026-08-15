@@ -72,18 +72,30 @@ final class GameJourneyState extends Equatable {
 
   /// The highest [reveal] this step can reach. Beyond it, a press moves
   /// to the next step instead.
+  ///
+  /// A cleared level keeps its sign. The level has not changed, so
+  /// taking the card away and putting it back would flicker something
+  /// the player is still looking at.
   int get maxReveal => switch (step.phase) {
-    GamePhase.prologue ||
-    GamePhase.epilogue ||
-    GamePhase.clearance => 0,
-    GamePhase.briefing => signReveal,
+    GamePhase.prologue || GamePhase.epilogue => 0,
+    GamePhase.briefing || GamePhase.clearance => signReveal,
     GamePhase.playing => imageReveal + (level?.verses.length ?? 0),
   };
+
+  /// Whether this step starts with a blank map.
+  ///
+  /// Only a level that is *swept* into does. Two letters to the same
+  /// city are not swept between, so there is nothing for a blank screen
+  /// to hide and the sign simply stays up.
+  bool get opensBlank => isLevelOpening && camera is SweepCameraTarget;
+
+  /// The lowest [reveal] this step settles at once acknowledged.
+  int get minReveal => opensBlank ? 0 : signReveal;
 
   /// Whether the level has been entered but not yet acknowledged: the
   /// camera is sweeping in, or has just landed, and the screen carries
   /// nothing over the map.
-  bool get isArriving => isLevelOpening && reveal == 0;
+  bool get isArriving => opensBlank && reveal == 0;
 
   /// Whether the card is showing its destination name and year.
   bool get showsSign => reveal >= signReveal;

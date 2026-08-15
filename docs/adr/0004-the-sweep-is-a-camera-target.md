@@ -1,7 +1,7 @@
 # The sweep is a camera target, not a sequence the cubit times
 
-A sweep is three movements — out to the Sweep Frame, a pause, then in on the new Destination — and
-it takes about 1.75 seconds. It is expressed as one `SweepCameraTarget` in the sealed
+A sweep is three movements — out to the Sweep Frame, a pause during which the couriers walk their
+leg, then in on the new Destination — and it takes about three seconds. It is expressed as one `SweepCameraTarget` in the sealed
 `MapCameraTarget` set. `GameJourneyCubit` emits it and moves on; each map surface performs the three
 parts.
 

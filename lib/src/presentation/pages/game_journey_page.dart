@@ -6,6 +6,7 @@ import 'package:e3dad_khodam_2026/src/presentation/cubit/game_journey_state.dart
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/character_portrait.dart';
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/destination_card.dart';
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/game_map_view.dart';
+import 'package:e3dad_khodam_2026/src/presentation/widgets/game/game_screen_size.dart';
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/pixel_panel.dart';
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/story_overlay.dart';
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/sweep_overlay.dart';
@@ -47,10 +48,24 @@ final class _GameJourneyView extends StatefulWidget {
 
 class _GameJourneyViewState extends State<_GameJourneyView>
     with SingleTickerProviderStateMixin {
-  /// Edge of the guide's portrait in the app bar. Small enough to sit in
-  /// a toolbar, big enough to read as a face — and `GuideCallout` points
-  /// its tail at the middle of it.
-  static const double _guideAvatarSize = 40.0;
+  /// Edge of the guide's portrait in the app bar. `GuideCallout` points
+  /// its tail at the middle of it, whichever size it is: the tail is
+  /// measured off the laid-out box rather than assumed, so it follows
+  /// this on its own.
+  ///
+  /// A toolbar-sized 40 in the hand. On a big screen she is the face of
+  /// the game being read from the back of a room, and 40 logical pixels
+  /// on a projector is a smudge — so she is given room to be looked at.
+  static const double _guideAvatarCompact = 40.0;
+  static const double _guideAvatarLarge = 120.0;
+
+  /// Clearance above and below the portrait. The app bar is sized from
+  /// the portrait plus this, so the portrait is the only number to
+  /// change when tuning how big she should be — set it alone and the bar
+  /// grows to hold her instead of clipping her.
+  ///
+  /// At [_guideAvatarCompact] the sum is exactly `kToolbarHeight`.
+  static const double _guideAvatarClearance = 16.0;
 
   final FocusNode _focusNode = FocusNode(debugLabel: 'game-journey-keys');
 
@@ -87,6 +102,10 @@ class _GameJourneyViewState extends State<_GameJourneyView>
   Widget build(BuildContext context) {
     final cubit = context.watch<GameJourneyCubit>();
     final state = cubit.state;
+    final guideAvatarSize = GameScreenSize.of(context).pick(
+      compact: _guideAvatarCompact,
+      large: _guideAvatarLarge,
+    );
     // After the frame, because the portrait has not been laid out yet
     // while this is running.
     WidgetsBinding.instance.addPostFrameCallback((_) => _findGuideAvatar());
@@ -100,13 +119,14 @@ class _GameJourneyViewState extends State<_GameJourneyView>
           // hangs from the start edge, and a centred portrait would leave
           // its tail pointing across the middle of the screen at it.
           centerTitle: false,
+          toolbarHeight: guideAvatarSize + _guideAvatarClearance,
           title: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               CharacterPortrait(
                 key: _guideAvatarKey,
                 character: cubit.guide,
-                size: _guideAvatarSize,
+                size: guideAvatarSize,
               ),
               const SizedBox(width: 12),
               const Flexible(child: Text(AppStrings.gameTitle)),

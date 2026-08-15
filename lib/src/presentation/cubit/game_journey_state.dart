@@ -2,7 +2,7 @@ import 'package:e3dad_khodam_2026/src/domain/game/game_level.dart';
 import 'package:e3dad_khodam_2026/src/domain/game/journey_stop.dart';
 import 'package:e3dad_khodam_2026/src/domain/game/story_beat.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/map_camera_target.dart';
-import 'package:e3dad_khodam_2026/src/presentation/cubit/character_trail.dart';
+import 'package:e3dad_khodam_2026/src/presentation/cubit/courier_party.dart';
 import 'package:e3dad_khodam_2026/src/presentation/cubit/game_step.dart';
 import 'package:equatable/equatable.dart';
 
@@ -51,9 +51,10 @@ final class GameJourneyState extends Equatable {
   /// journey goes next; null on the last level.
   final JourneyStop? nextStop;
 
-  /// One entry per character on the move: their route so far and where
-  /// they stand now.
-  final List<CharacterTrail> trails;
+  /// Everyone on the move and the one route they share: the stops behind
+  /// them, and the geometry to draw for any point of the leg they are
+  /// walking now.
+  final CourierParty party;
 
   /// Where the map should be looking.
   final MapCameraTarget camera;
@@ -178,7 +179,7 @@ final class GameJourneyState extends Equatable {
     clearedStops,
     currentStop,
     nextStop,
-    trails,
+    party,
     camera,
     cameraAnimationDuration,
     reveal,
@@ -194,7 +195,7 @@ final class GameJourneyState extends Equatable {
     required this.levelCount,
     required this.isLevelOpening,
     required this.clearedStops,
-    required this.trails,
+    required this.party,
     required this.camera,
     required this.cameraAnimationDuration,
     this.reveal = 0,
@@ -215,7 +216,7 @@ final class GameJourneyState extends Equatable {
     levelCount: levelCount,
     isLevelOpening: isLevelOpening,
     clearedStops: clearedStops,
-    trails: trails,
+    party: party,
     camera: camera,
     cameraAnimationDuration: cameraAnimationDuration,
     level: level,

@@ -24,6 +24,7 @@ final class PostOfficeScript {
     guide: PostOfficeCharacters.guide,
     narrator: PostOfficeCharacters.narrator,
     letterWriter: PostOfficeCharacters.paul,
+    couriers: PostOfficeCharacters.couriers,
     prologue: [
       StoryBeat.guide(
         'أهلا بكم في لعبة post office. انتو دلوقتي في زمن ٥٢ م، ودة عصر اول رسالة لبولس الرسول. انتو دلوقتي معاكم ١٤ رسالة متقسمين ل١٤ مرحلة، لازم تفهموهم كويس اوي وتوصلوهم عشان تعرفوا تطلعوا من اللعبة',

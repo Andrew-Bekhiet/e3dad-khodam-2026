@@ -16,6 +16,13 @@ final class LevelScript extends Equatable {
   /// quotes them.
   final GameCharacter letterWriter;
 
+  /// Everyone who walks the route, in the order they are drawn.
+  ///
+  /// One list for the whole script, not one per level: the party travels
+  /// together from the first letter to the last, so there is a single
+  /// route and this is who is on it.
+  final List<GameCharacter> couriers;
+
   /// Beats played once, before the first level's briefing.
   final List<StoryBeat> prologue;
 
@@ -30,6 +37,7 @@ final class LevelScript extends Equatable {
     guide,
     narrator,
     letterWriter,
+    couriers,
     prologue,
     levels,
     epilogue,
@@ -40,6 +48,7 @@ final class LevelScript extends Equatable {
     required this.guide,
     required this.narrator,
     required this.letterWriter,
+    required this.couriers,
     required this.prologue,
     required this.levels,
     required this.epilogue,

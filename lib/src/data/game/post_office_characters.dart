@@ -7,10 +7,13 @@ import 'package:e3dad_khodam_2026/src/domain/game/game_character.dart';
 /// artwork can be dropped into `assets/characters/` later without any
 /// code change.
 final class PostOfficeCharacters {
+  /// Everyone who travels, in the order their portraits are laid out on
+  /// the map. They go everywhere together, so this is the whole script's
+  /// roster rather than anything a level decides.
   static const List<GameCharacter> couriers = [grandma, courier2, courier1];
 
   /// The postman the player follows across the map; the one carrying the
-  /// letters, and the only character with a token on the map today.
+  /// letters.
   static const GameCharacter courier1 = GameCharacter(
     id: 'courier1',
     name: 'ساعي البريد ١',

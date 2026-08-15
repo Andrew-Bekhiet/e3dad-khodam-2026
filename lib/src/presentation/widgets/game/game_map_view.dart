@@ -1,5 +1,3 @@
-import 'package:e3dad_khodam_2026/src/data/game/courier_route.dart';
-import 'package:e3dad_khodam_2026/src/domain/game/game_character.dart';
 import 'package:e3dad_khodam_2026/src/domain/game/journey_stop.dart';
 import 'package:e3dad_khodam_2026/src/domain/geo_position.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/map_camera_target.dart';
@@ -9,8 +7,7 @@ import 'package:e3dad_khodam_2026/src/map_engine/map_surface_spec.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/map_token_spec.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/map_trail_spec.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/markers/map_marker_style.dart';
-import 'package:e3dad_khodam_2026/src/map_engine/trails/trail_walk.dart';
-import 'package:e3dad_khodam_2026/src/presentation/cubit/character_trail.dart';
+import 'package:e3dad_khodam_2026/src/presentation/cubit/courier_party.dart';
 import 'package:e3dad_khodam_2026/src/presentation/cubit/game_journey_cubit.dart';
 import 'package:e3dad_khodam_2026/src/presentation/cubit/game_journey_state.dart';
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/game_map_styles.dart';
@@ -18,21 +15,16 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 /// Bridges the playthrough state to the provider-agnostic map seam: the
-/// journey's stops become markers, each character's route becomes a line
-/// along real route geometry, and each character becomes a round
-/// portrait token.
+/// journey's stops become markers, the party's shared route becomes one
+/// line along real route geometry, and every traveller becomes a round
+/// portrait token standing on the end of it.
 ///
-/// While a sweep is flying, the couriers walk their last leg and the
-/// trail draws itself up to where they stand — one movement, so one
-/// clock and one computation.
+/// While a sweep is flying, the party walks its last leg and the trail
+/// draws itself up to where they stand — one movement, so one clock and
+/// one computation.
 final class GameMapView extends StatelessWidget {
   static const double _minZoom = 4.0;
   static const double _maxZoom = 18.0;
-
-  /// How far neighbouring portraits overlap, in logical pixels. A slight
-  /// overlap reads as a group standing together rather than as separate
-  /// people who happen to share a city.
-  static const double _tokenOverlap = 8.0;
 
   /// Clear space between a portrait and the label of the stop underneath
   /// it.
@@ -50,126 +42,18 @@ final class GameMapView extends StatelessWidget {
     final surfaceBuilder = context.read<MapSurfaceBuilder>();
     final state = cubit.state;
 
-    return AnimatedBuilder(
-      animation: sweepProgress,
-      builder: (context, _) {
-        final walked = _walkProgress(state.sweep, sweepProgress.value);
-        final routes = [
-          for (final trail in state.trails) _routeOf(trail, walked),
-        ];
-
-        return surfaceBuilder(
-          MapSurfaceSpec(
-            markers: _markersFor(state, routes),
-            camera: state.camera,
-            minZoom: _minZoom,
-            maxZoom: _maxZoom,
-            cameraAnimationDuration: state.cameraAnimationDuration,
-            onMarkerTap: cubit.goToStop,
-            trails: _trailsFor(routes),
-            tokens: _tokensFor(routes),
-          ),
-        );
-      },
+    return _WalkingMapSurface(
+      state: state,
+      // Markers answer to the step, not to the clock: only the room a
+      // label leaves for a portrait can move during a walk, and the
+      // portraits end the walk where this puts them. Building them out
+      // here keeps them off the animation entirely.
+      markers: _markersFor(state),
+      onMarkerTap: cubit.goToStop,
+      surfaceBuilder: surfaceBuilder,
+      sweepProgress: sweepProgress,
     );
   }
-
-  /// How far along its last leg a courier has walked.
-  ///
-  /// The walk belongs to the hold, the stretch where the camera is out
-  /// at the sweep frame and the whole route is on screen. Walking during
-  /// the inward leg would hide the journey behind the very movement that
-  /// is meant to show it: by then the camera is already closing on one
-  /// city and the rest of the line is off the edge.
-  ///
-  /// So the order is: pull out, walk, dive.
-  static double _walkProgress(SweepCameraTarget? sweep, double value) {
-    if (sweep == null) {
-      return 1;
-    }
-    final elapsed = value * sweep.total.inMilliseconds;
-    final start = sweep.outLeg.inMilliseconds;
-    final hold = sweep.hold.inMilliseconds;
-    if (hold == 0) {
-      return 1;
-    }
-
-    return ((elapsed - start) / hold).clamp(0.0, 1.0);
-  }
-
-  /// One character's line and where they stand on it.
-  static _CourierRoute _routeOf(CharacterTrail trail, double walked) {
-    final lastLeg = CourierRoute.lastLeg(trail.path);
-    if (walked >= 1 || trail.path.length < 2) {
-      final full = CourierRoute.through(trail.path);
-
-      return _CourierRoute(
-        character: trail.character,
-        points: full,
-        position: trail.position.position,
-      );
-    }
-
-    final walk = TrailWalk.along(lastLeg, walked);
-
-    return _CourierRoute(
-      character: trail.character,
-      points: [
-        ...CourierRoute.beforeLastLeg(trail.path),
-        ...walk.travelled.skip(1),
-      ],
-      position: walk.position,
-    );
-  }
-
-  /// One line per distinct route: characters travelling together share
-  /// every stop, and drawing their identical curves twice would only
-  /// darken the dashes.
-  static List<MapTrailSpec> _trailsFor(List<_CourierRoute> routes) {
-    final byShape = <String, _CourierRoute>{};
-    for (final route in routes) {
-      byShape.putIfAbsent(route.shapeKey, () => route);
-    }
-
-    return [
-      for (final route in byShape.values)
-        MapTrailSpec(
-          id: route.character.id,
-          points: route.points,
-          style: MapTrailStyle.travelled,
-        ),
-    ];
-  }
-
-  /// One token per character, with everyone standing in the same place
-  /// spread evenly either side of it.
-  static List<MapTokenSpec> _tokensFor(List<_CourierRoute> routes) {
-    final byPosition = <String, List<_CourierRoute>>{};
-    for (final route in routes) {
-      byPosition.putIfAbsent(route.positionKey, () => []).add(route);
-    }
-
-    return [
-      for (final group in byPosition.values)
-        for (final (index, route) in group.indexed)
-          MapTokenSpec(
-            id: route.character.id,
-            position: route.position,
-            style: GameMapStyles.tokenFor(route.character),
-            offset: _rowOffset(index, group.length),
-          ),
-    ];
-  }
-
-  /// Where the [index]th of [count] characters sharing a place stands.
-  ///
-  /// A row, centred on the place itself, so the middle of the group is
-  /// the point the trail ends at and the group travels with the trail
-  /// rather than hovering somewhere near it.
-  static Offset _rowOffset(int index, int count) => Offset(
-    (index - (count - 1) / 2) * (GameMapStyles.tokenDiameter - _tokenOverlap),
-    0,
-  );
 
   /// The stops to draw, at most one marker per point.
   ///
@@ -178,13 +62,10 @@ final class GameMapView extends StatelessWidget {
   /// one point means two copies of the city's name stacked on each
   /// other. Later entries win, so current beats cleared beats locked.
   ///
-  /// A stop with characters standing on it also hands its label the room
-  /// to clear their portraits.
-  static List<MapMarkerSpec> _markersFor(
-    GameJourneyState state,
-    List<_CourierRoute> routes,
-  ) {
-    final occupied = {for (final route in routes) route.positionKey};
+  /// The stop the party ends up on also hands its label the room to
+  /// clear their portraits.
+  static List<MapMarkerSpec> _markersFor(GameJourneyState state) {
+    final occupied = _positionKey(state.party.destination.position);
     final nextStop = state.nextStop;
     final currentStop = state.currentStop;
     final byPosition = <String, MapMarkerSpec>{};
@@ -200,13 +81,13 @@ final class GameMapView extends StatelessWidget {
         stop,
         style,
         isInteractive: isInteractive,
-        labelClearance: occupied.contains(key)
+        labelClearance: key == occupied
             ? GameMapStyles.tokenDiameter / 2 + _labelGap
             : 0,
       );
     }
 
-    return byPosition.values.toList();
+    return byPosition.values.toList(growable: false);
   }
 
   /// Identifies a point, so what stands on it can be matched to it.
@@ -230,24 +111,168 @@ final class GameMapView extends StatelessWidget {
   );
 }
 
-/// One character's drawn line and the point on it they occupy.
-final class _CourierRoute {
-  final GameCharacter character;
-  final List<GeoPosition> points;
-  final GeoPosition position;
+/// The map surface as the party walks across it: everything that moves
+/// during a sweep, and nothing that does not.
+final class _WalkingMapSurface extends StatefulWidget {
+  final GameJourneyState state;
+  final List<MapMarkerSpec> markers;
+  final void Function(String stopId) onMarkerTap;
+  final MapSurfaceBuilder surfaceBuilder;
+  final Animation<double> sweepProgress;
 
-  /// Identifies the shape, so companions walking the same water are
-  /// drawn once.
-  String get shapeKey =>
-      '${points.length}:${points.firstOrNull}:${points.lastOrNull}';
-
-  /// Identifies where they stand, so companions are spread apart and
-  /// the stop they are standing on can be found.
-  String get positionKey => GameMapView._positionKey(position);
-
-  const _CourierRoute({
-    required this.character,
-    required this.points,
-    required this.position,
+  const _WalkingMapSurface({
+    required this.state,
+    required this.markers,
+    required this.onMarkerTap,
+    required this.surfaceBuilder,
+    required this.sweepProgress,
   });
+
+  @override
+  State<_WalkingMapSurface> createState() => _WalkingMapSurfaceState();
+}
+
+class _WalkingMapSurfaceState extends State<_WalkingMapSurface> {
+  /// The one trail on the map. The party shares a route, so it is the
+  /// journey's line rather than any one traveller's.
+  static const String _trailId = 'party';
+
+  /// How far neighbouring portraits overlap, in logical pixels. A slight
+  /// overlap reads as a group standing together rather than as separate
+  /// people who happen to share a city.
+  static const double _tokenOverlap = 8.0;
+
+  /// How many positions the walk is rounded to over a whole leg.
+  ///
+  /// The couriers cross the Mediterranean in a second and a half, so
+  /// moving the geometry forty times over that is already smoother than
+  /// anyone can see — while handing the renderer a fresh copy of the
+  /// route on all sixty of a second's frames is how the platform channel
+  /// fills up faster than it drains.
+  static const int _walkSteps = 40;
+
+  /// What was last drawn, and the walk it was drawn for.
+  ///
+  /// The animation ticks faster than the walk is rounded, so most frames
+  /// ask for a position the frame before them already answered. Handing
+  /// back the very same lists means the surface can tell nothing has
+  /// changed by identity, without walking a thousand coordinates to find
+  /// out.
+  _WalkedContent? _content;
+  double? _contentAt;
+  CourierParty? _contentOf;
+
+  @override
+  Widget build(BuildContext context) => AnimatedBuilder(
+    animation: widget.sweepProgress,
+    builder: (context, _) {
+      final state = widget.state;
+      final content = _contentFor(
+        state.party,
+        _walkProgress(state.sweep, widget.sweepProgress.value),
+      );
+
+      return widget.surfaceBuilder(
+        MapSurfaceSpec(
+          markers: widget.markers,
+          camera: state.camera,
+          minZoom: GameMapView._minZoom,
+          maxZoom: GameMapView._maxZoom,
+          cameraAnimationDuration: state.cameraAnimationDuration,
+          onMarkerTap: widget.onMarkerTap,
+          trails: content.trails,
+          tokens: content.tokens,
+        ),
+      );
+    },
+  );
+
+  /// The line and the portraits for [party] at [walked], rebuilt only
+  /// when one of the two has actually moved.
+  _WalkedContent _contentFor(CourierParty party, double walked) {
+    final content = _content;
+    if (content != null &&
+        _contentAt == walked &&
+        identical(_contentOf, party)) {
+      return content;
+    }
+    final trail = party.trailAt(walked);
+    final built = _WalkedContent(
+      trails: [
+        MapTrailSpec(
+          id: _trailId,
+          points: trail.points,
+          style: MapTrailStyle.travelled,
+        ),
+      ],
+      tokens: _tokensFor(party, trail.position),
+    );
+    _content = built;
+    _contentAt = walked;
+    _contentOf = party;
+
+    return built;
+  }
+
+  /// How far along its last leg the party has walked, rounded to one of
+  /// [_walkSteps] positions.
+  ///
+  /// The walk belongs to the hold, the stretch where the camera is out
+  /// at the sweep frame and the whole route is on screen. Walking during
+  /// the inward leg would hide the journey behind the very movement that
+  /// is meant to show it: by then the camera is already closing on one
+  /// city and the rest of the line is off the edge.
+  ///
+  /// So the order is: pull out, walk, dive.
+  static double _walkProgress(SweepCameraTarget? sweep, double value) {
+    if (sweep == null) {
+      return 1;
+    }
+    final hold = sweep.hold.inMilliseconds;
+    if (hold == 0) {
+      return 1;
+    }
+    final elapsed = value * sweep.total.inMilliseconds;
+    final walked = (elapsed - sweep.outLeg.inMilliseconds) / hold * _walkSteps;
+
+    return (walked.roundToDouble() / _walkSteps).clamp(0.0, 1.0);
+  }
+
+  /// One token per courier, the group spread evenly either side of the
+  /// point they all stand on.
+  static List<MapTokenSpec> _tokensFor(
+    CourierParty party,
+    GeoPosition position,
+  ) {
+    final couriers = party.couriers;
+
+    return [
+      for (final (index, courier) in couriers.indexed)
+        MapTokenSpec(
+          id: courier.id,
+          position: position,
+          style: GameMapStyles.tokenFor(courier),
+          offset: _rowOffset(index, couriers.length),
+        ),
+    ];
+  }
+
+  /// Where the [index]th of [count] couriers stands.
+  ///
+  /// A row, centred on the place itself, so the middle of the group is
+  /// the point the trail ends at and the group travels with the trail
+  /// rather than hovering somewhere near it.
+  static Offset _rowOffset(int index, int count) => Offset(
+    (index - (count - 1) / 2) * (GameMapStyles.tokenDiameter - _tokenOverlap),
+    0,
+  );
+}
+
+/// The map content that moves as the party walks: their one line, and
+/// the portraits standing at the end of it.
+final class _WalkedContent {
+  final List<MapTrailSpec> trails;
+  final List<MapTokenSpec> tokens;
+
+  const _WalkedContent({required this.trails, required this.tokens});
 }

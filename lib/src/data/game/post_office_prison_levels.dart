@@ -1,5 +1,5 @@
 import 'package:e3dad_khodam_2026/src/data/game/letter_years.dart';
-import 'package:e3dad_khodam_2026/src/data/game/post_office_placements.dart';
+import 'package:e3dad_khodam_2026/src/data/journey_stops.dart';
 import 'package:e3dad_khodam_2026/src/domain/game/game_level.dart';
 
 /// Levels ٨–١٤ of the post-office game, in the order the play
@@ -16,7 +16,7 @@ final class PostOfficePrisonLevels {
     title: 'فيلمون',
     imageAsset: 'assets/levels/philemon.png',
     year: LetterYears.philemon,
-    placements: PostOfficePlacements.colossae,
+    destination: JourneyStops.colossae,
     verses: [
       '1 بُولُسُ، أَسِيرُ يَسُوعَ الْمَسِيحِ، وَتِيمُوثَاوُسُ الأَخُ، إِلَى فِلِيمُونَ الْمَحْبُوبِ وَالْعَامِلِ مَعَنَا',
       '16 لاَ كَعَبْدٍ فِي مَا بَعْدُ، بَلْ أَفْضَلَ مِنْ عَبْدٍ: أَخًا مَحْبُوبًا، وَلاَ سِيَّمَا إِلَيَّ، فَكَمْ بِالْحَرِيِّ إِلَيْكَ فِي الْجَسَدِ وَالرَّبِّ جَمِيعًا',
@@ -30,7 +30,7 @@ final class PostOfficePrisonLevels {
     title: 'كولوسي',
     imageAsset: 'assets/levels/colossians.png',
     year: LetterYears.colossians,
-    placements: PostOfficePlacements.colossae,
+    destination: JourneyStops.colossae,
   );
 
   /// المرحلة ١٠ — افسس.
@@ -39,7 +39,7 @@ final class PostOfficePrisonLevels {
     title: 'افسس',
     imageAsset: 'assets/levels/ephesians.png',
     year: LetterYears.ephesians,
-    placements: PostOfficePlacements.ephesus,
+    destination: JourneyStops.ephesus,
   );
 
   /// المرحلة ١١ — تيطس.
@@ -48,7 +48,7 @@ final class PostOfficePrisonLevels {
     title: 'تيطس',
     imageAsset: 'assets/levels/titus.png',
     year: LetterYears.titus,
-    placements: PostOfficePlacements.crete,
+    destination: JourneyStops.crete,
   );
 
   /// المرحلة ١٢ — تيمثاوس ١.
@@ -57,7 +57,7 @@ final class PostOfficePrisonLevels {
     title: 'تيمثاوس ١',
     imageAsset: 'assets/levels/timothy-1.png',
     year: LetterYears.timothy1,
-    placements: PostOfficePlacements.ephesus,
+    destination: JourneyStops.ephesus,
   );
 
   /// المرحلة ١٣ — عبرانيين.
@@ -66,7 +66,7 @@ final class PostOfficePrisonLevels {
     title: 'عبرانيين',
     imageAsset: 'assets/levels/hebrews.png',
     year: LetterYears.hebrews,
-    placements: PostOfficePlacements.jerusalem,
+    destination: JourneyStops.jerusalem,
   );
 
   /// المرحلة ١٤ — تيمثاوس ٢.
@@ -75,7 +75,7 @@ final class PostOfficePrisonLevels {
     title: 'تيمثاوس ٢',
     imageAsset: 'assets/levels/timothy-2.png',
     year: LetterYears.timothy2,
-    placements: PostOfficePlacements.ephesus,
+    destination: JourneyStops.ephesus,
     verses: [
       'فَلاَ تَخْجَلْ بِشَهَادَةِ رَبِّنَا، وَلاَ بِي أَنَا أَسِيرَهُ، بَلِ اشْتَرِكْ فِي احْتِمَالِ الْمَشَقَّاتِ لأَجْلِ الإِنْجِيلِ بِحَسَبِ قُوَّةِ اللهِ',
       'لأَنَّ اللهَ لَمْ يُعْطِنَا رُوحَ الْفَشَلِ، بَلْ رُوحَ الْقُوَّةِ وَالْمَحَبَّةِ وَالنُّصْحِ',

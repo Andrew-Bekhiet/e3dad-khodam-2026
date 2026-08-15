@@ -58,8 +58,8 @@ to fill the gap.
 _Avoid_: screenplay, story file
 
 **Script**:
-The whole playthrough as data: the guide, the narrator, the letter writer, a prologue, the ordered
-Levels, and an epilogue.
+The whole playthrough as data: the guide, the narrator, the letter writer, the Couriers who walk the
+Journey, a prologue, the ordered Levels, and an epilogue.
 
 **Level (مرحلة)**:
 One stage of play — the unit the player advances through, and the canonical unit of the game. Today
@@ -82,7 +82,7 @@ is read. Positioned from the Gazetteer.
 _Avoid_: waypoint, station, node
 
 **Destination**:
-The Stop a given Level is about — where its leading group stands, and what the camera frames.
+The Stop a given Level is about — where the Party ends up, and what the camera frames.
 
 **Destination Card**:
 The panel shown over the map during a Level, in the middle of the screen. It only ever grows, one
@@ -109,8 +109,8 @@ Anyone who takes part in the game — a Courier, the Guide, the Narrator, or the
 umbrella term; each role below behaves differently and the umbrella alone is rarely the right word.
 
 **Courier (ساعي البريد)**:
-A Character who carries the Letters and moves across the map. The only role with a Token and a Trail.
-Couriers travel paired.
+A Character who carries the Letters and moves across the map. The only role with a Token. Couriers
+travel as one Party, never separately.
 _Avoid_: postman, traveller, player character
 
 **Guide (صوت اللعبة)**:
@@ -125,9 +125,11 @@ a figure in the world.
 بولس الرسول — whose words the Verses are. Never on the map; present only as the signature on the
 Destination Card.
 
-**Placement**:
-Which Characters stand at which Stop during one Level. A Placement covers a *group*, which is what
-lets a second pair of Couriers walk their own route through the same Levels.
+**Party**:
+The Couriers as one travelling group: who they are, and every Stop they have stood at. They go
+everywhere together, so the Party — not the Courier — is what has a Trail and a place on the map,
+and the roster belongs to the Script rather than to any Level.
+_Avoid_: group, squad, placement
 
 **Story Beat**:
 One line of story shown as an overlay over the map, spoken by either the Guide or the Narrator.
@@ -149,8 +151,9 @@ The Story Beats played once the player has passed a Level. A Level that has been
 and its Stop is drawn as such.
 
 **Trail**:
-The dashed line marking where a Courier has already been. One per Courier on the move. Drawn along
-Route Geometry, and while a Sweep is flying it reaches only as far as the Courier has walked.
+The dashed line marking where the Party has already been. One for the whole Journey, since everyone
+walks it together. Drawn along Route Geometry, and while a Sweep is flying it reaches only as far as
+the Party has walked — the Trail ends exactly where they stand.
 _Avoid_: route, path, track
 
 **Leg**:

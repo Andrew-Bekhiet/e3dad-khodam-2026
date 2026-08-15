@@ -1,4 +1,3 @@
-import 'package:e3dad_khodam_2026/src/domain/game/character_placement.dart';
 import 'package:e3dad_khodam_2026/src/domain/game/journey_stop.dart';
 import 'package:e3dad_khodam_2026/src/domain/game/story_beat.dart';
 import 'package:equatable/equatable.dart';
@@ -17,12 +16,13 @@ final class GameLevel extends Equatable {
   /// The letter's name, as the play script names it.
   final String title;
 
-  /// Where every character on the map stands during this level, in draw
-  /// order. Never empty: the first entry's stop is the level's
-  /// [destination], which the camera frames and the letter is addressed
-  /// to. Extra entries are how a second group travels its own route
-  /// through the same levels.
-  final List<CharacterPlacement> placements;
+  /// The place this level is about: where its letter is delivered, where
+  /// the camera settles, and the next point on the party's route.
+  ///
+  /// Who is standing there is not a property of the level. The whole
+  /// cast travels together for the whole journey, so the roster lives
+  /// once on `LevelScript.travellers`.
+  final JourneyStop destination;
 
   /// Beats played before the level's map is handed to the player.
   final List<StoryBeat> briefing;
@@ -47,14 +47,11 @@ final class GameLevel extends Equatable {
   /// nothing to say about when it happened must be able to say nothing.
   final int? year;
 
-  /// The place this level is about: where its leading group stands.
-  JourneyStop get destination => placements.first.stop;
-
   @override
   List<Object?> get props => [
     id,
     title,
-    placements,
+    destination,
     briefing,
     clearance,
     verses,
@@ -63,15 +60,10 @@ final class GameLevel extends Equatable {
   ];
 
   /// Creates a level.
-  ///
-  /// [placements] must not be empty — [destination] reads its first
-  /// entry. It cannot be asserted here: a list's length is not reachable
-  /// from a `const` constructor, and every level is a compile-time
-  /// constant.
   const GameLevel({
     required this.id,
     required this.title,
-    required this.placements,
+    required this.destination,
     required this.imageAsset,
     this.briefing = const [],
     this.clearance = const [],

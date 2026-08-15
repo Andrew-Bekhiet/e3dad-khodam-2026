@@ -7,7 +7,7 @@ import 'package:e3dad_khodam_2026/src/domain/game/level_script.dart';
 import 'package:e3dad_khodam_2026/src/domain/game/level_script_repository.dart';
 import 'package:e3dad_khodam_2026/src/domain/geo_bounds.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/map_camera_target.dart';
-import 'package:e3dad_khodam_2026/src/presentation/cubit/character_trail.dart';
+import 'package:e3dad_khodam_2026/src/presentation/cubit/courier_party.dart';
 import 'package:e3dad_khodam_2026/src/presentation/cubit/game_journey_state.dart';
 import 'package:e3dad_khodam_2026/src/presentation/cubit/game_step.dart';
 import 'package:flutter/widgets.dart';
@@ -123,7 +123,7 @@ final class GameJourneyCubit extends Cubit<GameJourneyState> {
       clearedStops: _clearedStops(levels, clearedCount, currentStop),
       currentStop: currentStop,
       nextStop: _nextStop(levels, levelIndex, step),
-      trails: _trailsThrough(levels, levelIndex),
+      party: _partyThrough(script.couriers, levels, levelIndex),
       camera: _cameraFor(levels, levelIndex, step),
       cameraAnimationDuration: _stepDuration,
       carriedVerses: _carriedVerses(levels, levelIndex, step),
@@ -214,34 +214,25 @@ final class GameJourneyCubit extends Cubit<GameJourneyState> {
     return levels[levelIndex + 1].destination;
   }
 
-  /// Every character's route through the levels up to and including
-  /// [levelIndex], in the order they first appear, with consecutive stays
-  /// in the same city collapsed into one point.
-  static List<CharacterTrail> _trailsThrough(
+  /// The party as it stands after the levels up to and including
+  /// [levelIndex]: their destinations in play order, with consecutive
+  /// stays in the same city collapsed into one point.
+  ///
+  /// One journey, because everyone travels together — the roster is the
+  /// script's and does not change from level to level.
+  static CourierParty _partyThrough(
+    List<GameCharacter> couriers,
     List<GameLevel> levels,
     int levelIndex,
   ) {
-    final characters = <String, GameCharacter>{};
-    final paths = <String, List<JourneyStop>>{};
+    final stops = <JourneyStop>[];
     for (final level in levels.take(levelIndex + 1)) {
-      for (final placement in level.placements) {
-        for (final character in placement.characters) {
-          characters[character.id] ??= character;
-          final path = paths.putIfAbsent(character.id, () => <JourneyStop>[]);
-          if (path.isEmpty || path.last.id != placement.stop.id) {
-            path.add(placement.stop);
-          }
-        }
+      if (stops.isEmpty || stops.last.id != level.destination.id) {
+        stops.add(level.destination);
       }
     }
 
-    return [
-      for (final entry in paths.entries)
-        CharacterTrail(
-          character: characters[entry.key]!,
-          path: List.unmodifiable(entry.value),
-        ),
-    ];
+    return CourierParty(couriers: couriers, stops: List.unmodifiable(stops));
   }
 
   /// Where the camera looks for a step.
@@ -383,10 +374,11 @@ final class GameJourneyCubit extends Cubit<GameJourneyState> {
       _ => state.levelNumber,
     };
     final target = _steps.indexWhere(
-      (step) =>
-          step.levelIndex != null &&
-          step.levelIndex! < reached &&
-          _script.levels[step.levelIndex!].destination.id == stopId,
+      (step) => switch (step.levelIndex) {
+        final int index when index < reached =>
+          _script.levels[index].destination.id == stopId,
+        _ => false,
+      },
     );
     if (target >= 0) {
       _goTo(target, backward: false);

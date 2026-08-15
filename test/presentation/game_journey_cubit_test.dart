@@ -1,3 +1,4 @@
+import 'package:e3dad_khodam_2026/src/data/game/post_office_characters.dart';
 import 'package:e3dad_khodam_2026/src/data/game/post_office_script.dart';
 import 'package:e3dad_khodam_2026/src/data/journey_stops.dart';
 import 'package:e3dad_khodam_2026/src/domain/game/game_sounds.dart';
@@ -102,7 +103,7 @@ void _startAndStepTests() {
 }
 
 void _mapContentTests() {
-  test('GameJourneyCubit_firstLevel_putsBothCouriersOnItsDestination', () {
+  test('GameJourneyCubit_firstLevel_putsTheWholePartyOnItsDestination', () {
     final cubit = GameJourneyCubit(_repository);
     addTearDown(cubit.close);
 
@@ -110,16 +111,16 @@ void _mapContentTests() {
 
     expect(cubit.state.currentStop, JourneyStops.thessalonica);
     expect(cubit.state.clearedStops, isEmpty);
-    // The two postmen travel together: one trail each, same route.
-    expect(cubit.state.trails, hasLength(2));
+    // The whole cast travels together, so there is one route and the
+    // script's roster is standing on it.
     expect(
-      cubit.state.trails.map((trail) => trail.character.id),
-      ['courier1', 'courier2'],
+      cubit.state.party.couriers,
+      PostOfficeCharacters.couriers,
     );
-    for (final trail in cubit.state.trails) {
-      expect(trail.path, [JourneyStops.thessalonica]);
-      expect(trail.position, JourneyStops.thessalonica);
-    }
+    expect(cubit.state.party.stops, [JourneyStops.thessalonica]);
+    expect(cubit.state.party.destination, JourneyStops.thessalonica);
+    // Nobody has anywhere to have come from yet.
+    expect(cubit.state.party.isUnderway, isFalse);
     // The city after this one is previewed, but no further.
     expect(cubit.state.nextStop, JourneyStops.thessalonica);
   });
@@ -130,24 +131,43 @@ void _mapContentTests() {
 
     _pressUntil(cubit, () => cubit.state.levelNumber == 2);
 
-    // Both Thessalonian letters are delivered to one city, so the trail
+    // Both Thessalonian letters are delivered to one city, so the route
     // is still a single point and the city is not drawn twice.
-    expect(cubit.state.trails.first.path, [JourneyStops.thessalonica]);
+    expect(cubit.state.party.stops, [JourneyStops.thessalonica]);
     expect(cubit.state.clearedStops, isEmpty);
     expect(cubit.state.currentStop, JourneyStops.thessalonica);
   });
 
-  test('GameJourneyCubit_thirdLevel_extendsTheTrailToCorinth', () {
+  test('GameJourneyCubit_thirdLevel_extendsTheRouteToCorinth', () {
     final cubit = GameJourneyCubit(_repository);
     addTearDown(cubit.close);
 
     _pressUntil(cubit, () => cubit.state.levelNumber == 3);
 
     expect(cubit.state.currentStop, JourneyStops.corinth);
-    for (final trail in cubit.state.trails) {
-      expect(trail.path, [JourneyStops.thessalonica, JourneyStops.corinth]);
-    }
+    expect(cubit.state.party.stops, [
+      JourneyStops.thessalonica,
+      JourneyStops.corinth,
+    ]);
+    expect(cubit.state.party.isUnderway, isTrue);
     expect(cubit.state.clearedStops, [JourneyStops.thessalonica]);
+  });
+
+  test('GameJourneyCubit_theWholeJourney_staysOneRoute', () {
+    final cubit = GameJourneyCubit(_repository);
+    addTearDown(cubit.close);
+
+    _pressUntil(cubit, () => cubit.state.isAtEnd);
+    final path = cubit.state.party.stops;
+
+    // One line for everyone, walked in order. أفسس is returned to twice
+    // and so appears three times, but a city holding two letters in a
+    // row is one point rather than two.
+    expect(path.last, JourneyStops.ephesus);
+    expect(path.map((stop) => stop.id).toSet(), hasLength(9));
+    for (var index = 1; index < path.length; index++) {
+      expect(path[index].id, isNot(path[index - 1].id));
+    }
   });
 }
 
@@ -248,28 +268,33 @@ void _revealTests() {
     expect(cubit.state.beat, isNull);
   });
 
-  test('GameJourneyCubit_theFirstPressAfterArriving_startsTheBriefingAlone', () {
-    final cubit = GameJourneyCubit(_repository);
-    addTearDown(cubit.close);
+  test(
+    'GameJourneyCubit_theFirstPressAfterArriving_startsTheBriefingAlone',
+    () {
+      final cubit = GameJourneyCubit(_repository);
+      addTearDown(cubit.close);
 
-    _pressUntil(cubit, () => cubit.state.levelNumber == 1);
-    final step = cubit.state.stepIndex;
-    cubit.forward();
+      _pressUntil(cubit, () => cubit.state.levelNumber == 1);
+      final step = cubit.state.stepIndex;
+      cubit.forward();
 
-    // One press lands the level and the guide starts, without moving on
-    // to another step. The briefing has the map to itself: the card is
-    // still down even though the sign is what the next press opens.
-    expect(cubit.state.stepIndex, step);
-    expect(cubit.state.isArriving, isFalse);
-    expect(cubit.state.beat, isNotNull);
-    expect(cubit.state.showsSign, isTrue);
-    expect(cubit.state.showsCard, isFalse);
+      // One press lands the level and the guide starts, without moving on
+      // to another step. The briefing has the map to itself: the card is
+      // still down even though the sign is what the next press opens.
+      expect(cubit.state.stepIndex, step);
+      expect(cubit.state.isArriving, isFalse);
+      expect(cubit.state.beat, isNotNull);
+      expect(cubit.state.showsSign, isTrue);
+      expect(cubit.state.showsCard, isFalse);
 
-    // The card comes up on the press that leaves the briefing.
-    cubit.forward();
-    expect(cubit.state.showsCard, isTrue);
-    expect(cubit.state.showsImage, isFalse);
-  });
+      // The card comes up on the press that leaves the briefing, sign and
+      // artwork together — they share a reveal.
+      cubit.forward();
+      expect(cubit.state.showsCard, isTrue);
+      expect(cubit.state.showsImage, isTrue);
+      expect(cubit.state.revealedVerses, isEmpty);
+    },
+  );
 
   test('GameJourneyCubit_aLevelWithNoBriefing_raisesTheCardOnArrival', () {
     final cubit = GameJourneyCubit(_repository);
@@ -285,19 +310,16 @@ void _revealTests() {
     expect(cubit.state.showsCard, isTrue);
   });
 
-  test('GameJourneyCubit_theCard_opensSignThenImageThenVerses', () {
+  test('GameJourneyCubit_theCard_opensItsSignThenItsVerses', () {
     final cubit = GameJourneyCubit(_repository);
     addTearDown(cubit.close);
 
     _pressToLevel(cubit, 1);
     final verses = cubit.state.level!.verses;
 
-    // The playing step starts with the sign already up.
+    // The playing step starts with the sign and the artwork already up
+    // and nothing quoted yet.
     expect(cubit.state.showsSign, isTrue);
-    expect(cubit.state.showsImage, isFalse);
-    expect(cubit.state.revealedVerses, isEmpty);
-
-    cubit.forward();
     expect(cubit.state.showsImage, isTrue);
     expect(cubit.state.revealedVerses, isEmpty);
 
@@ -333,7 +355,6 @@ void _revealTests() {
     final step = cubit.state.stepIndex;
     cubit
       ..forward()
-      ..forward()
       ..forward();
     expect(cubit.state.revealedVerses, hasLength(2));
 
@@ -341,10 +362,8 @@ void _revealTests() {
     expect(cubit.state.revealedVerses, hasLength(1));
     expect(cubit.state.stepIndex, step);
 
-    cubit
-      ..backward()
-      ..backward();
-    expect(cubit.state.showsImage, isFalse);
+    cubit.backward();
+    expect(cubit.state.revealedVerses, isEmpty);
     expect(cubit.state.showsSign, isTrue);
     expect(cubit.state.stepIndex, step);
   });

@@ -1,5 +1,5 @@
 import 'package:e3dad_khodam_2026/src/data/game/letter_years.dart';
-import 'package:e3dad_khodam_2026/src/data/game/post_office_placements.dart';
+import 'package:e3dad_khodam_2026/src/data/journey_stops.dart';
 import 'package:e3dad_khodam_2026/src/domain/game/game_level.dart';
 import 'package:e3dad_khodam_2026/src/domain/game/story_beat.dart';
 
@@ -22,7 +22,7 @@ final class PostOfficeRoadLevels {
     title: 'الرسالة الأولى لتسالونيكي',
     imageAsset: 'assets/levels/thessalonians.png',
     year: LetterYears.thessalonians1,
-    placements: PostOfficePlacements.thessalonica,
+    destination: JourneyStops.thessalonica,
     briefing: [
       StoryBeat.guide(
         'احنا دلوقتي في تسالونيكي مدينة كبيرة على ساحل بحر مكدونية وبها مركز تجاري كبير، وعايش فيها كثير يهود كتير اوي. أول مرحلتين هيكونوا معانا هنا في نفس المدينة. مهمتكم في المدينة دي انكم تفهموا محتوى الرسالتين عشان تعرفوا تعدوا للمرحلة الجاية',
@@ -42,7 +42,7 @@ final class PostOfficeRoadLevels {
     title: 'الرسالة التانية لتسالونيكي',
     imageAsset: 'assets/levels/thessalonians.png',
     year: LetterYears.thessalonians2,
-    placements: PostOfficePlacements.thessalonica,
+    destination: JourneyStops.thessalonica,
     briefing: [
       StoryBeat.narrator(
         'معلمنا بولس الرسول لما كتب الرسالة الأولى لتسالونيكي ذكر أن مجئ الرب في أي لحظة، فبدأت الناس تسيب أشغالها وقعدوا مستنين المجئ الثاني وكان مبررهم أنهم عايزين يتفرغوا للحياة الروحية\n'
@@ -62,7 +62,7 @@ final class PostOfficeRoadLevels {
     title: 'رسالة كورنثوس',
     imageAsset: 'assets/levels/corinthians-1.png',
     year: LetterYears.corinthians1,
-    placements: PostOfficePlacements.corinth,
+    destination: JourneyStops.corinth,
     briefing: [
       StoryBeat.guide(
         'احنا هنا في كورنثوس ودي كانت تعتبر ميناء رئيسية في العالم القديم، وكانت مليانة بالمعابد اليونانية والآلهة الرومانية، وكانت مركز اقتصادي كبير. قضى فيها بولس سنة ونص بيتعرف على الناس وبيكلمهم عن يسوع',
@@ -80,7 +80,7 @@ final class PostOfficeRoadLevels {
     title: 'رسالة كورنثوس الثانية',
     imageAsset: 'assets/levels/corinthians-2.png',
     year: LetterYears.corinthians2,
-    placements: PostOfficePlacements.corinth,
+    destination: JourneyStops.corinth,
   );
 
   /// المرحلة ٥ — رسالة غلاطية.
@@ -89,7 +89,7 @@ final class PostOfficeRoadLevels {
     title: 'رسالة غلاطية',
     imageAsset: 'assets/levels/galatians.png',
     year: LetterYears.galatians,
-    placements: PostOfficePlacements.galatia,
+    destination: JourneyStops.galatia,
     verses: [
       'بُولُسُ، رَسُولٌ لَا مِنَ النَّاسِ وَلَا بِإِنْسَانٍ، بَلْ بِيَسُوعَ الْمَسِيحِ وَاللهِ الآبِ الَّذِي أَقَامَهُ مِنَ الأَمْوَاتِ.',
       'وَلكِنْ إِنْ بَشَّرْنَاكُمْ نَحْنُ أَوْ مَلاَكٌ مِنَ السَّمَاءِ بِغَيْرِ مَا بَشَّرْنَاكُمْ، فَلْيَكُنْ محروما!',
@@ -103,7 +103,7 @@ final class PostOfficeRoadLevels {
     title: 'الرسالة الى رومية',
     imageAsset: 'assets/levels/romans.png',
     year: LetterYears.romans,
-    placements: PostOfficePlacements.rome,
+    destination: JourneyStops.rome,
     verses: [
       '"إذ معرفة الله ظاهرة فيهم... لأن أموره غير المنظورة تُرى منذ خلق العالم." (رومية 1: 19-20)',
       '"عبدوا المخلوق دون الخالق." (رومية 1: 25)',
@@ -116,7 +116,7 @@ final class PostOfficeRoadLevels {
     title: 'رسالة فيلبي',
     imageAsset: 'assets/levels/philippians.png',
     year: LetterYears.philippians,
-    placements: PostOfficePlacements.philippi,
+    destination: JourneyStops.philippi,
     verses: [
       '"لأن لي الحياة هي المسيح والموت هو ربح"',
       '"افرحوا في الرب كل حين"',

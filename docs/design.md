@@ -153,14 +153,25 @@ this app's three chrome surfaces (app bar, breadcrumb, sheet).
 | category marker label | 15sp | 700 (Bold) |
 | level-1 marker label (continent/country/sea/island) | 13sp | 600 (SemiBold) |
 | city (leaf) marker label | 14sp | 700 (Bold) |
-| app bar title (root, static title) | 20sp | 700 (Bold) |
-| breadcrumb (app bar title when depth > 0) | 16sp | 600 (SemiBold) |
-| bottom sheet title | 16sp | 700 (Bold) |
-| bottom sheet list item | 15sp | 500 (Medium) |
-| bottom sheet group header | 13sp | 600 (SemiBold), `onSurfaceVariant` color |
+| app bar title (root, static title) | `titleLarge` | 700 (Bold) |
+| breadcrumb (app bar title when depth > 0) | `titleMedium` | 600 (SemiBold) |
+| bottom sheet title | `titleMedium` | 700 (Bold) |
+| bottom sheet list item | `bodyLarge` | theme |
+| bottom sheet group header | `labelLarge` | 600 (SemiBold), `onSurfaceVariant` color |
+| guide/narrator speaker name | `titleLarge` | 700 / 600 |
+| guide/narrator beat title | `headlineLarge` | 700 (Bold) |
+| guide/narrator beat text | `headlineMedium` | theme (narrator italic) |
 
 Register `FontFamily: 'Cairo'` in `pubspec.yaml`; set as `ThemeData.fontFamily` app-wide, except
 the basemap attribution string (§8), which stays in the system/Latin font.
+
+**Sizes are theme roles, not literals.** Every widget style comes from `TextTheme.of(context)` with
+`copyWith` for weight and colour, so the whole app rescales from one place. The exceptions are the
+marker labels above — painted onto a canvas by `MarkerSprite`, which has no `BuildContext` — and the
+missing-token notice, which is a developer message that must render before any theme exists.
+
+The game's dialogue sits a full step up the scale from ordinary body text: it is read off a
+projector from the back of a hall, not from a phone in the hand.
 
 ---
 
@@ -241,19 +252,48 @@ taps sweep the same way.
 Turn the map blur off with `AppFeatures.sweepMotionBlur`. The streaks and vignette keep running —
 they are Flutter's and are what carries the motion everywhere that is not web.
 
-### The card never blinks inside a level
+### The card never blinks, and verses accumulate
 
 The screen only goes blank for a **swept-into** level. Two letters to the same city are not swept
-between, so the sign stays up rather than flickering out and back to say the same words. A cleared
-level keeps its sign too — the level has not changed, and the player is still looking at it. The
-artwork and verses do close on clearance; only the sign persists.
+between, so the card stays up rather than flickering out and back to say the same words. A cleared
+level keeps its card fully open — the verses have just been read, and taking them away to say
+"well done" only to put them back is the flicker this rule exists to stop.
+
+**Verses belong to the city, not the letter.** كورنثوس and تسالونيكي each receive two letters; their
+verses are read in one sitting, so the second letter's verses are added below the first's instead of
+replacing them. Verses are cleared only when a sweep reaches a genuinely new city.
+
+A city already carrying verses opens straight to its artwork rather than back to the bare sign.
+
+**A swept-into level's briefing gets the map to itself.** The arrival and the line explaining it are
+one moment, and raising the sign underneath it puts a second thing on screen to read. The card comes
+up on the press that leaves the briefing (`GameJourneyState.showsCard`). A level the script gives no
+briefing — غلاطية, رومية, most of the prison letters — has nothing to wait behind, so its sign rises
+on the press that acknowledges the arrival. A level that is not swept into keeps whatever card was
+already up, which is the rule against blinking.
+
+### What animates what
+
+Three separate movements, deliberately sequenced rather than overlapping:
+
+1. The destination card's own `AnimatedSize` (**260ms**) — the card growing as it opens.
+2. An `AnimatedSize` around the **verse column** (also 260ms). One widget for the whole list, not one
+   per verse. The card's own cannot carry this: once the artwork is showing the card sits on a
+   400px floor, so early verses change nothing about its height. The verse column has no floor, so
+   it grows on every verse.
+3. `StoryOverlay`'s switch (**700ms**), whose fade-in does not begin until 60% in — **420ms**,
+   comfortably past the card's 260ms. Where a beat arrives on the same press that raises the card —
+   stepping back into a briefing, a card reopening behind a line — two panels growing and fading
+   through one another reads as a smear. The card goes first and finishes; only then does anyone
+   speak.
 
 ### The Destination Card
 
 Centred, and it only ever grows: **sign → artwork → verses**, one press each, `AnimatedSize` over
 **260ms** on `easeOutBack`. Overshoot is deliberate and is the thing §5 forbids on the Cross Map.
 
-- Sign: destination name at **34px**, year at **19px** in accent.
+- Sign: destination name at `displaySmall`, year at `titleLarge` in accent. Verses at `titleLarge`,
+  and they scroll rather than clip once a city's two letters outgrow the height cap.
 - Open height **400px** (`DestinationCard._openHeight`). Set it to the viewport height and the card
   covers the whole map — that one number is the full-screen switch.
 - Artwork fills the card behind a scrim; a missing file draws a flat stand-in carrying the name, so

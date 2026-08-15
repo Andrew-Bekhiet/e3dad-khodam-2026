@@ -12,7 +12,7 @@ import 'package:e3dad_khodam_2026/src/domain/game/story_beat.dart';
 /// only its verses — nothing is written to fill the gap.
 final class PostOfficeRoadLevels {
   /// The clearance line the script gives after a section is understood.
-  static const StoryBeat _cleared = StoryBeat.narrator(
+  static const StoryBeat _cleared = StoryBeat.guide(
     'برافو عليكم 🙌 🔥 أنتم كدة اجتزتم المرحلة دي، ودلوقتي هديكم الشاهد',
   );
 
@@ -20,7 +20,7 @@ final class PostOfficeRoadLevels {
   static const GameLevel thessalonians1 = GameLevel(
     id: 'thessalonians-1',
     title: 'الرسالة الأولى لتسالونيكي',
-    imageAsset: 'assets/levels/thessalonians-1.png',
+    imageAsset: 'assets/levels/thessalonians.png',
     year: LetterYears.thessalonians1,
     placements: PostOfficePlacements.thessalonica,
     briefing: [
@@ -40,14 +40,12 @@ final class PostOfficeRoadLevels {
   static const GameLevel thessalonians2 = GameLevel(
     id: 'thessalonians-2',
     title: 'الرسالة التانية لتسالونيكي',
-    imageAsset: 'assets/levels/thessalonians-2.png',
+    imageAsset: 'assets/levels/thessalonians.png',
     year: LetterYears.thessalonians2,
     placements: PostOfficePlacements.thessalonica,
     briefing: [
       StoryBeat.narrator(
-        'معلمنا بولس الرسول لما كتب الرسالة الأولى لتسالونيكي ذكر أن مجئ الرب في أي لحظة، فبدأت الناس تسيب أشغالها وقعدوا مستنين المجئ الثاني وكان مبررهم أنهم عايزين يتفرغوا للحياة الروحية',
-      ),
-      StoryBeat.narrator(
+        'معلمنا بولس الرسول لما كتب الرسالة الأولى لتسالونيكي ذكر أن مجئ الرب في أي لحظة، فبدأت الناس تسيب أشغالها وقعدوا مستنين المجئ الثاني وكان مبررهم أنهم عايزين يتفرغوا للحياة الروحية\n'
         'وكان لازم معلمنا بولس يبعتلهم رسالة تانيه كلها حزم',
       ),
     ],

@@ -31,6 +31,7 @@ final class NarratorCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final title = beat.title;
+    final text = TextTheme.of(context);
 
     return Center(
       child: SafeArea(
@@ -45,7 +46,13 @@ final class NarratorCard extends StatelessWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const _Rule(),
+                  const Divider(
+                    thickness: NarratorCard._ruleHeight,
+                    height: NarratorCard._ruleHeight,
+                    color: GamePalette.accent,
+                    endIndent: 0,
+                    indent: 0,
+                  ),
                   const SizedBox(height: 18),
                   CharacterPortrait(
                     character: character,
@@ -55,8 +62,7 @@ final class NarratorCard extends StatelessWidget {
                   const SizedBox(height: 12),
                   Text(
                     character.name,
-                    style: TextStyle(
-                      fontSize: 15,
+                    style: text.titleLarge?.copyWith(
                       letterSpacing: 1,
                       fontWeight: FontWeight.w600,
                       color: GamePalette.narratorText.withValues(alpha: 0.7),
@@ -67,8 +73,7 @@ final class NarratorCard extends StatelessWidget {
                     Text(
                       title,
                       textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        fontSize: 26,
+                      style: text.headlineLarge?.copyWith(
                         fontWeight: FontWeight.w700,
                         color: GamePalette.narratorText,
                       ),
@@ -80,9 +85,8 @@ final class NarratorCard extends StatelessWidget {
                       child: Text(
                         beat.text,
                         textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontSize: 22,
-                          height: 1.8,
+                        style: text.displaySmall?.copyWith(
+                          height: 1.7,
                           fontStyle: FontStyle.italic,
                           color: GamePalette.narratorText,
                         ),
@@ -99,15 +103,4 @@ final class NarratorCard extends StatelessWidget {
       ),
     );
   }
-}
-
-/// The thin accent rule that letterboxes the card.
-final class _Rule extends StatelessWidget {
-  const _Rule();
-
-  @override
-  Widget build(BuildContext context) => Container(
-    height: NarratorCard._ruleHeight,
-    color: GamePalette.accent,
-  );
 }

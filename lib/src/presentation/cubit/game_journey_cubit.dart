@@ -34,14 +34,14 @@ final class GameJourneyCubit extends Cubit<GameJourneyState> {
   /// them by accident. Changing this is a one-line change.
   static const GeoBounds sweepFrame = GeoBounds(
     south: 30.89,
-    west: 10.00,
+    west: 10.0,
     north: 43.57,
-    east: 26.00,
+    east: 26.0,
   );
 
   /// Zoom the camera settles on over a destination. High enough to make
   /// the city the subject, low enough to keep its coastline in frame.
-  static const double arrivalZoom = 8.0;
+  static const double arrivalZoom = 10.0;
 
   /// The three parts of a sweep. Coming in is longer than going out on
   /// purpose: going out is travel, coming in is arrival.
@@ -126,9 +126,14 @@ final class GameJourneyCubit extends Cubit<GameJourneyState> {
       trails: _trailsThrough(levels, levelIndex),
       camera: _cameraFor(levels, levelIndex, step),
       cameraAnimationDuration: _stepDuration,
+      carriedVerses: _carriedVerses(levels, levelIndex, step),
     );
 
-    if (backward) {
+    // Stepping back returns to something already seen, and a cleared
+    // level has just been read: both open the card fully rather than
+    // making the operator press through verses again to reach the line
+    // they were on.
+    if (backward || step.phase == GamePhase.clearance) {
       return state.withReveal(state.maxReveal);
     }
 
@@ -136,6 +141,29 @@ final class GameJourneyCubit extends Cubit<GameJourneyState> {
     // until the next press acknowledges the arrival. Everything else
     // keeps its sign, so the card never blinks inside one level.
     return state.withReveal(state.minReveal);
+  }
+
+  /// Verses read in this destination before this level.
+  ///
+  /// A city receiving two letters reads their verses in one sitting —
+  /// كورنثوس and تسالونيكي both do — so the second letter's verses are
+  /// added below the first's instead of replacing them. Only the levels
+  /// *before* this one contribute; this level's own arrive one press at
+  /// a time as always.
+  static List<String> _carriedVerses(
+    List<GameLevel> levels,
+    int levelIndex,
+    GameStep step,
+  ) {
+    if (step.levelIndex == null) {
+      return const [];
+    }
+    final destination = levels[levelIndex].destination;
+
+    return [
+      for (final level in levels.take(levelIndex))
+        if (level.destination.id == destination.id) ...level.verses,
+    ];
   }
 
   /// Whether step [index] is the first of its level.

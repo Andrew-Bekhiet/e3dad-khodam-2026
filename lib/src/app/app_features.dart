@@ -18,5 +18,5 @@ final class AppFeatures {
   /// Turning this off leaves the streaks and the vignette
   /// (`SweepOverlay`) running — they are drawn by Flutter and are what
   /// carries the motion on every other platform.
-  static const bool sweepMotionBlur = true;
+  static const bool sweepMotionBlur = false;
 }

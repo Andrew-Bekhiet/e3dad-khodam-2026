@@ -31,6 +31,7 @@ final class GuideDialoguePanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final title = beat.title;
+    final text = TextTheme.of(context);
 
     return Center(
       child: SafeArea(
@@ -55,8 +56,7 @@ final class GuideDialoguePanel extends StatelessWidget {
                       children: [
                         Text(
                           character.name,
-                          style: const TextStyle(
-                            fontSize: 16,
+                          style: text.titleLarge?.copyWith(
                             fontWeight: FontWeight.w700,
                             color: GamePalette.accent,
                           ),
@@ -65,8 +65,7 @@ final class GuideDialoguePanel extends StatelessWidget {
                           const SizedBox(height: 6),
                           Text(
                             title,
-                            style: const TextStyle(
-                              fontSize: 24,
+                            style: text.headlineLarge?.copyWith(
                               fontWeight: FontWeight.w700,
                               color: GamePalette.ink,
                             ),
@@ -77,9 +76,8 @@ final class GuideDialoguePanel extends StatelessWidget {
                           child: SingleChildScrollView(
                             child: Text(
                               beat.text,
-                              style: const TextStyle(
-                                fontSize: 21,
-                                height: 1.7,
+                              style: text.headlineMedium?.copyWith(
+                                height: 1.6,
                                 color: GamePalette.ink,
                               ),
                             ),

@@ -1,7 +1,6 @@
 import 'package:e3dad_khodam_2026/src/app/arabic_numerals.dart';
 import 'package:e3dad_khodam_2026/src/domain/game/game_character.dart';
 import 'package:e3dad_khodam_2026/src/domain/game/game_level.dart';
-import 'package:e3dad_khodam_2026/src/presentation/widgets/game/character_portrait.dart';
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/continue_chevron.dart';
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/game_palette.dart';
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/pixel_panel.dart';
@@ -19,15 +18,11 @@ import 'package:flutter/material.dart';
 ///
 /// Only the card takes taps, so the map around it stays live.
 final class DestinationCard extends StatelessWidget {
-  static const double _maxWidth = 820.0;
-  static const double _maxHeightFactor = 0.72;
-
   /// How tall the card stands once its artwork is showing. Set this to
   /// the viewport height and the card covers the whole map — that is the
   /// single number the full-screen question turns on.
   static const double _openHeight = 400.0;
 
-  static const double _speakerPortraitSize = 56.0;
   static const Duration _growDuration = Duration(milliseconds: 260);
 
   /// The level being played.
@@ -66,103 +61,72 @@ final class DestinationCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Center(
     child: SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 88, 20, 88),
-        child: ConstrainedBox(
-          constraints: BoxConstraints(
-            maxWidth: _maxWidth,
-            maxHeight: MediaQuery.sizeOf(context).height * _maxHeightFactor,
-          ),
-          child: AnimatedSize(
-            duration: _growDuration,
-            curve: Curves.easeOutBack,
-            child: GestureDetector(
-              onTap: hasMore ? onReveal : null,
-              child: PixelPanel(
-                padding: EdgeInsets.zero,
-                color: showsImage ? GamePalette.ink : GamePalette.parchment,
-                child: Stack(
-                  fit: StackFit.passthrough,
-                  children: [
-                    if (showsImage)
-                      Positioned.fill(
-                        child: _Artwork(
-                          asset: level.imageAsset,
-                          label: destinationLabel,
-                        ),
-                      ),
-                    if (showsImage)
-                      const Positioned.fill(
-                        child: ColoredBox(color: GamePalette.scrim),
-                      ),
-                    _Body(
-                      level: level,
-                      destinationLabel: destinationLabel,
-                      showsImage: showsImage,
-                      verses: verses,
-                      versesSpeaker: versesSpeaker,
-                      hasMore: hasMore,
+      child: AnimatedSize(
+        duration: _growDuration,
+        curve: Curves.easeOutBack,
+        child: GestureDetector(
+          onTap: hasMore ? onReveal : null,
+          child: PixelPanel(
+            padding: EdgeInsets.zero,
+            color: showsImage ? GamePalette.ink : GamePalette.parchment,
+            child: Stack(
+              fit: StackFit.passthrough,
+              children: [
+                if (showsImage)
+                  Positioned.fill(
+                    child: _Artwork(
+                      asset: level.imageAsset,
+                      label: destinationLabel,
                     ),
-                  ],
+                  ),
+                if (showsImage)
+                  const Positioned.fill(
+                    child: ColoredBox(color: GamePalette.scrim),
+                  ),
+                ConstrainedBox(
+                  constraints: BoxConstraints(
+                    minHeight: showsImage ? DestinationCard._openHeight : 0,
+                    minWidth: showsImage ? double.infinity : 0,
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 22,
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        _Sign(
+                          destinationLabel: destinationLabel,
+                          year: level.year,
+                          onImage: showsImage,
+                        ),
+                        // Scrolls rather than overflows: a city collecting two
+                        // letters' verses can outgrow the card's height cap, and a
+                        // clipped verse in front of a room is worse than a drag.
+                        _Verses(
+                          verses: verses,
+                          speaker: versesSpeaker,
+                          onImage: showsImage,
+                        ),
+                        if (hasMore) ...[
+                          const SizedBox(height: 10),
+                          const Center(
+                            widthFactor: 1,
+                            child: ContinueChevron(
+                              icon: Icons.keyboard_arrow_down,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
                 ),
-              ),
+              ],
             ),
           ),
         ),
-      ),
-    ),
-  );
-}
-
-/// The card's text, over whatever the background happens to be.
-final class _Body extends StatelessWidget {
-  final GameLevel level;
-  final String destinationLabel;
-  final bool showsImage;
-  final List<String> verses;
-  final GameCharacter versesSpeaker;
-  final bool hasMore;
-
-  const _Body({
-    required this.level,
-    required this.destinationLabel,
-    required this.showsImage,
-    required this.verses,
-    required this.versesSpeaker,
-    required this.hasMore,
-  });
-
-  @override
-  Widget build(BuildContext context) => ConstrainedBox(
-    constraints: BoxConstraints(
-      minHeight: showsImage ? DestinationCard._openHeight : 0,
-      minWidth: showsImage ? double.infinity : 0,
-    ),
-    child: Padding(
-      padding: const EdgeInsets.fromLTRB(22, 18, 22, 16),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _Sign(
-            destinationLabel: destinationLabel,
-            year: level.year,
-            onImage: showsImage,
-          ),
-          if (verses.isNotEmpty)
-            Flexible(
-              child: _Verses(
-                verses: verses,
-                speaker: versesSpeaker,
-                onImage: showsImage,
-              ),
-            ),
-          if (hasMore) ...[
-            const SizedBox(height: 10),
-            const Center(child: ContinueChevron(icon: Icons.keyboard_arrow_down)),
-          ],
-        ],
       ),
     ),
   );
@@ -187,6 +151,7 @@ final class _Sign extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ink = onImage ? GamePalette.parchment : GamePalette.ink;
+    final text = TextTheme.of(context);
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -194,8 +159,7 @@ final class _Sign extends StatelessWidget {
         Text(
           destinationLabel,
           textAlign: TextAlign.center,
-          style: TextStyle(
-            fontSize: 34,
+          style: text.displaySmall?.copyWith(
             fontWeight: FontWeight.w700,
             height: 1.2,
             color: ink,
@@ -206,8 +170,7 @@ final class _Sign extends StatelessWidget {
           Text(
             '${ArabicNumerals.format(year!)} م',
             textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 19,
+            style: text.titleLarge?.copyWith(
               fontWeight: FontWeight.w700,
               color: GamePalette.accent,
             ),
@@ -235,36 +198,15 @@ final class _Verses extends StatelessWidget {
     mainAxisSize: MainAxisSize.min,
     children: [
       const SizedBox(height: 14),
-      Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          CharacterPortrait(
-            character: speaker,
-            size: DestinationCard._speakerPortraitSize,
-          ),
-          const SizedBox(width: 10),
-          Text(
-            speaker.name,
-            style: const TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w700,
-              color: GamePalette.accent,
-            ),
-          ),
-        ],
-      ),
-      Flexible(
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Keyed on the text so an already-revealed verse keeps its
-              // state when the next one arrives, and only the new one
-              // plays its entrance.
-              for (final verse in verses)
-                _Verse(key: ValueKey(verse), text: verse, onImage: onImage),
-            ],
-          ),
+      AnimatedSize(
+        duration: DestinationCard._growDuration,
+        curve: Curves.easeOutCubic,
+        alignment: Alignment.topCenter,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            for (final verse in verses) _Verse(text: verse, onImage: onImage),
+          ],
         ),
       ),
     ],
@@ -272,74 +214,37 @@ final class _Verses extends StatelessWidget {
 }
 
 /// One revealed verse, ruled off from the one before it.
-///
-/// It animates itself in rather than relying on the card growing around
-/// it. Once the artwork is showing, the card stands at a fixed height, so
-/// adding a verse no longer changes its size and `AnimatedSize` has
-/// nothing to animate — which is exactly why the reveal stopped reading
-/// as an event. This puts the movement on the verse itself, where it
-/// belongs, and it now works whether the card grows or not.
-final class _Verse extends StatefulWidget {
-  static const Duration _enterDuration = Duration(milliseconds: 420);
-
-  /// How far the verse rises as it fades in, in logical pixels.
-  static const double _rise = 18.0;
-
+final class _Verse extends StatelessWidget {
   final String text;
   final bool onImage;
 
-  const _Verse({required this.text, required this.onImage, super.key});
-
-  @override
-  State<_Verse> createState() => _VerseState();
-}
-
-class _VerseState extends State<_Verse> with SingleTickerProviderStateMixin {
-  late final AnimationController _enter = AnimationController(
-    vsync: this,
-    duration: _Verse._enterDuration,
-  )..forward();
-
-  late final Animation<double> _eased = CurvedAnimation(
-    parent: _enter,
-    curve: Curves.easeOutCubic,
-  );
+  const _Verse({required this.text, required this.onImage});
 
   @override
   Widget build(BuildContext context) {
-    final ink = widget.onImage ? GamePalette.parchment : GamePalette.ink;
+    final ink = onImage ? GamePalette.parchment : GamePalette.ink;
 
-    return FadeTransition(
-      opacity: _eased,
-      child: AnimatedBuilder(
-        animation: _eased,
-        builder: (context, child) => Transform.translate(
-          offset: Offset(0, (1 - _eased.value) * _Verse._rise),
-          child: child,
-        ),
-        child: Padding(
-          padding: const EdgeInsets.only(top: 10),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(height: 2, color: ink.withValues(alpha: 0.2)),
-              const SizedBox(height: 10),
-              Text(
-                widget.text,
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 19, height: 1.8, color: ink),
-              ),
-            ],
+    return Padding(
+      padding: const EdgeInsets.only(top: 10),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Divider(height: 2, color: ink.withValues(alpha: 0.2)),
+          Text(
+            text,
+            textAlign: TextAlign.center,
+            style:
+                TextTheme.of(
+                  context,
+                ).displaySmall?.copyWith(
+                  height: 1.8,
+                  color: ink,
+                  fontWeight: FontWeight.w700,
+                ),
           ),
-        ),
+        ],
       ),
     );
-  }
-
-  @override
-  void dispose() {
-    _enter.dispose();
-    super.dispose();
   }
 }
 
@@ -387,8 +292,7 @@ final class _StandIn extends StatelessWidget {
       child: Text(
         label,
         textAlign: TextAlign.center,
-        style: TextStyle(
-          fontSize: 84,
+        style: TextTheme.of(context).displayLarge?.copyWith(
           fontWeight: FontWeight.w700,
           color: GamePalette.parchment.withValues(alpha: 0.14),
         ),

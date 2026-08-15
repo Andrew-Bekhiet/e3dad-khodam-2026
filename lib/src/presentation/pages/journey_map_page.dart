@@ -16,8 +16,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 /// [MapHierarchyCubit.goBack] instead of closing the app.
 final class JourneyMapPage extends StatelessWidget {
   static const Duration _titleSwitchDuration = Duration(milliseconds: 200);
-  static const double _rootTitleFontSize = 20.0;
-  static const double _breadcrumbFontSize = 16.0;
   static const String _breadcrumbSeparator = ' / ';
 
   /// Creates the journey map page.
@@ -59,14 +57,13 @@ final class JourneyMapPage extends StatelessWidget {
                 child: Text(
                   breadcrumbText ?? AppStrings.appTitle,
                   key: ValueKey(breadcrumbText ?? AppStrings.appTitle),
-                  style: TextStyle(
-                    fontSize: breadcrumbText == null
-                        ? _rootTitleFontSize
-                        : _breadcrumbFontSize,
-                    fontWeight: breadcrumbText == null
-                        ? FontWeight.w700
-                        : FontWeight.w600,
-                  ),
+                  style: breadcrumbText == null
+                      ? TextTheme.of(
+                          context,
+                        ).titleLarge?.copyWith(fontWeight: FontWeight.w700)
+                      : TextTheme.of(
+                          context,
+                        ).titleMedium?.copyWith(fontWeight: FontWeight.w600),
                 ),
               ),
               actions: [

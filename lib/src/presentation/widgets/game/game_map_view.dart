@@ -12,6 +12,7 @@ import 'package:e3dad_khodam_2026/src/map_engine/markers/map_marker_style.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/trails/trail_walk.dart';
 import 'package:e3dad_khodam_2026/src/presentation/cubit/character_trail.dart';
 import 'package:e3dad_khodam_2026/src/presentation/cubit/game_journey_cubit.dart';
+import 'package:e3dad_khodam_2026/src/presentation/cubit/game_journey_state.dart';
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/game_map_styles.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -28,10 +29,14 @@ final class GameMapView extends StatelessWidget {
   static const double _minZoom = 4.0;
   static const double _maxZoom = 18.0;
 
-  /// Logical pixels between the tokens of characters standing in the
-  /// same city, so travelling companions read as two people rather than
-  /// one portrait hiding another.
-  static const double _tokenSpacing = 34.0;
+  /// How far neighbouring portraits overlap, in logical pixels. A slight
+  /// overlap reads as a group standing together rather than as separate
+  /// people who happen to share a city.
+  static const double _tokenOverlap = 8.0;
+
+  /// Clear space between a portrait and the label of the stop underneath
+  /// it.
+  static const double _labelGap = 8.0;
 
   /// How far through the current sweep the camera is.
   final Animation<double> sweepProgress;
@@ -44,8 +49,6 @@ final class GameMapView extends StatelessWidget {
     final cubit = context.watch<GameJourneyCubit>();
     final surfaceBuilder = context.read<MapSurfaceBuilder>();
     final state = cubit.state;
-    final nextStop = state.nextStop;
-    final currentStop = state.currentStop;
 
     return AnimatedBuilder(
       animation: sweepProgress,
@@ -57,13 +60,7 @@ final class GameMapView extends StatelessWidget {
 
         return surfaceBuilder(
           MapSurfaceSpec(
-            markers: [
-              if (nextStop != null) _marker(nextStop, GameMapStyles.locked),
-              for (final stop in state.clearedStops)
-                _marker(stop, GameMapStyles.cleared, isInteractive: true),
-              if (currentStop != null)
-                _marker(currentStop, GameMapStyles.current, isInteractive: true),
-            ],
+            markers: _markersFor(state, routes),
             camera: state.camera,
             minZoom: _minZoom,
             maxZoom: _maxZoom,
@@ -159,13 +156,62 @@ final class GameMapView extends StatelessWidget {
             id: route.character.id,
             position: route.position,
             style: GameMapStyles.tokenFor(route.character),
-            offset: Offset(
-              (index - (group.length - 1) / 2) * _tokenSpacing,
-              0,
-            ),
+            offset: _rowOffset(index, group.length),
           ),
     ];
   }
+
+  /// Where the [index]th of [count] characters sharing a place stands.
+  ///
+  /// A row, centred on the place itself, so the middle of the group is
+  /// the point the trail ends at and the group travels with the trail
+  /// rather than hovering somewhere near it.
+  static Offset _rowOffset(int index, int count) => Offset(
+    (index - (count - 1) / 2) * (GameMapStyles.tokenDiameter - _tokenOverlap),
+    0,
+  );
+
+  /// The stops to draw, at most one marker per point.
+  ///
+  /// A city holding two letters appears twice in the script — cleared
+  /// from the first, current or next for the second — and two markers on
+  /// one point means two copies of the city's name stacked on each
+  /// other. Later entries win, so current beats cleared beats locked.
+  ///
+  /// A stop with characters standing on it also hands its label the room
+  /// to clear their portraits.
+  static List<MapMarkerSpec> _markersFor(
+    GameJourneyState state,
+    List<_CourierRoute> routes,
+  ) {
+    final occupied = {for (final route in routes) route.positionKey};
+    final nextStop = state.nextStop;
+    final currentStop = state.currentStop;
+    final byPosition = <String, MapMarkerSpec>{};
+
+    for (final (stop, style, isInteractive) in [
+      if (nextStop != null) (nextStop, GameMapStyles.locked, false),
+      for (final stop in state.clearedStops)
+        (stop, GameMapStyles.cleared, true),
+      if (currentStop != null) (currentStop, GameMapStyles.current, true),
+    ]) {
+      final key = _positionKey(stop.position);
+      byPosition[key] = _marker(
+        stop,
+        style,
+        isInteractive: isInteractive,
+        labelClearance: occupied.contains(key)
+            ? GameMapStyles.tokenDiameter / 2 + _labelGap
+            : 0,
+      );
+    }
+
+    return byPosition.values.toList();
+  }
+
+  /// Identifies a point, so what stands on it can be matched to it.
+  static String _positionKey(GeoPosition position) =>
+      '${position.latitude},${position.longitude}';
 
   /// A stop's marker. The stop's own id is the marker id, which is what
   /// `GameJourneyCubit.goToStop` is handed on a tap.
@@ -173,12 +219,14 @@ final class GameMapView extends StatelessWidget {
     JourneyStop stop,
     MapMarkerStyle style, {
     bool isInteractive = false,
+    double labelClearance = 0,
   }) => MapMarkerSpec(
     id: stop.id,
     position: stop.position,
     label: stop.label,
     style: style,
     isInteractive: isInteractive,
+    labelClearance: labelClearance,
   );
 }
 
@@ -193,8 +241,9 @@ final class _CourierRoute {
   String get shapeKey =>
       '${points.length}:${points.firstOrNull}:${points.lastOrNull}';
 
-  /// Identifies where they stand, so companions are spread apart.
-  String get positionKey => '${position.latitude},${position.longitude}';
+  /// Identifies where they stand, so companions are spread apart and
+  /// the stop they are standing on can be found.
+  String get positionKey => GameMapView._positionKey(position);
 
   const _CourierRoute({
     required this.character,

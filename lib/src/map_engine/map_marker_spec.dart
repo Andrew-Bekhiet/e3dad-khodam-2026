@@ -29,8 +29,23 @@ final class MapMarkerSpec extends Equatable {
   /// rather than relying on the caller to ignore the result.
   final bool isInteractive;
 
+  /// Extra logical pixels to push the label down by, beyond what the
+  /// style's own shape needs.
+  ///
+  /// Something drawn on top of the marker — a character's portrait, say
+  /// — is not part of the style, so only the caller knows the label has
+  /// more than the shape to clear.
+  final double labelClearance;
+
   @override
-  List<Object?> get props => [id, position, label, style, isInteractive];
+  List<Object?> get props => [
+    id,
+    position,
+    label,
+    style,
+    isInteractive,
+    labelClearance,
+  ];
 
   /// Creates a marker spec.
   const MapMarkerSpec({
@@ -39,5 +54,6 @@ final class MapMarkerSpec extends Equatable {
     required this.label,
     required this.style,
     required this.isInteractive,
+    this.labelClearance = 0,
   });
 }

@@ -244,11 +244,11 @@ void _revealTests() {
 
     // The sweep owns the screen: no card, and nobody speaks over it.
     expect(cubit.state.isArriving, isTrue);
-    expect(cubit.state.showsSign, isFalse);
+    expect(cubit.state.showsCard, isFalse);
     expect(cubit.state.beat, isNull);
   });
 
-  test('GameJourneyCubit_theFirstPressAfterArriving_raisesTheSign', () {
+  test('GameJourneyCubit_theFirstPressAfterArriving_startsTheBriefingAlone', () {
     final cubit = GameJourneyCubit(_repository);
     addTearDown(cubit.close);
 
@@ -256,13 +256,33 @@ void _revealTests() {
     final step = cubit.state.stepIndex;
     cubit.forward();
 
-    // One press lands the level: the sign appears and the guide starts,
-    // without moving on to another step.
+    // One press lands the level and the guide starts, without moving on
+    // to another step. The briefing has the map to itself: the card is
+    // still down even though the sign is what the next press opens.
     expect(cubit.state.stepIndex, step);
     expect(cubit.state.isArriving, isFalse);
-    expect(cubit.state.showsSign, isTrue);
-    expect(cubit.state.showsImage, isFalse);
     expect(cubit.state.beat, isNotNull);
+    expect(cubit.state.showsSign, isTrue);
+    expect(cubit.state.showsCard, isFalse);
+
+    // The card comes up on the press that leaves the briefing.
+    cubit.forward();
+    expect(cubit.state.showsCard, isTrue);
+    expect(cubit.state.showsImage, isFalse);
+  });
+
+  test('GameJourneyCubit_aLevelWithNoBriefing_raisesTheCardOnArrival', () {
+    final cubit = GameJourneyCubit(_repository);
+    addTearDown(cubit.close);
+
+    // غلاطية is swept into and the script gives it no briefing, so there
+    // is nothing for the card to wait behind.
+    _pressUntil(cubit, () => cubit.state.level?.id == 'galatians');
+    expect(cubit.state.isArriving, isTrue);
+    expect(cubit.state.showsCard, isFalse);
+
+    cubit.forward();
+    expect(cubit.state.showsCard, isTrue);
   });
 
   test('GameJourneyCubit_theCard_opensSignThenImageThenVerses', () {
@@ -345,17 +365,69 @@ void _revealTests() {
     expect(cubit.state.revealedVerses, verses);
   });
 
-  test('GameJourneyCubit_aClearedLevel_keepsItsSignUp', () {
+  test('GameJourneyCubit_aClearedLevel_keepsItsCardOpen', () {
     final cubit = GameJourneyCubit(_repository);
     addTearDown(cubit.close);
 
     _pressUntil(cubit, () => cubit.state.step.phase == GamePhase.clearance);
 
-    // Still the same level, so the sign must not blink out and back.
-    // The artwork and verses do close; only the name and year stay.
+    // Still the same level, and the verses have just been read. Taking
+    // them away to say "well done" and then putting them back is the
+    // flicker this is here to prevent.
     expect(cubit.state.showsSign, isTrue);
-    expect(cubit.state.showsImage, isFalse);
+    expect(cubit.state.showsImage, isTrue);
+    // Everything the city has said so far: this letter's verses, and —
+    // since the first clearance in the script is تسالونيكي's second
+    // letter — the first letter's above them.
+    expect(cubit.state.revealedVerses, [
+      ...cubit.state.carriedVerses,
+      ...cubit.state.level!.verses,
+    ]);
+    expect(cubit.state.revealedVerses, isNotEmpty);
+  });
+
+  test('GameJourneyCubit_aSecondLetterToACity_keepsTheFirstLettersVerses', () {
+    final cubit = GameJourneyCubit(_repository);
+    addTearDown(cubit.close);
+
+    _pressToLevel(cubit, 1);
+    final first = cubit.state.level!.verses;
+    _pressToLevel(cubit, 2);
+    final second = cubit.state.level!.verses;
+
+    // تسالونيكي receives two letters and they are read in one sitting,
+    // so the second letter's verses go below the first letter's rather
+    // than replacing them.
+    expect(cubit.state.revealedVerses, first);
+
+    for (var verse = 0; verse < second.length; verse++) {
+      cubit.forward();
+    }
+
+    expect(cubit.state.revealedVerses, [...first, ...second]);
+  });
+
+  test('GameJourneyCubit_sweepingToANewCity_leavesTheOldVersesBehind', () {
+    final cubit = GameJourneyCubit(_repository);
+    addTearDown(cubit.close);
+
+    // كورنثوس is a new city, so nothing is carried across the water.
+    _pressToLevel(cubit, 3);
+
+    expect(cubit.state.carriedVerses, isEmpty);
     expect(cubit.state.revealedVerses, isEmpty);
+  });
+
+  test('GameJourneyCubit_corinth_accumulatesAcrossBothItsLetters', () {
+    final cubit = GameJourneyCubit(_repository);
+    addTearDown(cubit.close);
+
+    _pressToLevel(cubit, 3);
+    final first = cubit.state.level!.verses;
+    _pressToLevel(cubit, 4);
+
+    expect(cubit.state.carriedVerses, first);
+    expect(cubit.state.showsImage, isTrue);
   });
 
   test('GameJourneyCubit_anotherLetterToTheSameCity_keepsTheSignUp', () {

@@ -84,6 +84,24 @@ void main() {
     expect(propertiesOf(marker)['labelOffsetEms'], [0.0, 2.5]);
   });
 
+  test('drops the label below whatever is standing on the marker', () {
+    // A 48px clearance plus the 5px gap is 53px, 5.3em at a 10px font:
+    // the shape's own 25px no longer decides where the name goes.
+    expect(
+      propertiesOf(
+        const MapMarkerSpec(
+          id: 'sea',
+          position: GeoPosition(latitude: 0, longitude: 0),
+          label: 'مدينة',
+          style: style,
+          isInteractive: false,
+          labelClearance: 48,
+        ),
+      )['labelOffsetEms'],
+      [0.0, 5.3],
+    );
+  });
+
   test('emits colours as CSS hex, which is what Mapbox parses', () {
     expect(propertiesOf(marker)['labelColor'], '#102030');
     expect(propertiesOf(marker)['labelHaloColor'], '#ffffff');

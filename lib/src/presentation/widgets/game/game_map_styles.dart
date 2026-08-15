@@ -36,7 +36,7 @@ final class GameMapStyles {
       ringWidth: 2,
     ),
     shadow: const MapMarkerShadow(blur: 5, offsetDy: 1, opacity: 0.22),
-    glyph: _glyph(Icons.check, size: 16),
+    glyph: _glyph(Icons.check, size: 32),
     label: _label,
   );
 
@@ -45,13 +45,13 @@ final class GameMapStyles {
     id: 'game-stop-locked',
     shape: MapMarkerShapeStyle(
       shape: MapMarkerShape.circle,
-      diameter: 20,
+      diameter: 40,
       color: GamePalette.locked,
     ),
     shadow: null,
     glyph: null,
     label: MapMarkerLabelStyle(
-      fontSize: 12,
+      fontSize: 20,
       color: GamePalette.locked,
       haloColor: GamePalette.white,
       haloWidth: 1.5,
@@ -60,21 +60,26 @@ final class GameMapStyles {
   );
 
   static const MapMarkerLabelStyle _label = MapMarkerLabelStyle(
-    fontSize: 14,
+    fontSize: 34,
     color: GamePalette.ink,
     haloColor: GamePalette.white,
     haloWidth: 2,
     gap: 4,
   );
 
+  /// Outer diameter of a character token, ring included. Public because
+  /// laying a group of characters out around a city needs to know how
+  /// much room one of them takes.
+  static const double tokenDiameter = 80;
+
   /// The round portrait token [character] stands on the map as. The style
   /// id folds in the character, so two characters never share one image.
   static MapTokenStyle tokenFor(GameCharacter character) => MapTokenStyle(
     id: 'game-token-${character.id}',
     portraitAsset: character.portraitAsset,
-    diameter: 54,
+    diameter: tokenDiameter,
     ringColor: GamePalette.white,
-    ringWidth: 4,
+    ringWidth: 2,
     fallbackColor: GamePalette.accent,
   );
 

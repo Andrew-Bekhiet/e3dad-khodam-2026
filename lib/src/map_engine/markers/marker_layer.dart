@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'dart:ui';
 
 import 'package:e3dad_khodam_2026/src/map_engine/map_marker_spec.dart';
@@ -138,7 +139,7 @@ final class MarkerLayer {
         spriteProperty: style.id,
         labelProperty: marker.label,
         _fontSizeProperty: label.fontSize,
-        _offsetProperty: _labelOffsetEms(style),
+        _offsetProperty: _labelOffsetEms(style, marker.labelClearance),
         _colorProperty: _hex(label.color),
         _haloColorProperty: _hex(label.haloColor),
         _haloWidthProperty: label.haloWidth,
@@ -149,11 +150,14 @@ final class MarkerLayer {
 
   /// Vertical `text-offset`, measured in ems of the label's font size.
   /// The icon is centred on the coordinate, so the label must clear half
-  /// the shape plus the gap.
-  static List<double> _labelOffsetEms(MapMarkerStyle style) => [
-    0,
-    (style.diameter / 2 + style.label.gap) / style.label.fontSize,
-  ];
+  /// the shape plus the gap, plus whatever [clearance] the caller adds
+  /// for things drawn over the marker.
+  static List<double> _labelOffsetEms(MapMarkerStyle style, double clearance) =>
+      [
+        0,
+        (max(style.diameter / 2, clearance) + style.label.gap) /
+            style.label.fontSize,
+      ];
 
   /// Mapbox parses colours from CSS strings.
   static String _hex(Color color) {

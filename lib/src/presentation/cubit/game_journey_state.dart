@@ -16,7 +16,7 @@ final class GameJourneyState extends Equatable {
 
   /// Reveal at which the card's background artwork appears. Every reveal
   /// above this one is a verse.
-  static const int imageReveal = 2;
+  static const int imageReveal = 1;
 
   /// The step currently showing.
   final GameStep step;
@@ -70,16 +70,26 @@ final class GameJourneyState extends Equatable {
   /// same `±1` they use on steps.
   final int reveal;
 
+  /// Verses already read in this destination, from earlier levels
+  /// delivered to the same place.
+  ///
+  /// كورنثوس and تسالونيكي each receive two letters. Their verses belong
+  /// to one city and are read in one sitting, so the second letter's
+  /// verses are added below the first letter's rather than replacing
+  /// them. Cleared only when the journey sweeps to somewhere new.
+  final List<String> carriedVerses;
+
   /// The highest [reveal] this step can reach. Beyond it, a press moves
   /// to the next step instead.
   ///
-  /// A cleared level keeps its sign. The level has not changed, so
-  /// taking the card away and putting it back would flicker something
-  /// the player is still looking at.
+  /// A cleared level keeps everything it had open. The level has not
+  /// changed, so taking the card away and putting it back would flicker
+  /// something the player is still reading.
   int get maxReveal => switch (step.phase) {
     GamePhase.prologue || GamePhase.epilogue => 0,
-    GamePhase.briefing || GamePhase.clearance => signReveal,
-    GamePhase.playing => imageReveal + (level?.verses.length ?? 0),
+    GamePhase.briefing => signReveal,
+    GamePhase.playing ||
+    GamePhase.clearance => imageReveal + (level?.verses.length ?? 0),
   };
 
   /// Whether this step starts with a blank map.
@@ -90,7 +100,15 @@ final class GameJourneyState extends Equatable {
   bool get opensBlank => isLevelOpening && camera is SweepCameraTarget;
 
   /// The lowest [reveal] this step settles at once acknowledged.
-  int get minReveal => opensBlank ? 0 : signReveal;
+  ///
+  /// A city already carrying verses opens straight to its artwork: the
+  /// player is part-way through reading that city, and dropping back to
+  /// the bare sign would take away what they are still looking at.
+  int get minReveal => switch (this) {
+    _ when opensBlank => 0,
+    _ when carriedVerses.isNotEmpty => imageReveal,
+    _ => signReveal,
+  };
 
   /// Whether the level has been entered but not yet acknowledged: the
   /// camera is sweeping in, or has just landed, and the screen carries
@@ -100,6 +118,20 @@ final class GameJourneyState extends Equatable {
   /// Whether the card is showing its destination name and year.
   bool get showsSign => reveal >= signReveal;
 
+  /// Whether the card is on screen at all.
+  ///
+  /// A swept-into level's briefing gets the map to itself: the arrival
+  /// and the line explaining it are one moment, and raising the sign
+  /// underneath puts a second thing on screen to read. The card comes up
+  /// on the press that leaves the briefing. A level with no briefing has
+  /// nothing to wait for, so its sign rises on arrival as before — and a
+  /// level that is not swept into keeps whatever card was already up,
+  /// which is the rule against blinking.
+  bool get showsCard =>
+      level != null &&
+      showsSign &&
+      !(opensBlank && step.phase == GamePhase.briefing);
+
   /// Whether the card is showing its background artwork.
   bool get showsImage => reveal >= imageReveal;
 
@@ -107,9 +139,12 @@ final class GameJourneyState extends Equatable {
   int get versesShown =>
       (reveal - imageReveal).clamp(0, level?.verses.length ?? 0);
 
-  /// The verses revealed so far, in the order the script quotes them.
-  List<String> get revealedVerses =>
-      (level?.verses ?? const <String>[]).take(versesShown).toList();
+  /// Every verse on the card: those already read in this city, then this
+  /// level's own as they are revealed.
+  List<String> get revealedVerses => [
+    ...carriedVerses,
+    ...(level?.verses ?? const <String>[]).take(versesShown),
+  ];
 
   /// Whether this step still has something left to open.
   bool get hasMoreReveal => reveal < maxReveal;
@@ -147,6 +182,7 @@ final class GameJourneyState extends Equatable {
     camera,
     cameraAnimationDuration,
     reveal,
+    carriedVerses,
   ];
 
   /// Creates a playthrough state.
@@ -162,6 +198,7 @@ final class GameJourneyState extends Equatable {
     required this.camera,
     required this.cameraAnimationDuration,
     this.reveal = 0,
+    this.carriedVerses = const [],
     this.level,
     this.currentStop,
     this.nextStop,
@@ -184,6 +221,7 @@ final class GameJourneyState extends Equatable {
     level: level,
     currentStop: currentStop,
     nextStop: nextStop,
+    carriedVerses: carriedVerses,
     reveal: reveal.clamp(0, maxReveal),
   );
 }

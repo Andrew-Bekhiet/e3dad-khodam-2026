@@ -7,20 +7,26 @@ import 'package:e3dad_khodam_2026/src/domain/game/game_character.dart';
 /// artwork can be dropped into `assets/characters/` later without any
 /// code change.
 final class PostOfficeCharacters {
-  static const List<GameCharacter> couriers = [courier1, courier2];
+  static const List<GameCharacter> couriers = [grandma, courier2, courier1];
 
   /// The postman the player follows across the map; the one carrying the
   /// letters, and the only character with a token on the map today.
   static const GameCharacter courier1 = GameCharacter(
     id: 'courier1',
     name: 'ساعي البريد ١',
-    portraitAsset: 'assets/characters/postman1-avatar.jpg',
+    portraitAsset: 'assets/characters/postman1-avatar.png',
   );
 
   static const GameCharacter courier2 = GameCharacter(
     id: 'courier2',
     name: 'ساعي البريد ٢',
     portraitAsset: 'assets/characters/postman2-avatar.jpg',
+  );
+
+  static const GameCharacter grandma = GameCharacter(
+    id: 'grandma',
+    name: 'تيتا',
+    portraitAsset: 'assets/characters/grandma-avatar.png',
   );
 
   /// The writer of every letter in the game. He has no token on the map
@@ -35,7 +41,7 @@ final class PostOfficeCharacters {
   /// The in-world voice of the game that explains each level.
   static const GameCharacter guide = GameCharacter(
     id: 'guide',
-    name: 'صوت اللعبة',
+    name: 'اللعبة',
     portraitAsset: 'assets/characters/guide.png',
   );
 

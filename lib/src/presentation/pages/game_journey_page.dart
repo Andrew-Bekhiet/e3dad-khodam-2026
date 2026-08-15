@@ -87,7 +87,7 @@ class _GameJourneyViewState extends State<_GameJourneyView>
               // a level: a cleared level still has one, and its card
               // must be gone before the clearance line and the next
               // sweep.
-              if (state.level != null && state.showsSign)
+              if (state.showsCard)
                 DestinationCard(
                   level: state.level!,
                   destinationLabel: state.currentStop?.label ?? '',

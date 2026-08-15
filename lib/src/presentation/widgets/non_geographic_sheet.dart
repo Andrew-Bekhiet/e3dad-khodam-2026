@@ -12,9 +12,6 @@ final class NonGeographicSheet extends StatelessWidget {
   static const double _dragHandleTopMargin = 12.0;
   static const Color _dragHandleColor = Color(0xFF9E9E9E);
   static const double _titlePadding = 16.0;
-  static const double _titleFontSize = 16.0;
-  static const double _rowFontSize = 15.0;
-  static const double _groupHeaderFontSize = 13.0;
   static const double _groupHeaderHorizontalPadding = 16.0;
   static const double _groupHeaderTopPadding = 12.0;
   static const double _bottomSafeAreaPadding = 8.0;
@@ -35,6 +32,7 @@ final class NonGeographicSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final text = theme.textTheme;
 
     return SafeArea(
       top: false,
@@ -52,14 +50,11 @@ final class NonGeographicSheet extends StatelessWidget {
                 borderRadius: BorderRadius.circular(_dragHandleHeight / 2),
               ),
             ),
-            const Padding(
-              padding: EdgeInsets.all(_titlePadding),
+            Padding(
+              padding: const EdgeInsets.all(_titlePadding),
               child: Text(
                 AppStrings.nonGeographicSheetTitle,
-                style: TextStyle(
-                  fontSize: _titleFontSize,
-                  fontWeight: FontWeight.w700,
-                ),
+                style: text.titleMedium?.copyWith(fontWeight: FontWeight.w700),
               ),
             ),
             for (final (index, group) in groups.indexed) ...[
@@ -73,8 +68,7 @@ final class NonGeographicSheet extends StatelessWidget {
                   alignment: AlignmentDirectional.centerStart,
                   child: Text(
                     group.label,
-                    style: TextStyle(
-                      fontSize: _groupHeaderFontSize,
+                    style: text.labelLarge?.copyWith(
                       fontWeight: FontWeight.w600,
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
@@ -84,10 +78,7 @@ final class NonGeographicSheet extends StatelessWidget {
               for (final member in group.members)
                 ListTile(
                   leading: Icon(_iconFor(group.label)),
-                  title: Text(
-                    member,
-                    style: const TextStyle(fontSize: _rowFontSize),
-                  ),
+                  title: Text(member, style: text.bodyLarge),
                 ),
             ],
           ],

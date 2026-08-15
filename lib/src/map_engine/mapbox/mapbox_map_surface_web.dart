@@ -225,8 +225,14 @@ class _MapboxMapSurfaceWebState extends State<MapboxMapSurfaceWeb>
           minZoom: widget.spec.minZoom,
           maxZoom: widget.spec.maxZoom,
         ),
+        // Out of the bottom-left, where the game's step arrows sit: the
+        // app is locked to Arabic, so their directional `end` resolves
+        // to the physical left.
+        logoPosition: 'bottom-right',
       ),
     );
+    // The tile terms want this on screen; the corner is ours to pick.
+    map.addControl(gl.GlAttributionControl(), 'top-right');
     // Listeners must return void: `toJS` rejects a Future signature.
     map.on(
       'load',

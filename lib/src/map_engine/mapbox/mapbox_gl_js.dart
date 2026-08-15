@@ -102,6 +102,22 @@ extension type GlMap._(JSObject _) implements JSObject {
   /// The pinch gesture handler, whose rotation half this app switches
   /// off — as it does every other rotation and pitch control.
   external GlTouchZoomRotateHandler get touchZoomRotate;
+
+  /// Adds [control] at [position] — one of `top-left`, `top-right`,
+  /// `bottom-left`, `bottom-right`.
+  ///
+  /// The only way to place the attribution anywhere but its default
+  /// corner: GL JS takes `logoPosition` as a map option but offers no
+  /// matching option for the attribution, so it has to be switched off
+  /// in [GlMapOptions] and re-added here.
+  external void addControl(JSObject control, String position);
+}
+
+/// GL JS's attribution control — the `©` line the tile terms require.
+@JS('AttributionControl')
+extension type GlAttributionControl._(JSObject _) implements JSObject {
+  /// Creates a collapsed attribution control.
+  external GlAttributionControl();
 }
 
 /// A `geojson` source, whose features can be replaced wholesale.
@@ -189,6 +205,7 @@ extension type GlMapOptions._(JSObject _) implements JSObject {
     required GlViewport viewport,
     bool antialias = false,
     bool attributionControl = false,
+    String logoPosition = 'bottom-left',
   }) {
     final options = JSObject()
       ..['container'] = container
@@ -198,7 +215,8 @@ extension type GlMapOptions._(JSObject _) implements JSObject {
       ..['minZoom'] = viewport.minZoom.toJS
       ..['maxZoom'] = viewport.maxZoom.toJS
       ..['antialias'] = antialias.toJS
-      ..['attributionControl'] = attributionControl.toJS;
+      ..['attributionControl'] = attributionControl.toJS
+      ..['logoPosition'] = logoPosition.toJS;
 
     return GlMapOptions._(options);
   }

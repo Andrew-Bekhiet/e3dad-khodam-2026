@@ -173,6 +173,17 @@ class _MapboxMapSurfaceNativeState extends State<MapboxMapSurfaceNative>
     _map = map;
     await map.compass.updateSettings(CompassSettings(enabled: false));
     await map.scaleBar.updateSettings(ScaleBarSettings(enabled: false));
+    // Both ornaments default to the bottom-left, which is where the
+    // game's step arrows sit: `_Arrows` is positioned at the directional
+    // `end`, and the app is locked to Arabic, so `end` resolves to the
+    // physical left. Mapbox only speaks physical corners, so these are
+    // physical too rather than mirrored off `Directionality`.
+    await map.logo.updateSettings(
+      LogoSettings(position: OrnamentPosition.BOTTOM_RIGHT),
+    );
+    await map.attribution.updateSettings(
+      AttributionSettings(position: OrnamentPosition.TOP_RIGHT),
+    );
     await map.setBounds(
       CameraBoundsOptions(
         minZoom: widget.spec.minZoom,

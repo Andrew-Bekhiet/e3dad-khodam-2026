@@ -49,87 +49,97 @@ final class CityOverlay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Center(
-    child: SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 96, 20, 80),
-        child: ConstrainedBox(
-          constraints: BoxConstraints(
-            maxWidth: _maxWidth,
-            maxHeight: MediaQuery.sizeOf(context).height * _maxHeightFactor,
-          ),
-          child: GestureDetector(
-            onTap: hasMoreVerses ? onRevealVerse : null,
-            child: PixelPanel(
-              padding: const EdgeInsets.fromLTRB(18, 16, 18, 14),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  _Artwork(asset: level.imageAsset),
-                  const SizedBox(height: 12),
-                  Text(
-                    cityLabel,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                      color: GamePalette.accent,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    level.title,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontSize: 26,
-                      fontWeight: FontWeight.w700,
-                      color: GamePalette.ink,
-                    ),
-                  ),
-                  if (verses.isNotEmpty) ...[
-                    const SizedBox(height: 14),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        CharacterPortrait(
-                          character: versesSpeaker,
-                          size: _speakerPortraitSize,
+    child: Visibility(
+      visible: verses.isNotEmpty,
+      maintainState: true,
+      maintainAnimation: true,
+      maintainSize: true,
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 96, 20, 80),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: _maxWidth,
+              maxHeight: MediaQuery.sizeOf(context).height * _maxHeightFactor,
+            ),
+            child: AnimatedSize(
+              duration: _revealDuration,
+              alignment: Alignment.topCenter,
+              child: GestureDetector(
+                onTap: hasMoreVerses ? onRevealVerse : null,
+                child: PixelPanel(
+                  padding: const EdgeInsets.fromLTRB(18, 16, 18, 14),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _Artwork(asset: level.imageAsset),
+                      const SizedBox(height: 12),
+                      Text(
+                        cityLabel,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: GamePalette.accent,
                         ),
-                        const SizedBox(width: 10),
-                        Text(
-                          versesSpeaker.name,
-                          style: const TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w700,
-                            color: GamePalette.accent,
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        level.title,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 26,
+                          fontWeight: FontWeight.w700,
+                          color: GamePalette.ink,
+                        ),
+                      ),
+                      if (verses.isNotEmpty)
+                        Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const SizedBox(height: 14),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                CharacterPortrait(
+                                  character: versesSpeaker,
+                                  size: _speakerPortraitSize,
+                                ),
+                                const SizedBox(width: 10),
+                                Text(
+                                  versesSpeaker.name,
+                                  style: const TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w700,
+                                    color: GamePalette.accent,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 2),
+                            Flexible(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  for (final verse in verses)
+                                    _Verse(text: verse),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      if (hasMoreVerses) ...[
+                        const SizedBox(height: 8),
+                        const Center(
+                          child: ContinueChevron(
+                            icon: Icons.keyboard_arrow_down,
                           ),
                         ),
                       ],
-                    ),
-                    const SizedBox(height: 2),
-                    Flexible(
-                      child: SingleChildScrollView(
-                        reverse: true,
-                        child: AnimatedSize(
-                          duration: _revealDuration,
-                          alignment: Alignment.topCenter,
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              for (final verse in verses) _Verse(text: verse),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                  if (hasMoreVerses) ...[
-                    const SizedBox(height: 8),
-                    const Center(
-                      child: ContinueChevron(icon: Icons.keyboard_arrow_down),
-                    ),
-                  ],
-                ],
+                    ],
+                  ),
+                ),
               ),
             ),
           ),

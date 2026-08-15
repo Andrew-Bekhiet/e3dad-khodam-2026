@@ -17,6 +17,16 @@ plugin-aware and equivalent; passing `paths` drops the plugin diagnostics the sa
 
 More detail in `docs/agents/linting.md`.
 
+## Where to work
+
+Work in the main checkout. Do **not** run `EnterWorktree` unless the user asks for a worktree by
+name — the user follows the work as it lands in their editor and their running app, and a separate
+worktree hides every edit until the branch is merged back.
+
+Background jobs are the one exception: that harness forces isolation before the first edit, and
+once isolated it refuses the shared checkout entirely. If that applies, say so explicitly and name
+the reason instead of isolating silently, and hand back the branch name and the merge command.
+
 ## Agent skills
 
 ### Issue tracker

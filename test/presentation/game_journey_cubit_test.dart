@@ -2,9 +2,12 @@ import 'package:e3dad_khodam_2026/src/data/game/post_office_characters.dart';
 import 'package:e3dad_khodam_2026/src/data/game/post_office_script.dart';
 import 'package:e3dad_khodam_2026/src/data/journey_stops.dart';
 import 'package:e3dad_khodam_2026/src/domain/game/game_sounds.dart';
+import 'package:e3dad_khodam_2026/src/domain/geo_bounds.dart';
+import 'package:e3dad_khodam_2026/src/domain/geo_position.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/map_camera_target.dart';
 import 'package:e3dad_khodam_2026/src/presentation/cubit/game_journey_cubit.dart';
 import 'package:e3dad_khodam_2026/src/presentation/cubit/game_step.dart';
+import 'package:e3dad_khodam_2026/src/presentation/cubit/sweep_framing.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 // The script is a compile-time constant, so a real repository exercises
@@ -52,6 +55,13 @@ final class _CountingSounds implements GameSounds {
 ///
 /// A press is not a step: most steps also open part of the destination
 /// card, so crossing the script takes several presses per step.
+/// Whether [bounds] encloses [position].
+bool _contains(GeoBounds bounds, GeoPosition position) =>
+    position.latitude >= bounds.south &&
+    position.latitude <= bounds.north &&
+    position.longitude >= bounds.west &&
+    position.longitude <= bounds.east;
+
 void _pressUntil(GameJourneyCubit cubit, bool Function() test) {
   final limit = cubit.state.stepCount * 20;
   for (var press = 0; press < limit && !test(); press++) {
@@ -296,6 +306,35 @@ void _sweepTests() {
     expect(sweep.inLeg, greaterThan(sweep.outLeg));
   });
 
+  test('GameJourneyCubit_framingTheLeg_pullsOutToTheTwoCitiesAlone', () {
+    final cubit = GameJourneyCubit(_repository, framing: SweepFraming.leg);
+    addTearDown(cubit.close);
+
+    // Level ٣ is the move from تسالونيكي to كورنثوس.
+    _pressUntil(cubit, () => cubit.state.levelNumber == 3);
+    final bounds = cubit.state.sweep!.widest.bounds;
+
+    expect(_contains(bounds, JourneyStops.thessalonica.position), isTrue);
+    expect(_contains(bounds, JourneyStops.corinth.position), isTrue);
+    // The point of the frame: on a phone the basin is two unreadable
+    // dots, so the leg is all it shows.
+    expect(
+      bounds.east - bounds.west,
+      lessThan(
+        GameJourneyCubit.sweepFrame.east - GameJourneyCubit.sweepFrame.west,
+      ),
+    );
+  });
+
+  test('GameJourneyCubit_framingTheBasin_staysTheDefault', () {
+    final cubit = GameJourneyCubit(_repository);
+    addTearDown(cubit.close);
+
+    _pressUntil(cubit, () => cubit.state.levelNumber == 3);
+
+    expect(cubit.state.sweep!.widest.bounds, GameJourneyCubit.sweepFrame);
+  });
+
   test('GameJourneyCubit_theFirstLevel_sweepsOntoItToo', () {
     final cubit = GameJourneyCubit(_repository);
     addTearDown(cubit.close);
@@ -340,19 +379,66 @@ void _sweepTests() {
     expect(cubit.state.camera, camera);
   });
 
-  test('GameJourneyCubit_steppingBackIntoAnEarlierCity_sweepsAgain', () {
+  test(
+    'GameJourneyCubit_steppingBackIntoAnEarlierCity_pansRatherThanSweeps',
+    () {
+      final cubit = GameJourneyCubit(_repository);
+      addTearDown(cubit.close);
+
+      _pressUntil(cubit, () => cubit.state.levelNumber == 3);
+      while (cubit.state.levelNumber == 3) {
+        cubit.backward();
+      }
+
+      expect(cubit.state.levelNumber, 2);
+      expect(cubit.state.currentStop, JourneyStops.thessalonica);
+      // Reviewing the journey is not making it again. A sweep here would
+      // pull out to the whole basin over a card the operator is reading,
+      // and the card is fully open on the way back.
+      expect(cubit.state.sweep, isNull);
+      expect(cubit.state.showsCard, isTrue);
+      expect(
+        cubit.state.camera,
+        CenterZoomCameraTarget(
+          center: JourneyStops.thessalonica.position,
+          zoom: GameJourneyCubit.arrivalZoom,
+        ),
+      );
+    },
+  );
+
+  test('GameJourneyCubit_steppingBackOverASecondLetter_staysWhereItIs', () {
     final cubit = GameJourneyCubit(_repository);
     addTearDown(cubit.close);
 
-    _pressUntil(cubit, () => cubit.state.levelNumber == 3);
-    while (cubit.state.levelNumber == 3) {
+    // Levels ١ and ٢ are both تسالونيكي. The boundary between them is
+    // where the camera used to fly out to the basin and dive back onto
+    // the city it was already looking at.
+    _pressUntil(cubit, () => cubit.state.levelNumber == 2);
+    while (cubit.state.levelNumber == 2) {
       cubit.backward();
     }
 
-    expect(cubit.state.levelNumber, 2);
-    // Going back is travel too, so the way back is swept the same way.
-    expect(cubit.state.camera, isNotNull);
-    expect(cubit.state.currentStop, JourneyStops.thessalonica);
+    expect(cubit.state.levelNumber, 1);
+    expect(cubit.state.sweep, isNull);
+  });
+
+  test('GameJourneyCubit_steppingBackAndForwardInsideALevel_doesNotRefly', () {
+    final cubit = GameJourneyCubit(_repository);
+    addTearDown(cubit.close);
+
+    _pressToLevel(cubit, 3);
+    final camera = cubit.state.camera;
+    cubit
+      ..backward()
+      ..backward()
+      ..forward()
+      ..forward();
+
+    // The camera is the level's own from either direction: a step back
+    // and forward inside كورنثوس must not fly to كورنثوس again.
+    expect(cubit.state.levelNumber, 3);
+    expect(cubit.state.camera, camera);
   });
 
   test('GameJourneyCubit_thePrologue_opensOnThePostOffice', () {

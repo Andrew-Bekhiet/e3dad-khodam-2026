@@ -33,8 +33,15 @@ final class GameMapView extends StatelessWidget {
   /// How far through the current sweep the camera is.
   final Animation<double> sweepProgress;
 
+  /// Called when a tap lands anywhere on the map, marker or not.
+  ///
+  /// One callback for both, because a tap is a press: landing on a city
+  /// used to jump the whole level it belongs to, which skipped past the
+  /// guide and the verses of every level in between.
+  final VoidCallback? onTap;
+
   /// Creates the game map; reads its data from ambient providers.
-  const GameMapView({required this.sweepProgress, super.key});
+  const GameMapView({required this.sweepProgress, this.onTap, super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -49,7 +56,8 @@ final class GameMapView extends StatelessWidget {
       // portraits end the walk where this puts them. Building them out
       // here keeps them off the animation entirely.
       markers: _markersFor(state),
-      onMarkerTap: cubit.goToStop,
+      onMarkerTap: (_) => onTap?.call(),
+      onSurfaceTap: onTap,
       surfaceBuilder: surfaceBuilder,
       sweepProgress: sweepProgress,
     );
@@ -117,6 +125,7 @@ final class _WalkingMapSurface extends StatefulWidget {
   final GameJourneyState state;
   final List<MapMarkerSpec> markers;
   final void Function(String stopId) onMarkerTap;
+  final VoidCallback? onSurfaceTap;
   final MapSurfaceBuilder surfaceBuilder;
   final Animation<double> sweepProgress;
 
@@ -124,6 +133,7 @@ final class _WalkingMapSurface extends StatefulWidget {
     required this.state,
     required this.markers,
     required this.onMarkerTap,
+    required this.onSurfaceTap,
     required this.surfaceBuilder,
     required this.sweepProgress,
   });
@@ -180,6 +190,7 @@ class _WalkingMapSurfaceState extends State<_WalkingMapSurface> {
           maxZoom: GameMapView._maxZoom,
           cameraAnimationDuration: state.cameraAnimationDuration,
           onMarkerTap: widget.onMarkerTap,
+          onSurfaceTap: widget.onSurfaceTap,
           trails: content.trails,
           tokens: content.tokens,
         ),

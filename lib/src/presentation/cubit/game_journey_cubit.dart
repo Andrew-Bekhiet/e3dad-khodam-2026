@@ -10,6 +10,7 @@ import 'package:e3dad_khodam_2026/src/map_engine/map_camera_target.dart';
 import 'package:e3dad_khodam_2026/src/presentation/cubit/courier_party.dart';
 import 'package:e3dad_khodam_2026/src/presentation/cubit/game_journey_state.dart';
 import 'package:e3dad_khodam_2026/src/presentation/cubit/game_step.dart';
+import 'package:e3dad_khodam_2026/src/presentation/cubit/sweep_framing.dart';
 import 'package:flutter/widgets.dart';
 
 /// Walks the guided playthrough one step at a time.
@@ -51,12 +52,29 @@ final class GameJourneyCubit extends Cubit<GameJourneyState> {
   ///
   /// This is the whole point of pulling out: the couriers walk their leg
   /// during this pause, with the entire route on screen, and only then
-  /// does the camera dive. A short pause would show the Mediterranean
-  /// but not the journey across it.
-  static const Duration sweepHold = Duration(milliseconds: 1400);
+  /// does the camera dive.
+  ///
+  /// Shorter than it was: framing the leg alone rather than the whole
+  /// basin makes the walk legible straight away, so the pause no longer
+  /// has to hold long enough for the eye to find two dots in a sea.
+  static const Duration sweepHold = Duration(milliseconds: 500);
 
   /// How long the camera takes to come in on its destination.
   static const Duration sweepIn = Duration(milliseconds: 900);
+
+  /// Breathing room around a leg-framed sweep, in degrees, so the two
+  /// cities are inside the frame rather than on its edges. Degrees rather
+  /// than pixels because a short leg and a long one need the frame opened
+  /// up by the same *fraction*, not the same number of pixels.
+  static const double _legMargin = 0.6;
+
+  /// Screen-space inset for a leg-framed sweep. Smaller than
+  /// [_overviewPadding]: this only ever runs on a phone, where that much
+  /// inset is most of the viewport.
+  static const EdgeInsets _legPadding = EdgeInsets.symmetric(
+    horizontal: 32,
+    vertical: 72,
+  );
 
   /// Screen-space inset used when framing the whole journey, which only
   /// happens in the prologue and the epilogue.
@@ -96,11 +114,17 @@ final class GameJourneyCubit extends Cubit<GameJourneyState> {
   /// returning to something they have already seen, and making them press
   /// through five verses again to reach the line before them is a way of
   /// losing the room.
+  ///
+  /// [from] is the state being left, or null for the state the game opens
+  /// on. The camera needs it: a sweep is a *departure*, so whether one
+  /// runs is a fact about the move rather than about the step arrived at.
   static GameJourneyState _stateAt(
     LevelScript script,
     List<GameStep> steps,
     int index, {
     required bool backward,
+    required SweepFraming framing,
+    GameJourneyState? from,
   }) {
     final step = steps[index];
     final levels = script.levels;
@@ -129,7 +153,14 @@ final class GameJourneyCubit extends Cubit<GameJourneyState> {
       currentStop: currentStop,
       nextStop: _nextStop(levels, levelIndex, step),
       party: _partyThrough(script, levelIndex, step),
-      camera: _cameraFor(script, levelIndex, step),
+      camera: _cameraFor(
+        script,
+        levelIndex,
+        step,
+        from: from,
+        backward: backward,
+        framing: framing,
+      ),
       cameraAnimationDuration: _stepDuration,
       carriedVerses: _carriedVerses(levels, levelIndex, step),
     );
@@ -185,8 +216,7 @@ final class GameJourneyCubit extends Cubit<GameJourneyState> {
   /// the prologue and the last one for the epilogue — those beats belong
   /// to no level but still need somewhere to look.
   static int _levelIndexOf(GameStep step, int levelCount) =>
-      step.levelIndex ??
-      (step.phase == GamePhase.opening ? 0 : levelCount - 1);
+      step.levelIndex ?? (step.phase == GamePhase.opening ? 0 : levelCount - 1);
 
   /// Destinations of the levels already delivered to, in order, minus
   /// [currentStop] (which is drawn as the highlighted marker instead) and
@@ -255,12 +285,29 @@ final class GameJourneyCubit extends Cubit<GameJourneyState> {
   /// city is not, since a sweep between the two letters to تسالونيكي
   /// would fly out to the whole basin and come back to the identical
   /// view.
+  ///
+  /// A sweep is only ever emitted for a move that is genuinely a
+  /// departure — forwards, from one city to a different one. Everything
+  /// else lands on the plain arrival, which the surface reaches with an
+  /// ordinary pan.
   static MapCameraTarget _cameraFor(
     LevelScript script,
     int levelIndex,
-    GameStep step,
-  ) {
+    GameStep step, {
+    required GameJourneyState? from,
+    required bool backward,
+    required SweepFraming framing,
+  }) {
     final levels = script.levels;
+    // The camera was decided when the level was entered, and a level's
+    // steps must all carry the same one: handing the surface a different
+    // target mid-level makes it fly to where it already is, and would let
+    // a step back and forward inside a level re-run its whole sweep.
+    if (from != null &&
+        step.levelIndex != null &&
+        from.step.levelIndex == step.levelIndex) {
+      return from.camera;
+    }
     // The map opens on the post office rather than flying to it: this is
     // where the couriers already are, and an arrival needs somewhere to
     // have arrived from.
@@ -284,18 +331,23 @@ final class GameJourneyCubit extends Cubit<GameJourneyState> {
       center: destination.position,
       zoom: arrivalZoom,
     );
-    final previous = levelIndex == 0
-        ? null
-        : levels[levelIndex - 1].destination;
-    if (previous != null && previous.id == destination.id) {
+    // Stepping back is reviewing the journey, not making it again. The
+    // clearance and departure stings are already kept quiet for the same
+    // reason; a sweep would be louder than either, and it would fly out
+    // to the whole basin over a card the operator is reading.
+    if (backward) {
+      return arrival;
+    }
+    // Nowhere to depart for. Two letters to تسالونيكي, a tap on the city
+    // already on screen, a step out of the epilogue and back in: all of
+    // them would otherwise pull out to the basin and dive on the view
+    // already showing.
+    if (from == null || from.party.destination.id == destination.id) {
       return arrival;
     }
 
     return SweepCameraTarget(
-      widest: const FitBoundsCameraTarget(
-        bounds: sweepFrame,
-        padding: EdgeInsets.zero,
-      ),
+      widest: _widestFrame(from.party.destination, destination, framing),
       arrival: arrival,
       outLeg: sweepOut,
       hold: sweepHold,
@@ -303,9 +355,33 @@ final class GameJourneyCubit extends Cubit<GameJourneyState> {
     );
   }
 
+  /// The frame a sweep from [departure] to [destination] pulls out to.
+  static FitBoundsCameraTarget _widestFrame(
+    JourneyStop departure,
+    JourneyStop destination,
+    SweepFraming framing,
+  ) => switch (framing) {
+    SweepFraming.basin => const FitBoundsCameraTarget(
+      bounds: sweepFrame,
+      padding: EdgeInsets.zero,
+    ),
+    SweepFraming.leg => FitBoundsCameraTarget(
+      bounds: GeoBounds.containing([
+        departure.position,
+        destination.position,
+      ]).padded(_legMargin),
+      padding: _legPadding,
+    ),
+  };
+
   final LevelScript _script;
   final GameSounds _sounds;
   final List<GameStep> _steps;
+
+  /// How wide the next sweep pulls out. Set by whoever knows how much
+  /// screen there is; only read when a sweep is built, so changing it
+  /// never disturbs a flight already under way.
+  SweepFraming sweepFraming;
 
   /// The character who fronts the guide overlay.
   GameCharacter get guide => _script.guide;
@@ -323,20 +399,23 @@ final class GameJourneyCubit extends Cubit<GameJourneyState> {
   factory GameJourneyCubit(
     LevelScriptRepository repository, {
     GameSounds sounds = const SilentGameSounds(),
+    SweepFraming framing = SweepFraming.basin,
   }) {
     final script = repository.loadLevelScript();
 
-    return GameJourneyCubit._(script, sounds, _buildSteps(script));
+    return GameJourneyCubit._(script, sounds, _buildSteps(script), framing);
   }
 
   GameJourneyCubit._(
     LevelScript script,
     GameSounds sounds,
     List<GameStep> steps,
+    SweepFraming framing,
   ) : _script = script,
       _sounds = sounds,
       _steps = steps,
-      super(_stateAt(script, steps, 0, backward: false));
+      sweepFraming = framing,
+      super(_stateAt(script, steps, 0, backward: false, framing: framing));
 
   /// Advances one press: opens the card a little further if it has
   /// anything left to show, otherwise moves to the next step.
@@ -421,7 +500,14 @@ final class GameJourneyCubit extends Cubit<GameJourneyState> {
     if (forward && _isFirstClearanceStep(index)) {
       _sounds.playLevelCleared();
     }
-    final next = _stateAt(_script, _steps, index, backward: backward);
+    final next = _stateAt(
+      _script,
+      _steps,
+      index,
+      backward: backward,
+      framing: sweepFraming,
+      from: state,
+    );
     // A sweep the camera is already holding is the same departure seen
     // from a later step, not a second one.
     if (forward && next.sweep != null && next.camera != state.camera) {

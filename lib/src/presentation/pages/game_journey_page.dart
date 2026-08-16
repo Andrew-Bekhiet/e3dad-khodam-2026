@@ -4,6 +4,7 @@ import 'package:e3dad_khodam_2026/src/domain/game/level_script_repository.dart';
 import 'package:e3dad_khodam_2026/src/domain/game/story_beat.dart';
 import 'package:e3dad_khodam_2026/src/presentation/cubit/game_journey_cubit.dart';
 import 'package:e3dad_khodam_2026/src/presentation/cubit/game_journey_state.dart';
+import 'package:e3dad_khodam_2026/src/presentation/cubit/sweep_framing.dart';
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/character_portrait.dart';
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/destination_card.dart';
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/game_map_view.dart';
@@ -73,6 +74,14 @@ class _GameJourneyViewState extends State<_GameJourneyView>
   /// At [_guideAvatarCompact] the sum is exactly `kToolbarHeight`.
   static const double _guideAvatarClearance = 16.0;
 
+  /// How long the bar takes to grow around her and settle back.
+  ///
+  /// Short on purpose: this is chrome moving out of the way of a line
+  /// somebody is about to read, not something to watch. `CharacterPortrait`
+  /// eases its own frame on top of this, so the face lands a beat after
+  /// the bar rather than snapping with it.
+  static const Duration _guideAvatarGrow = Duration(milliseconds: 100);
+
   final FocusNode _focusNode = FocusNode(debugLabel: 'game-journey-keys');
 
   /// Finds the guide's portrait so her bubble's tail can point at it.
@@ -84,7 +93,13 @@ class _GameJourneyViewState extends State<_GameJourneyView>
   final GlobalKey _guideAvatarKey = GlobalKey();
 
   /// Where that portrait sits, in global x.
-  double? _guideAnchorX;
+  ///
+  /// A notifier rather than a field behind `setState`, because it is
+  /// re-read on every frame the bar is growing. Calling `setState` for it
+  /// would rebuild this whole widget — and with it the map, which is a
+  /// platform view being handed a fresh spec sixty times a second for a
+  /// number only the bubble's tail cares about.
+  final ValueNotifier<double?> _guideAnchorX = ValueNotifier(null);
 
   /// Runs from 0 to 1 across a whole sweep. Drives the couriers walking,
   /// their trail drawing itself behind them, and the streaks over the
@@ -98,15 +113,38 @@ class _GameJourneyViewState extends State<_GameJourneyView>
   /// deaf, so they are held and applied the moment the sweep lands.
   int _pressesDuringSweep = 0;
 
-  /// The step the camera last moved for, so a move can tell which way it
-  /// went.
-  int _cameraStep = 0;
+  /// How many of those are kept. An arrow key held down repeats about
+  /// thirty times a second, and replaying three seconds of that would
+  /// walk the script past the level the operator was waiting for.
+  static const int _maxQueuedPresses = 3;
 
   GameSounds get _sounds => widget.sounds;
 
   @override
+  void initState() {
+    super.initState();
+    _reaimTheTail();
+  }
+
+  /// Re-reads where the portrait is after the frame that moved it.
+  ///
+  /// She slides as the bar grows, so the tail has to be re-aimed for as
+  /// long as that lasts — which is why the answer lives in a notifier
+  /// rather than in this widget's state.
+  void _reaimTheTail() {
+    WidgetsBinding.instance.addPostFrameCallback((_) => _findGuideAvatar());
+  }
+
+  @override
   Widget build(BuildContext context) {
     final cubit = context.watch<GameJourneyCubit>();
+    final screen = GameScreenSize.of(context);
+    // Read here rather than in the cubit: how much screen there is is a
+    // fact about the viewport, and the cubit has none.
+    cubit.sweepFraming = screen.pick(
+      compact: SweepFraming.leg,
+      large: SweepFraming.basin,
+    );
     final state = cubit.state;
     final beat = state.beat;
     final guideHasABubbleUp =
@@ -114,83 +152,110 @@ class _GameJourneyViewState extends State<_GameJourneyView>
         beat.speaker == StorySpeaker.guide &&
         beat.emphasis == BeatEmphasis.callout;
     final guideAvatarSize = guideHasABubbleUp
-        ? GameScreenSize.of(context).pick(
-            compact: _guideAvatarCompact,
-            large: _guideAvatarLarge,
-          )
+        ? screen.pick(compact: _guideAvatarCompact, large: _guideAvatarLarge)
         : _guideAvatarCompact;
-    // After the frame, because the portrait has not been laid out yet
-    // while this is running.
-    WidgetsBinding.instance.addPostFrameCallback((_) => _findGuideAvatar());
+
+    // Built outside the builder below so the same widget instance is
+    // handed back on every frame of the bar's growth: the element sees an
+    // identical child and skips the whole subtree, which is what keeps the
+    // map off a 200ms rebuild loop.
+    final body = Focus(
+      focusNode: _focusNode,
+      autofocus: true,
+      onKeyEvent: (node, event) => _onKeyEvent(cubit, event),
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          GameMapView(
+            sweepProgress: _sweep,
+            // The map is the biggest target on a phone, so a tap on it
+            // steps the script — the same thing the forward arrow does,
+            // whether or not the tap landed on a city.
+            onTap: () => _step(cubit, forward: true),
+          ),
+          SweepOverlay(progress: _sweep),
+          // Gated on the card being open, not merely on there being
+          // a level: a cleared level still has one, and its card
+          // must be gone before the clearance line and the next
+          // sweep.
+          if (state.showsCard)
+            DestinationCard(
+              level: state.level!,
+              destinationLabel: state.currentStop?.label ?? '',
+              showsImage: state.showsImage,
+              verses: state.revealedVerses,
+              versesSpeaker: cubit.letterWriter,
+              hasMore: state.hasMoreReveal,
+              onReveal: cubit.revealNext,
+              onAdvance: () => _step(cubit, forward: true),
+            ),
+          // Listening rather than reading, so that re-aiming the tail
+          // rebuilds the bubble alone and leaves the map beneath it
+          // untouched.
+          ValueListenableBuilder<double?>(
+            valueListenable: _guideAnchorX,
+            builder: (context, anchorX, _) => StoryOverlay(
+              guide: cubit.guide,
+              guideAnchorX: anchorX,
+              narrator: cubit.narrator,
+              beat: state.beat,
+              onAdvance: () => _step(cubit, forward: true),
+            ),
+          ),
+          _Arrows(
+            state: state,
+            onBackward: () => _step(cubit, forward: false),
+            onForward: () => _step(cubit, forward: true),
+          ),
+        ],
+      ),
+    );
 
     return BlocListener<GameJourneyCubit, GameJourneyState>(
       listenWhen: (previous, current) => previous.camera != current.camera,
       listener: (context, state) => _onCameraChanged(state),
-      child: Scaffold(
-        appBar: AppBar(
-          // Left where the title starts rather than centred: the bubble
-          // hangs from the start edge, and a centred portrait would leave
-          // its tail pointing across the middle of the screen at it.
-          centerTitle: false,
-          toolbarHeight: guideAvatarSize + _guideAvatarClearance,
-          title: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              CharacterPortrait(
-                key: _guideAvatarKey,
-                character: cubit.guide,
-                size: guideAvatarSize,
-              ),
-              const SizedBox(width: 12),
-              const Flexible(child: Text(AppStrings.gameTitle)),
-            ],
-          ),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.replay),
-              tooltip: AppStrings.restartTooltip,
-              onPressed: cubit.restart,
-            ),
-          ],
-        ),
-        body: Focus(
-          focusNode: _focusNode,
-          autofocus: true,
-          onKeyEvent: (node, event) => _onKeyEvent(cubit, event),
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              GameMapView(sweepProgress: _sweep),
-              SweepOverlay(progress: _sweep),
-              // Gated on the card being open, not merely on there being
-              // a level: a cleared level still has one, and its card
-              // must be gone before the clearance line and the next
-              // sweep.
-              if (state.showsCard)
-                DestinationCard(
-                  level: state.level!,
-                  destinationLabel: state.currentStop?.label ?? '',
-                  showsImage: state.showsImage,
-                  verses: state.revealedVerses,
-                  versesSpeaker: cubit.letterWriter,
-                  hasMore: state.hasMoreReveal,
-                  onReveal: cubit.revealNext,
+      // The whole `Scaffold` is rebuilt per frame, not just the bar: the
+      // bar's height is `PreferredSize`'s, and `Scaffold` only re-reads
+      // that when it is handed a new one. Animating inside the bar would
+      // grow the portrait against a body that jumps.
+      child: TweenAnimationBuilder<double>(
+        tween: Tween(end: guideAvatarSize),
+        duration: _guideAvatarGrow,
+        curve: Curves.easeOutCubic,
+        builder: (context, size, child) {
+          _reaimTheTail();
+
+          return Scaffold(
+            appBar: PreferredSize(
+              preferredSize: Size.fromHeight(size + _guideAvatarClearance),
+              child: AppBar(
+                centerTitle: false,
+                toolbarHeight: size + _guideAvatarClearance,
+                title: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    CharacterPortrait(
+                      key: _guideAvatarKey,
+                      character: cubit.guide,
+                      size: size,
+                    ),
+                    const SizedBox(width: 12),
+                    const Flexible(child: Text(AppStrings.gameTitle)),
+                  ],
                 ),
-              StoryOverlay(
-                guide: cubit.guide,
-                guideAnchorX: _guideAnchorX,
-                narrator: cubit.narrator,
-                beat: state.beat,
-                onAdvance: () => _step(cubit, forward: true),
+                actions: [
+                  IconButton(
+                    icon: const Icon(Icons.replay),
+                    tooltip: AppStrings.restartTooltip,
+                    onPressed: cubit.restart,
+                  ),
+                ],
               ),
-              _Arrows(
-                state: state,
-                onBackward: () => _step(cubit, forward: false),
-                onForward: () => _step(cubit, forward: true),
-              ),
-            ],
-          ),
-        ),
+            ),
+            body: child,
+          );
+        },
+        child: body,
       ),
     );
   }
@@ -200,12 +265,12 @@ class _GameJourneyViewState extends State<_GameJourneyView>
     _sounds.stopWalking();
     _sweep.dispose();
     _focusNode.dispose();
+    _guideAnchorX.dispose();
     super.dispose();
   }
 
   /// Notes where the guide's portrait ended up, so her bubble can point
-  /// at it. A no-op once it has settled, so this cannot chase its own
-  /// tail across frames.
+  /// at it.
   void _findGuideAvatar() {
     if (!mounted) {
       return;
@@ -214,11 +279,7 @@ class _GameJourneyViewState extends State<_GameJourneyView>
     if (box is! RenderBox || !box.hasSize) {
       return;
     }
-    final centre = box.localToGlobal(box.size.center(Offset.zero)).dx;
-    if (centre == _guideAnchorX) {
-      return;
-    }
-    setState(() => _guideAnchorX = centre);
+    _guideAnchorX.value = box.localToGlobal(box.size.center(Offset.zero)).dx;
   }
 
   /// Starts the sweep clock when the camera is given one to fly, and
@@ -228,8 +289,6 @@ class _GameJourneyViewState extends State<_GameJourneyView>
   /// exactly where the movement does — including the parked branch, which
   /// is how a journey cut short still falls silent.
   void _onCameraChanged(GameJourneyState state) {
-    final arriving = state.stepIndex > _cameraStep;
-    _cameraStep = state.stepIndex;
     final sweep = state.sweep;
     if (sweep == null) {
       _sounds.stopWalking();
@@ -239,44 +298,49 @@ class _GameJourneyViewState extends State<_GameJourneyView>
 
       return;
     }
-    // The loop rides the movement either way, because the movement is on
-    // screen either way. The arrival sting does not: see [_onSweepLanded].
     _sounds.startWalking();
     _sweep
       ..duration = sweep.total
-      ..forward(from: 0).then((_) => _onSweepLanded(arriving: arriving));
+      ..forward(from: 0).then((_) => _onSweepLanded());
   }
 
   /// The party has stopped moving. A `TickerFuture` only completes when
   /// the animation runs its whole course, so an interrupted sweep never
   /// gets here — which is the point: nothing was reached.
   ///
-  /// Only a forward move *arrives* anywhere. Stepping back re-flies a
-  /// sweep already seen, and ringing the arrival again would contradict
-  /// the clearance and departure stings, which the cubit deliberately
-  /// keeps quiet when the journey is being reviewed rather than lived.
-  void _onSweepLanded({required bool arriving}) {
+  /// Every sweep that runs is an arrival: the cubit only puts one on a
+  /// forward move to a city the camera is not already at, so there is no
+  /// re-flown sweep here to keep quiet for.
+  void _onSweepLanded() {
     if (!mounted) {
       return;
     }
     _sounds.stopWalking();
-    if (arriving) {
-      _sounds.playLevelReached();
-    }
+    _sounds.playLevelReached();
     _drainPresses();
   }
 
-  /// Applies whatever was pressed while the camera was flying.
+  /// Applies whatever was pressed while the camera was flying, one press
+  /// per frame.
+  ///
+  /// One at a time rather than all at once: a press can set off another
+  /// sweep, and applying the rest of the queue on top of it would stack
+  /// two flights on one clock — the second restarting the first from zero
+  /// over a map that is halfway to somewhere else. So each press waits
+  /// for the frame after the one before it, and a press that starts a
+  /// sweep leaves the remainder queued for when *it* lands.
   void _drainPresses() {
     if (!mounted || _pressesDuringSweep == 0) {
       return;
     }
-    final cubit = context.read<GameJourneyCubit>();
-    final pending = _pressesDuringSweep;
-    _pressesDuringSweep = 0;
-    for (var press = 0; press < pending; press++) {
-      cubit.forward();
-    }
+    _pressesDuringSweep--;
+    context.read<GameJourneyCubit>().forward();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _sweep.isAnimating) {
+        return;
+      }
+      _drainPresses();
+    });
   }
 
   /// Left and right walk the script, space and enter advance it, down and
@@ -327,7 +391,10 @@ class _GameJourneyViewState extends State<_GameJourneyView>
     _focusNode.requestFocus();
     if (_sweep.isAnimating) {
       if (forward) {
-        _pressesDuringSweep++;
+        _pressesDuringSweep = (_pressesDuringSweep + 1).clamp(
+          0,
+          _maxQueuedPresses,
+        );
       }
 
       return;

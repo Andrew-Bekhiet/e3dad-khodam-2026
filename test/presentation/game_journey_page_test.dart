@@ -29,9 +29,24 @@ final class _BlankSurface extends StatelessWidget {
 
 const MapSurfaceBuilder _blankSurface = _BlankSurface.new;
 
+/// How many times the map has been handed a spec to draw.
+///
+/// The map is a platform view: every one of these is a fresh spec over
+/// the channel, so the count is the cost of a rebuild rather than a proxy
+/// for it.
+int _surfaceBuilds = 0;
+
+Widget _countingSurface(MapSurfaceSpec spec) {
+  _surfaceBuilds++;
+
+  return _BlankSurface(spec);
+}
+
 /// The game screen with its dependencies stubbed.
 final class _GameUnderTest extends StatelessWidget {
-  const _GameUnderTest();
+  final MapSurfaceBuilder surfaceBuilder;
+
+  const _GameUnderTest({this.surfaceBuilder = _blankSurface});
 
   @override
   Widget build(BuildContext context) => MultiRepositoryProvider(
@@ -40,7 +55,7 @@ final class _GameUnderTest extends StatelessWidget {
         value: const StaticLevelScriptRepository(),
       ),
       RepositoryProvider<GameSounds>.value(value: const SilentGameSounds()),
-      RepositoryProvider<MapSurfaceBuilder>.value(value: _blankSurface),
+      RepositoryProvider<MapSurfaceBuilder>.value(value: surfaceBuilder),
     ],
     // The app runs right-to-left; the bubble anchors on the start edge,
     // so the direction is load-bearing for where it lands.
@@ -54,6 +69,16 @@ final class _GameUnderTest extends StatelessWidget {
 /// The cubit driving the page under test.
 GameJourneyCubit _cubitOf(WidgetTester tester) =>
     tester.element(find.byType(Scaffold)).read<GameJourneyCubit>();
+
+/// Taps the map itself, as the real surface does when a tap lands on no
+/// marker. The gesture cannot be made with the tester: the real surface
+/// is a platform view that hit-tests inside the renderer, so the seam it
+/// reports through is the thing to drive.
+void _tapTheMap(WidgetTester tester) {
+  final spec = tester.widget<_BlankSurface>(find.byType(_BlankSurface)).spec;
+  expect(spec.onSurfaceTap, isNotNull, reason: 'the map should take taps');
+  spec.onSurfaceTap?.call();
+}
 
 /// Steps the script until a beat of [emphasis] is showing.
 void _advanceUntil(WidgetTester tester, BeatEmphasis emphasis) {
@@ -71,6 +96,19 @@ void _advanceUntil(WidgetTester tester, BeatEmphasis emphasis) {
 /// `kToolbarHeight`, which is what the page means by leaving it alone.
 double _appBarHeight(WidgetTester tester) =>
     tester.widget<AppBar>(find.byType(AppBar)).toolbarHeight ?? kToolbarHeight;
+
+/// Runs the app bar's growth all the way to its end.
+///
+/// Written out rather than `pumpAndSettle`: the card's chevron pulses on
+/// a repeating controller, so nothing on this screen ever settles. The
+/// second pump is what lets the growth's ticker take its start time —
+/// one long pump alone lands on the frame the ticker starts on, and
+/// reads back the height it began at.
+Future<void> _growTheBar(WidgetTester tester) async {
+  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 1));
+  await tester.pump(const Duration(milliseconds: 400));
+}
 
 void main() {
   testWidgets('GameJourneyPage_theOpeningShot_saysNothing', (tester) async {
@@ -164,10 +202,26 @@ void main() {
     testWidgets('a callout raises it', (tester) async {
       await pumpBig(tester);
       _advanceUntil(tester, BeatEmphasis.callout);
-      await tester.pump();
-      await tester.pump(const Duration(seconds: 1));
+      await _growTheBar(tester);
 
       expect(_appBarHeight(tester), greaterThan(kToolbarHeight));
+    });
+
+    testWidgets('and it grows into it rather than jumping', (tester) async {
+      await pumpBig(tester);
+      _advanceUntil(tester, BeatEmphasis.callout);
+      // The frame the bubble arrives on, then one part-way through the
+      // growth: the bar is on its way up rather than already there.
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 1));
+      final started = _appBarHeight(tester);
+      await tester.pump(const Duration(milliseconds: 20));
+      final partWay = _appBarHeight(tester);
+      await tester.pump(const Duration(milliseconds: 400));
+
+      expect(started, kToolbarHeight);
+      expect(partWay, greaterThan(started));
+      expect(partWay, lessThan(_appBarHeight(tester)));
     });
 
     testWidgets('a panel beat does not, having its own portrait', (
@@ -175,10 +229,119 @@ void main() {
     ) async {
       await pumpBig(tester);
       _advanceUntil(tester, BeatEmphasis.panel);
-      await tester.pump();
-      await tester.pump(const Duration(seconds: 1));
+      await _growTheBar(tester);
 
       expect(_appBarHeight(tester), kToolbarHeight);
+    });
+
+    testWidgets('and the map underneath is not redrawn while it grows', (
+      tester,
+    ) async {
+      _surfaceBuilds = 0;
+      // Taller than the rest of the group: this test walks to a card
+      // carrying two letters' verses, and it is measuring redraws rather
+      // than layout — an overflow there would fail it for the wrong
+      // reason.
+      tester.view.physicalSize = const Size(1400, 2200);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(
+        const _GameUnderTest(surfaceBuilder: _countingSurface),
+      );
+      await tester.pump();
+
+      final cubit = _cubitOf(tester);
+      // Twelve presses lands on تسالونيكي's second letter, one press short
+      // of its bubble. That level is not swept into, so the camera holds
+      // across the press that raises her — leaving the bar's growth as the
+      // only thing moving, which is what makes the count mean anything.
+      for (var press = 0; press < 12; press++) {
+        cubit.forward();
+      }
+      for (var second = 0; second < 5; second++) {
+        await tester.pump(const Duration(seconds: 1));
+      }
+      final camera = cubit.state.camera;
+
+      cubit.forward();
+      expect(cubit.state.beat?.emphasis, BeatEmphasis.callout);
+      expect(cubit.state.camera, camera, reason: 'the camera must hold');
+
+      // Two frames: the one the bubble arrives on, where the map may
+      // redraw because the game state genuinely changed, and the one
+      // after it, which is where the cubit's own notification lands.
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 1));
+      final before = _surfaceBuilds;
+
+      // From here nothing is happening but the bar growing.
+      for (var frame = 0; frame < 10; frame++) {
+        await tester.pump(const Duration(milliseconds: 16));
+      }
+
+      expect(
+        _surfaceBuilds - before,
+        0,
+        reason: 'the growing bar redrew the map beneath it',
+      );
+      expect(
+        _appBarHeight(tester),
+        greaterThan(kToolbarHeight),
+        reason: 'the bar really did grow, so the count above means something',
+      );
+    });
+  });
+
+  group('a tap on the map steps the script', () {
+    testWidgets('from the opening shot, which nothing else covers', (
+      tester,
+    ) async {
+      await tester.pumpWidget(const _GameUnderTest());
+      await tester.pump();
+      final cubit = _cubitOf(tester);
+      final before = cubit.state.stepIndex;
+
+      _tapTheMap(tester);
+      await tester.pump();
+
+      expect(cubit.state.stepIndex, before + 1);
+    });
+
+    testWidgets('but not while the camera is still flying', (tester) async {
+      await tester.pumpWidget(const _GameUnderTest());
+      await tester.pump();
+      final cubit = _cubitOf(tester);
+      // The first press sets off the sweep out of الإسماعيلية.
+      _tapTheMap(tester);
+      await tester.pump();
+      final midFlight = cubit.state.stepIndex;
+
+      _tapTheMap(tester);
+      await tester.pump();
+
+      expect(cubit.state.stepIndex, midFlight);
+    });
+
+    testWidgets('including a tap that lands on a city', (tester) async {
+      await tester.pumpWidget(const _GameUnderTest());
+      await tester.pump();
+      final cubit = _cubitOf(tester);
+      final spec = tester
+          .widget<_BlankSurface>(find.byType(_BlankSurface))
+          .spec;
+      final stop = cubit.state.currentStop;
+      if (stop == null) {
+        fail('the opening shot stands somewhere');
+      }
+      final before = cubit.state.stepIndex;
+
+      // A city is a press like any other: jumping to the level it
+      // belongs to would skip every level in between.
+      spec.onMarkerTap(stop.id);
+      await tester.pump();
+
+      expect(cubit.state.stepIndex, before + 1);
+      expect(tester.takeException(), isNull);
     });
   });
 }

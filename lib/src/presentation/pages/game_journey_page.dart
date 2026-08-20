@@ -202,12 +202,13 @@ class _GameJourneyViewState extends State<_GameJourneyView>
                   )
                   ? CrossFadeState.showFirst
                   : CrossFadeState.showSecond,
+              alignment: Alignment.center,
               secondChild: const SizedBox.shrink(),
               firstChild: DestinationCard(
                 level: level,
                 destinationLabel: state.currentStop?.label ?? '',
                 verses: state.reveal.revealedVerses(
-                  carriedVerses: state.carriedVerses,
+                  carriedVerses: [],
                   levelVerses: level.verses,
                 ),
                 versesSpeaker: cubit.letterWriter,
@@ -232,10 +233,20 @@ class _GameJourneyViewState extends State<_GameJourneyView>
               onAdvance: () => _step(cubit, forward: true),
             ),
           ),
-          _Arrows(
-            state: state,
-            onBackward: () => _step(cubit, forward: false),
-            onForward: () => _step(cubit, forward: true),
+          PositionedDirectional(
+            end: 12,
+            bottom: 12,
+            child: SafeArea(
+              child: PixelPanel(
+                padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
+                child: MapArrowControls(
+                  onBackward: () => _step(cubit, forward: false),
+                  onForward: () => _step(cubit, forward: true),
+                  canGoBackward: !state.isAtStart,
+                  canGoForward: !state.isAtEnd,
+                ),
+              ),
+            ),
           ),
         ],
       ),
@@ -376,19 +387,16 @@ class _GameJourneyViewState extends State<_GameJourneyView>
     if (event is! KeyDownEvent && event is! KeyRepeatEvent) {
       return KeyEventResult.ignored;
     }
+
     final key = event.logicalKey;
     if (_isForwardKey(key)) {
       _step(cubit, forward: true);
 
       return KeyEventResult.handled;
     }
+
     if (_isBackwardKey(key)) {
       _step(cubit, forward: false);
-
-      return KeyEventResult.handled;
-    }
-    if (key == LogicalKeyboardKey.escape) {
-      Navigator.of(context).maybePop();
 
       return KeyEventResult.handled;
     }
@@ -397,7 +405,7 @@ class _GameJourneyViewState extends State<_GameJourneyView>
   }
 
   bool _isForwardKey(LogicalKeyboardKey key) => switch (key) {
-    LogicalKeyboardKey.arrowRight ||
+    LogicalKeyboardKey.arrowLeft ||
     LogicalKeyboardKey.space ||
     LogicalKeyboardKey.enter ||
     LogicalKeyboardKey.arrowDown => true,
@@ -405,7 +413,7 @@ class _GameJourneyViewState extends State<_GameJourneyView>
   };
 
   bool _isBackwardKey(LogicalKeyboardKey key) => switch (key) {
-    LogicalKeyboardKey.arrowLeft ||
+    LogicalKeyboardKey.arrowRight ||
     LogicalKeyboardKey.backspace ||
     LogicalKeyboardKey.arrowUp => true,
     _ => false,
@@ -430,35 +438,4 @@ class _GameJourneyViewState extends State<_GameJourneyView>
       onBackward: cubit.backward,
     );
   }
-}
-
-/// The on-screen step arrows, framed to match the game's panels and kept
-/// above the story overlay so they stay usable while someone is talking.
-final class _Arrows extends StatelessWidget {
-  final GameJourneyState state;
-  final VoidCallback onBackward;
-  final VoidCallback onForward;
-
-  const _Arrows({
-    required this.state,
-    required this.onBackward,
-    required this.onForward,
-  });
-
-  @override
-  Widget build(BuildContext context) => PositionedDirectional(
-    end: 12,
-    bottom: 12,
-    child: SafeArea(
-      child: PixelPanel(
-        padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
-        child: MapArrowControls(
-          onBackward: onBackward,
-          onForward: onForward,
-          canGoBackward: !state.isAtStart,
-          canGoForward: !state.isAtEnd,
-        ),
-      ),
-    ),
-  );
 }

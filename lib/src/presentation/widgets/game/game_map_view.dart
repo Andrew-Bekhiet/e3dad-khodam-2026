@@ -1,6 +1,5 @@
 import 'package:e3dad_khodam_2026/src/domain/game/journey_stop.dart';
 import 'package:e3dad_khodam_2026/src/domain/geo_position.dart';
-import 'package:e3dad_khodam_2026/src/map_engine/map_camera_target.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/map_marker_spec.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/map_surface_builder.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/map_surface_spec.dart';
@@ -11,6 +10,7 @@ import 'package:e3dad_khodam_2026/src/presentation/cubit/courier_party.dart';
 import 'package:e3dad_khodam_2026/src/presentation/cubit/game_journey_cubit.dart';
 import 'package:e3dad_khodam_2026/src/presentation/cubit/game_journey_state.dart';
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/game_map_styles.dart';
+import 'package:e3dad_khodam_2026/src/presentation/widgets/game/sweep_clock.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -30,8 +30,8 @@ final class GameMapView extends StatelessWidget {
   /// it.
   static const double _labelGap = 8.0;
 
-  /// How far through the current sweep the camera is.
-  final Animation<double> sweepProgress;
+  /// The sweep's shared phase clock.
+  final SweepClock sweepClock;
 
   /// Called when a tap lands anywhere on the map, marker or not.
   ///
@@ -41,7 +41,7 @@ final class GameMapView extends StatelessWidget {
   final VoidCallback? onTap;
 
   /// Creates the game map; reads its data from ambient providers.
-  const GameMapView({required this.sweepProgress, this.onTap, super.key});
+  const GameMapView({required this.sweepClock, this.onTap, super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -59,7 +59,7 @@ final class GameMapView extends StatelessWidget {
       onMarkerTap: (_) => onTap?.call(),
       onSurfaceTap: onTap,
       surfaceBuilder: surfaceBuilder,
-      sweepProgress: sweepProgress,
+      sweepClock: sweepClock,
     );
   }
 
@@ -127,7 +127,7 @@ final class _WalkingMapSurface extends StatefulWidget {
   final void Function(String stopId) onMarkerTap;
   final VoidCallback? onSurfaceTap;
   final MapSurfaceBuilder surfaceBuilder;
-  final Animation<double> sweepProgress;
+  final SweepClock sweepClock;
 
   const _WalkingMapSurface({
     required this.state,
@@ -135,7 +135,7 @@ final class _WalkingMapSurface extends StatefulWidget {
     required this.onMarkerTap,
     required this.onSurfaceTap,
     required this.surfaceBuilder,
-    required this.sweepProgress,
+    required this.sweepClock,
   });
 
   @override
@@ -174,12 +174,12 @@ class _WalkingMapSurfaceState extends State<_WalkingMapSurface> {
 
   @override
   Widget build(BuildContext context) => AnimatedBuilder(
-    animation: widget.sweepProgress,
+    animation: widget.sweepClock,
     builder: (context, _) {
       final state = widget.state;
       final content = _contentFor(
         state.party,
-        _walkProgress(state.sweep, widget.sweepProgress.value),
+        _walkProgress(widget.sweepClock),
       );
 
       return widget.surfaceBuilder(
@@ -235,16 +235,8 @@ class _WalkingMapSurfaceState extends State<_WalkingMapSurface> {
   /// city and the rest of the line is off the edge.
   ///
   /// So the order is: pull out, walk, dive.
-  static double _walkProgress(SweepCameraTarget? sweep, double value) {
-    if (sweep == null) {
-      return 1;
-    }
-    final hold = sweep.hold.inMilliseconds;
-    if (hold == 0) {
-      return 1;
-    }
-    final elapsed = value * sweep.total.inMilliseconds;
-    final walked = (elapsed - sweep.outLeg.inMilliseconds) / hold * _walkSteps;
+  static double _walkProgress(SweepClock clock) {
+    final walked = clock.holdProgress * _walkSteps;
 
     return (walked.roundToDouble() / _walkSteps).clamp(0.0, 1.0);
   }

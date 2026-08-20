@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/game_palette.dart';
+import 'package:e3dad_khodam_2026/src/presentation/widgets/game/sweep_clock.dart';
 import 'package:flutter/widgets.dart';
 
 /// The streaks and vignette drawn over the map while the camera sweeps.
@@ -14,20 +15,20 @@ import 'package:flutter/widgets.dart';
 /// Strongest in the middle of the sweep and gone by the time the camera
 /// settles, so the effect never sits over a still map.
 final class SweepOverlay extends StatelessWidget {
-  /// How far through the sweep the camera is, from `0` to `1`.
-  final Animation<double> progress;
+  /// The sweep's shared phase clock.
+  final SweepClock clock;
 
   /// Creates the overlay.
-  const SweepOverlay({required this.progress, super.key});
+  const SweepOverlay({required this.clock, super.key});
 
   @override
   Widget build(BuildContext context) => IgnorePointer(
     child: RepaintBoundary(
       child: AnimatedBuilder(
-        animation: progress,
+        animation: clock,
         builder: (context, _) => CustomPaint(
           size: Size.infinite,
-          painter: _SweepPainter(progress.value),
+          painter: _SweepPainter(clock.progress),
         ),
       ),
     ),
@@ -69,7 +70,7 @@ final class _SweepPainter extends CustomPainter {
     final random = Random(_seed);
     final paint = Paint()
       ..strokeCap = StrokeCap.round
-      ..color = GamePalette.white.withValues(alpha: 0.30 * intensity);
+      ..color = GamePalette.white.withValues(alpha: 0.3 * intensity);
 
     for (var index = 0; index < _streakCount; index++) {
       final angle = random.nextDouble() * 2 * pi;
@@ -82,7 +83,7 @@ final class _SweepPainter extends CustomPainter {
         ..drawLine(
           centre + direction * (start * diagonal),
           centre + direction * ((start + length) * diagonal),
-          paint..strokeWidth = 1.0 + random.nextDouble() * 1.6,
+          paint..strokeWidth = 1 + random.nextDouble() * 1.6,
         )
         ..restore();
     }

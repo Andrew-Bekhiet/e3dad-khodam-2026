@@ -13,7 +13,10 @@ import 'package:e3dad_khodam_2026/src/presentation/widgets/game/guide_dialogue_p
     show GuideDialoguePanel;
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/pixel_panel.dart';
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/story_overlay.dart';
+import 'package:e3dad_khodam_2026/src/presentation/widgets/game/sweep_clock.dart';
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/sweep_overlay.dart';
+import 'package:e3dad_khodam_2026/src/presentation/widgets/game/sweep_phase.dart';
+import 'package:e3dad_khodam_2026/src/presentation/widgets/game/sweep_press_queue.dart';
 import 'package:e3dad_khodam_2026/src/presentation/widgets/map_arrow_controls.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -105,18 +108,9 @@ class _GameJourneyViewState extends State<_GameJourneyView>
   /// their trail drawing itself behind them, and the streaks over the
   /// map — all three are the same movement, so they share one clock.
   late final AnimationController _sweep = AnimationController(vsync: this);
-
-  /// Presses made while the camera was still flying.
-  ///
-  /// The operator drives this like a slideshow and will press ahead of
-  /// the animation. Dropping those presses would make the game feel
-  /// deaf, so they are held and applied the moment the sweep lands.
-  int _pressesDuringSweep = 0;
-
-  /// How many of those are kept. An arrow key held down repeats about
-  /// thirty times a second, and replaying three seconds of that would
-  /// walk the script past the level the operator was waiting for.
-  static const int _maxQueuedPresses = 3;
+  late final SweepClock _sweepClock = SweepClock(_sweep);
+  final SweepPressQueue _pressQueue = SweepPressQueue();
+  SweepPhase _lastSweepPhase = SweepPhase.landed;
 
   GameSounds get _sounds => widget.sounds;
 
@@ -124,27 +118,24 @@ class _GameJourneyViewState extends State<_GameJourneyView>
   void initState() {
     super.initState();
     _reaimTheTail();
-    _playSoundOnSweepAnimation();
+    _sweepClock.addListener(_playSoundForSweepPhase);
   }
 
-  void _playSoundOnSweepAnimation() {
-    _sweep.addStatusListener(_sweepSoundListener);
-  }
-
-  Future<void> _sweepSoundListener(AnimationStatus status) async {
-    if (status == AnimationStatus.forward) {
-      final sweepOutDuration = context
-          .read<GameJourneyCubit>()
-          .state
-          .sweep
-          ?.outLeg;
-      await Future.delayed(sweepOutDuration ?? Duration.zero);
-
-      _sounds.startWalking();
-    } else if (status == AnimationStatus.completed ||
-        status == AnimationStatus.dismissed) {
-      _sounds.stopWalking();
-      if (status == AnimationStatus.completed) _sounds.playLevelReached();
+  void _playSoundForSweepPhase() {
+    final phase = _sweepClock.phase;
+    if (phase == _lastSweepPhase) {
+      return;
+    }
+    _lastSweepPhase = phase;
+    switch (phase) {
+      case SweepPhase.hold:
+        _sounds
+          ..playDeparture()
+          ..startWalking();
+      case SweepPhase.landed || SweepPhase.interrupted:
+        _sounds.stopWalking();
+      case SweepPhase.out || SweepPhase.inward:
+        break;
     }
   }
 
@@ -189,13 +180,13 @@ class _GameJourneyViewState extends State<_GameJourneyView>
         fit: StackFit.expand,
         children: [
           GameMapView(
-            sweepProgress: _sweep,
+            sweepClock: _sweepClock,
             // The map is the biggest target on a phone, so a tap on it
             // steps the script — the same thing the forward arrow does,
             // whether or not the tap landed on a city.
             onTap: () => _step(cubit, forward: true),
           ),
-          SweepOverlay(progress: _sweep),
+          SweepOverlay(clock: _sweepClock),
           // Mounted for as long as there is a level, and only faded on
           // `showsCard`: mounting on `showsCard` would tear the card out
           // of the tree before it could fade, so it would vanish and pop
@@ -292,7 +283,9 @@ class _GameJourneyViewState extends State<_GameJourneyView>
   @override
   void dispose() {
     _sounds.stopWalking();
-    _sweep.removeStatusListener(_sweepSoundListener);
+    _sweepClock
+      ..removeListener(_playSoundForSweepPhase)
+      ..dispose();
     _sweep.dispose();
     _focusNode.dispose();
     _guideAnchorX.dispose();
@@ -321,15 +314,11 @@ class _GameJourneyViewState extends State<_GameJourneyView>
   void _onCameraChanged(GameJourneyState state) {
     final sweep = state.sweep;
     if (sweep == null) {
-      _sweep
-        ..stop()
-        ..value = 0;
+      _sweepClock.interrupt();
 
       return;
     }
-    _sweep
-      ..duration = sweep.total
-      ..forward(from: 0).then((_) => _onSweepLanded());
+    _sweepClock.start(sweep).then((_) => _onSweepLanded());
   }
 
   /// The party has stopped moving. A `TickerFuture` only completes when
@@ -344,7 +333,7 @@ class _GameJourneyViewState extends State<_GameJourneyView>
       return;
     }
     _sounds.playLevelReached();
-    _drainPresses();
+    _drainPressQueue();
   }
 
   /// Applies whatever was pressed while the camera was flying, one press
@@ -356,17 +345,16 @@ class _GameJourneyViewState extends State<_GameJourneyView>
   /// over a map that is halfway to somewhere else. So each press waits
   /// for the frame after the one before it, and a press that starts a
   /// sweep leaves the remainder queued for when *it* lands.
-  void _drainPresses() {
-    if (!mounted || _pressesDuringSweep == 0) {
+  void _drainPressQueue() {
+    if (!mounted ||
+        !_pressQueue.drainOne(context.read<GameJourneyCubit>().forward)) {
       return;
     }
-    _pressesDuringSweep--;
-    context.read<GameJourneyCubit>().forward();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || _sweep.isAnimating) {
+      if (!mounted || _sweepClock.phase.isRunning) {
         return;
       }
-      _drainPresses();
+      _drainPressQueue();
     });
   }
 
@@ -378,31 +366,40 @@ class _GameJourneyViewState extends State<_GameJourneyView>
     if (event is! KeyDownEvent && event is! KeyRepeatEvent) {
       return KeyEventResult.ignored;
     }
+    final key = event.logicalKey;
+    if (_isForwardKey(key)) {
+      _step(cubit, forward: true);
 
-    switch (event.logicalKey) {
-      case LogicalKeyboardKey.arrowRight:
-      case LogicalKeyboardKey.space:
-      case LogicalKeyboardKey.enter:
-      case LogicalKeyboardKey.arrowDown:
-        _step(cubit, forward: true);
+      return KeyEventResult.handled;
+    }
+    if (_isBackwardKey(key)) {
+      _step(cubit, forward: false);
 
-        return KeyEventResult.handled;
+      return KeyEventResult.handled;
+    }
+    if (key == LogicalKeyboardKey.escape) {
+      Navigator.of(context).maybePop();
 
-      case LogicalKeyboardKey.arrowLeft:
-      case LogicalKeyboardKey.backspace:
-      case LogicalKeyboardKey.arrowUp:
-        _step(cubit, forward: false);
-
-        return KeyEventResult.handled;
-
-      case LogicalKeyboardKey.escape:
-        Navigator.of(context).maybePop();
-
-        return KeyEventResult.handled;
+      return KeyEventResult.handled;
     }
 
     return KeyEventResult.ignored;
   }
+
+  bool _isForwardKey(LogicalKeyboardKey key) => switch (key) {
+    LogicalKeyboardKey.arrowRight ||
+    LogicalKeyboardKey.space ||
+    LogicalKeyboardKey.enter ||
+    LogicalKeyboardKey.arrowDown => true,
+    _ => false,
+  };
+
+  bool _isBackwardKey(LogicalKeyboardKey key) => switch (key) {
+    LogicalKeyboardKey.arrowLeft ||
+    LogicalKeyboardKey.backspace ||
+    LogicalKeyboardKey.arrowUp => true,
+    _ => false,
+  };
 
   /// Steps the script and takes the keyboard focus back, so a tap on the
   /// map or a button does not leave the arrow keys dead afterwards.
@@ -416,22 +413,12 @@ class _GameJourneyViewState extends State<_GameJourneyView>
   /// is worse than ignoring a key pressed during a second of animation.
   void _step(GameJourneyCubit cubit, {required bool forward}) {
     _focusNode.requestFocus();
-    if (_sweep.isAnimating) {
-      if (forward) {
-        _pressesDuringSweep = (_pressesDuringSweep + 1).clamp(
-          0,
-          _maxQueuedPresses,
-        );
-      }
-
-      return;
-    }
-
-    if (forward) {
-      cubit.forward();
-    } else {
-      cubit.backward();
-    }
+    _pressQueue.press(
+      forward: forward,
+      phase: _sweepClock.phase,
+      onForward: cubit.forward,
+      onBackward: cubit.backward,
+    );
   }
 }
 

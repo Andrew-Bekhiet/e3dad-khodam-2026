@@ -211,7 +211,6 @@ class _GameJourneyViewState extends State<_GameJourneyView>
               firstChild: DestinationCard(
                 level: level,
                 destinationLabel: state.currentStop?.label ?? '',
-                showsImage: state.showsImage,
                 verses: state.revealedVerses,
                 versesSpeaker: cubit.letterWriter,
                 hasMore: state.hasMoreReveal,

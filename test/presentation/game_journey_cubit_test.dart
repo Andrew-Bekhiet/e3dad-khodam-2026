@@ -89,7 +89,10 @@ void main() {
 
 void _startAndStepTests() {
   test('GameJourneyCubit_construction_startsOnTheStillOpeningShot', () {
-    final cubit = GameJourneyCubit(_repository);
+    final cubit = GameJourneyCubit(
+      _repository,
+      sounds: const SilentGameSounds(),
+    );
     addTearDown(cubit.close);
 
     expect(cubit.state.stepIndex, 0);
@@ -103,7 +106,10 @@ void _startAndStepTests() {
   });
 
   test('GameJourneyCubit_theGuideSpeaks_onlyOnceTheJourneyHasFlown', () {
-    final cubit = GameJourneyCubit(_repository);
+    final cubit = GameJourneyCubit(
+      _repository,
+      sounds: const SilentGameSounds(),
+    );
     addTearDown(cubit.close);
 
     // The opening shot: home, silent, no flight yet.
@@ -128,7 +134,10 @@ void _startAndStepTests() {
   });
 
   test('GameJourneyCubit_backwardAtStart_staysPut', () {
-    final cubit = GameJourneyCubit(_repository);
+    final cubit = GameJourneyCubit(
+      _repository,
+      sounds: const SilentGameSounds(),
+    );
     addTearDown(cubit.close);
 
     cubit.backward();
@@ -137,7 +146,10 @@ void _startAndStepTests() {
   });
 
   test('GameJourneyCubit_forwardThenBackward_returnsToTheSameStep', () {
-    final cubit = GameJourneyCubit(_repository);
+    final cubit = GameJourneyCubit(
+      _repository,
+      sounds: const SilentGameSounds(),
+    );
     addTearDown(cubit.close);
 
     final before = cubit.state.stepIndex;
@@ -149,7 +161,10 @@ void _startAndStepTests() {
   });
 
   test('GameJourneyCubit_pressingThroughTheWholeScript_endsOnTheLastLevel', () {
-    final cubit = GameJourneyCubit(_repository);
+    final cubit = GameJourneyCubit(
+      _repository,
+      sounds: const SilentGameSounds(),
+    );
     addTearDown(cubit.close);
 
     _pressUntil(cubit, () => cubit.state.isAtEnd);
@@ -166,7 +181,10 @@ void _startAndStepTests() {
 
 void _mapContentTests() {
   test('GameJourneyCubit_firstLevel_putsTheWholePartyOnItsDestination', () {
-    final cubit = GameJourneyCubit(_repository);
+    final cubit = GameJourneyCubit(
+      _repository,
+      sounds: const SilentGameSounds(),
+    );
     addTearDown(cubit.close);
 
     _pressUntil(cubit, () => cubit.state.levelNumber == 1);
@@ -192,7 +210,10 @@ void _mapContentTests() {
   });
 
   test('GameJourneyCubit_theHopFromHome_leavesNoTrail', () {
-    final cubit = GameJourneyCubit(_repository);
+    final cubit = GameJourneyCubit(
+      _repository,
+      sounds: const SilentGameSounds(),
+    );
     addTearDown(cubit.close);
 
     _pressUntil(cubit, () => cubit.state.levelNumber == 1);
@@ -205,7 +226,10 @@ void _mapContentTests() {
   });
 
   test('GameJourneyCubit_whileTheCameraFliesFromHome_nobodyWalks', () {
-    final cubit = GameJourneyCubit(_repository);
+    final cubit = GameJourneyCubit(
+      _repository,
+      sounds: const SilentGameSounds(),
+    );
     addTearDown(cubit.close);
 
     _pressUntil(cubit, () => cubit.state.levelNumber == 1);
@@ -226,7 +250,10 @@ void _mapContentTests() {
   });
 
   test('GameJourneyCubit_theDrawnRoute_startsAtTheFirstCityNotAtHome', () {
-    final cubit = GameJourneyCubit(_repository);
+    final cubit = GameJourneyCubit(
+      _repository,
+      sounds: const SilentGameSounds(),
+    );
     addTearDown(cubit.close);
 
     _pressUntil(cubit, () => cubit.state.levelNumber == 3);
@@ -239,7 +266,10 @@ void _mapContentTests() {
   });
 
   test('GameJourneyCubit_secondLevelInTheSameCity_doesNotRepeatTheStop', () {
-    final cubit = GameJourneyCubit(_repository);
+    final cubit = GameJourneyCubit(
+      _repository,
+      sounds: const SilentGameSounds(),
+    );
     addTearDown(cubit.close);
 
     _pressUntil(cubit, () => cubit.state.levelNumber == 2);
@@ -255,7 +285,10 @@ void _mapContentTests() {
   });
 
   test('GameJourneyCubit_thirdLevel_extendsTheRouteToCorinth', () {
-    final cubit = GameJourneyCubit(_repository);
+    final cubit = GameJourneyCubit(
+      _repository,
+      sounds: const SilentGameSounds(),
+    );
     addTearDown(cubit.close);
 
     _pressUntil(cubit, () => cubit.state.levelNumber == 3);
@@ -271,7 +304,10 @@ void _mapContentTests() {
   });
 
   test('GameJourneyCubit_theWholeJourney_staysOneRoute', () {
-    final cubit = GameJourneyCubit(_repository);
+    final cubit = GameJourneyCubit(
+      _repository,
+      sounds: const SilentGameSounds(),
+    );
     addTearDown(cubit.close);
 
     _pressUntil(cubit, () => cubit.state.isAtEnd);
@@ -292,7 +328,10 @@ void _mapContentTests() {
 
 void _sweepTests() {
   test('GameJourneyCubit_reachingANewCity_sweepsOntoIt', () {
-    final cubit = GameJourneyCubit(_repository);
+    final cubit = GameJourneyCubit(
+      _repository,
+      sounds: const SilentGameSounds(),
+    );
     addTearDown(cubit.close);
 
     _pressUntil(cubit, () => cubit.state.levelNumber == 3);
@@ -307,7 +346,11 @@ void _sweepTests() {
   });
 
   test('GameJourneyCubit_framingTheLeg_pullsOutToTheTwoCitiesAlone', () {
-    final cubit = GameJourneyCubit(_repository, framing: SweepFraming.leg);
+    final cubit = GameJourneyCubit(
+      _repository,
+      sounds: const SilentGameSounds(),
+      framing: SweepFraming.leg,
+    );
     addTearDown(cubit.close);
 
     // Level ٣ is the move from تسالونيكي to كورنثوس.
@@ -327,7 +370,10 @@ void _sweepTests() {
   });
 
   test('GameJourneyCubit_framingTheBasin_staysTheDefault', () {
-    final cubit = GameJourneyCubit(_repository);
+    final cubit = GameJourneyCubit(
+      _repository,
+      sounds: const SilentGameSounds(),
+    );
     addTearDown(cubit.close);
 
     _pressUntil(cubit, () => cubit.state.levelNumber == 3);
@@ -336,7 +382,10 @@ void _sweepTests() {
   });
 
   test('GameJourneyCubit_theFirstLevel_sweepsOntoItToo', () {
-    final cubit = GameJourneyCubit(_repository);
+    final cubit = GameJourneyCubit(
+      _repository,
+      sounds: const SilentGameSounds(),
+    );
     addTearDown(cubit.close);
 
     _pressUntil(cubit, () => cubit.state.levelNumber == 1);
@@ -345,7 +394,10 @@ void _sweepTests() {
   });
 
   test('GameJourneyCubit_anotherLetterToTheSameCity_doesNotSweep', () {
-    final cubit = GameJourneyCubit(_repository);
+    final cubit = GameJourneyCubit(
+      _repository,
+      sounds: const SilentGameSounds(),
+    );
     addTearDown(cubit.close);
 
     // Levels ١ and ٢ are both تسالونيكي: a sweep would fly out to the
@@ -363,7 +415,10 @@ void _sweepTests() {
   });
 
   test('GameJourneyCubit_stepsWithinALevel_leaveTheCameraAlone', () {
-    final cubit = GameJourneyCubit(_repository);
+    final cubit = GameJourneyCubit(
+      _repository,
+      sounds: const SilentGameSounds(),
+    );
     addTearDown(cubit.close);
 
     _pressUntil(cubit, () => cubit.state.levelNumber == 3);
@@ -382,7 +437,10 @@ void _sweepTests() {
   test(
     'GameJourneyCubit_steppingBackIntoAnEarlierCity_pansRatherThanSweeps',
     () {
-      final cubit = GameJourneyCubit(_repository);
+      final cubit = GameJourneyCubit(
+        _repository,
+        sounds: const SilentGameSounds(),
+      );
       addTearDown(cubit.close);
 
       _pressUntil(cubit, () => cubit.state.levelNumber == 3);
@@ -408,7 +466,10 @@ void _sweepTests() {
   );
 
   test('GameJourneyCubit_steppingBackOverASecondLetter_staysWhereItIs', () {
-    final cubit = GameJourneyCubit(_repository);
+    final cubit = GameJourneyCubit(
+      _repository,
+      sounds: const SilentGameSounds(),
+    );
     addTearDown(cubit.close);
 
     // Levels ١ and ٢ are both تسالونيكي. The boundary between them is
@@ -424,7 +485,10 @@ void _sweepTests() {
   });
 
   test('GameJourneyCubit_steppingBackAndForwardInsideALevel_doesNotRefly', () {
-    final cubit = GameJourneyCubit(_repository);
+    final cubit = GameJourneyCubit(
+      _repository,
+      sounds: const SilentGameSounds(),
+    );
     addTearDown(cubit.close);
 
     _pressToLevel(cubit, 3);
@@ -442,7 +506,10 @@ void _sweepTests() {
   });
 
   test('GameJourneyCubit_thePrologue_opensOnThePostOffice', () {
-    final cubit = GameJourneyCubit(_repository);
+    final cubit = GameJourneyCubit(
+      _repository,
+      sounds: const SilentGameSounds(),
+    );
     addTearDown(cubit.close);
 
     // Already there rather than flying to it: an arrival needs somewhere
@@ -460,7 +527,10 @@ void _sweepTests() {
 
 void _revealTests() {
   test('GameJourneyCubit_arrivingAtALevel_showsNothingOverTheMap', () {
-    final cubit = GameJourneyCubit(_repository);
+    final cubit = GameJourneyCubit(
+      _repository,
+      sounds: const SilentGameSounds(),
+    );
     addTearDown(cubit.close);
 
     _pressUntil(cubit, () => cubit.state.levelNumber == 1);
@@ -474,7 +544,10 @@ void _revealTests() {
   test(
     'GameJourneyCubit_theFirstPressAfterArriving_startsTheBriefingAlone',
     () {
-      final cubit = GameJourneyCubit(_repository);
+      final cubit = GameJourneyCubit(
+        _repository,
+        sounds: const SilentGameSounds(),
+      );
       addTearDown(cubit.close);
 
       _pressUntil(cubit, () => cubit.state.levelNumber == 1);
@@ -490,17 +563,19 @@ void _revealTests() {
       expect(cubit.state.showsSign, isTrue);
       expect(cubit.state.showsCard, isFalse);
 
-      // The card comes up on the press that leaves the briefing, sign and
-      // artwork together — they share a reveal.
+      // The card comes up on the press that leaves the briefing, with the
+      // sign raised but nothing quoted yet.
       cubit.forward();
       expect(cubit.state.showsCard, isTrue);
-      expect(cubit.state.showsImage, isTrue);
       expect(cubit.state.revealedVerses, isEmpty);
     },
   );
 
   test('GameJourneyCubit_aLevelWithNoBriefing_raisesTheCardOnArrival', () {
-    final cubit = GameJourneyCubit(_repository);
+    final cubit = GameJourneyCubit(
+      _repository,
+      sounds: const SilentGameSounds(),
+    );
     addTearDown(cubit.close);
 
     // غلاطية is swept into and the script gives it no briefing, so there
@@ -514,16 +589,17 @@ void _revealTests() {
   });
 
   test('GameJourneyCubit_theCard_opensItsSignThenItsVerses', () {
-    final cubit = GameJourneyCubit(_repository);
+    final cubit = GameJourneyCubit(
+      _repository,
+      sounds: const SilentGameSounds(),
+    );
     addTearDown(cubit.close);
 
     _pressToLevel(cubit, 1);
     final verses = cubit.state.level!.verses;
 
-    // The playing step starts with the sign and the artwork already up
-    // and nothing quoted yet.
+    // The playing step starts with the sign up and nothing quoted yet.
     expect(cubit.state.showsSign, isTrue);
-    expect(cubit.state.showsImage, isTrue);
     expect(cubit.state.revealedVerses, isEmpty);
 
     cubit.forward();
@@ -537,7 +613,10 @@ void _revealTests() {
   });
 
   test('GameJourneyCubit_pressingPastTheLastVerse_movesToTheNextStep', () {
-    final cubit = GameJourneyCubit(_repository);
+    final cubit = GameJourneyCubit(
+      _repository,
+      sounds: const SilentGameSounds(),
+    );
     addTearDown(cubit.close);
 
     _pressToLevel(cubit, 1);
@@ -551,7 +630,10 @@ void _revealTests() {
   });
 
   test('GameJourneyCubit_backward_closesTheCardOnePartAtATime', () {
-    final cubit = GameJourneyCubit(_repository);
+    final cubit = GameJourneyCubit(
+      _repository,
+      sounds: const SilentGameSounds(),
+    );
     addTearDown(cubit.close);
 
     _pressToLevel(cubit, 1);
@@ -572,7 +654,10 @@ void _revealTests() {
   });
 
   test('GameJourneyCubit_steppingBackIntoAStep_findsItFullyOpen', () {
-    final cubit = GameJourneyCubit(_repository);
+    final cubit = GameJourneyCubit(
+      _repository,
+      sounds: const SilentGameSounds(),
+    );
     addTearDown(cubit.close);
 
     _pressToLevel(cubit, 1);
@@ -588,7 +673,10 @@ void _revealTests() {
   });
 
   test('GameJourneyCubit_aClearedLevel_keepsItsCardOpen', () {
-    final cubit = GameJourneyCubit(_repository);
+    final cubit = GameJourneyCubit(
+      _repository,
+      sounds: const SilentGameSounds(),
+    );
     addTearDown(cubit.close);
 
     _pressUntil(cubit, () => cubit.state.step.phase == GamePhase.clearance);
@@ -597,7 +685,6 @@ void _revealTests() {
     // them away to say "well done" and then putting them back is the
     // flicker this is here to prevent.
     expect(cubit.state.showsSign, isTrue);
-    expect(cubit.state.showsImage, isTrue);
     // Everything the city has said so far: this letter's verses, and —
     // since the first clearance in the script is تسالونيكي's second
     // letter — the first letter's above them.
@@ -609,7 +696,10 @@ void _revealTests() {
   });
 
   test('GameJourneyCubit_aSecondLetterToACity_keepsTheFirstLettersVerses', () {
-    final cubit = GameJourneyCubit(_repository);
+    final cubit = GameJourneyCubit(
+      _repository,
+      sounds: const SilentGameSounds(),
+    );
     addTearDown(cubit.close);
 
     _pressToLevel(cubit, 1);
@@ -630,7 +720,10 @@ void _revealTests() {
   });
 
   test('GameJourneyCubit_sweepingToANewCity_leavesTheOldVersesBehind', () {
-    final cubit = GameJourneyCubit(_repository);
+    final cubit = GameJourneyCubit(
+      _repository,
+      sounds: const SilentGameSounds(),
+    );
     addTearDown(cubit.close);
 
     // كورنثوس is a new city, so nothing is carried across the water.
@@ -641,7 +734,10 @@ void _revealTests() {
   });
 
   test('GameJourneyCubit_corinth_accumulatesAcrossBothItsLetters', () {
-    final cubit = GameJourneyCubit(_repository);
+    final cubit = GameJourneyCubit(
+      _repository,
+      sounds: const SilentGameSounds(),
+    );
     addTearDown(cubit.close);
 
     _pressToLevel(cubit, 3);
@@ -649,11 +745,13 @@ void _revealTests() {
     _pressToLevel(cubit, 4);
 
     expect(cubit.state.carriedVerses, first);
-    expect(cubit.state.showsImage, isTrue);
   });
 
   test('GameJourneyCubit_anotherLetterToTheSameCity_keepsTheSignUp', () {
-    final cubit = GameJourneyCubit(_repository);
+    final cubit = GameJourneyCubit(
+      _repository,
+      sounds: const SilentGameSounds(),
+    );
     addTearDown(cubit.close);
 
     // Levels ١ and ٢ are both تسالونيكي, so no sweep runs between them.
@@ -667,7 +765,10 @@ void _revealTests() {
   });
 
   test('GameJourneyCubit_aSweptIntoLevel_startsBlank', () {
-    final cubit = GameJourneyCubit(_repository);
+    final cubit = GameJourneyCubit(
+      _repository,
+      sounds: const SilentGameSounds(),
+    );
     addTearDown(cubit.close);
 
     // كورنثوس is a new city, so the camera flies and the screen clears.
@@ -679,7 +780,10 @@ void _revealTests() {
   });
 
   test('GameJourneyCubit_revealNext_doesNothingDuringDialogue', () {
-    final cubit = GameJourneyCubit(_repository);
+    final cubit = GameJourneyCubit(
+      _repository,
+      sounds: const SilentGameSounds(),
+    );
     addTearDown(cubit.close);
 
     // The opening beat: a line is showing, so there is no card to open.
@@ -691,7 +795,10 @@ void _revealTests() {
   });
 
   test('GameJourneyCubit_everyLevel_carriesItsYear', () {
-    final cubit = GameJourneyCubit(_repository);
+    final cubit = GameJourneyCubit(
+      _repository,
+      sounds: const SilentGameSounds(),
+    );
     addTearDown(cubit.close);
 
     for (var level = 1; level <= cubit.state.levelCount; level++) {
@@ -767,7 +874,10 @@ void _clearanceAndJumpTests() {
   });
 
   test('GameJourneyCubit_goToStop_onlyJumpsToCitiesAlreadyReached', () {
-    final cubit = GameJourneyCubit(_repository);
+    final cubit = GameJourneyCubit(
+      _repository,
+      sounds: const SilentGameSounds(),
+    );
     addTearDown(cubit.close);
 
     _pressUntil(cubit, () => cubit.state.levelNumber == 3);
@@ -783,7 +893,10 @@ void _clearanceAndJumpTests() {
   });
 
   test('GameJourneyCubit_goToStop_arrivesTheWayTheStoryDoes', () {
-    final cubit = GameJourneyCubit(_repository);
+    final cubit = GameJourneyCubit(
+      _repository,
+      sounds: const SilentGameSounds(),
+    );
     addTearDown(cubit.close);
 
     _pressUntil(cubit, () => cubit.state.levelNumber == 3);
@@ -797,7 +910,10 @@ void _clearanceAndJumpTests() {
   });
 
   test('GameJourneyCubit_restart_returnsToTheOpeningShot', () {
-    final cubit = GameJourneyCubit(_repository);
+    final cubit = GameJourneyCubit(
+      _repository,
+      sounds: const SilentGameSounds(),
+    );
     addTearDown(cubit.close);
 
     _pressUntil(cubit, () => cubit.state.levelNumber == 4);

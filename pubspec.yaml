@@ -35,9 +35,6 @@ flutter:
     # without touching this file; missing portraits degrade to a
     # placeholder at runtime.
     - assets/characters/
-    # Same for the per-level city artwork: a level whose picture has not
-    # been drawn yet shows its name alone.
-    - assets/levels/
     - assets/sounds/
 
   fonts:

@@ -14,7 +14,6 @@ final class PostOfficePrisonLevels {
   static const GameLevel philemon = GameLevel(
     id: 'philemon',
     title: 'فيلمون',
-    imageAsset: 'assets/levels/philemon.jpg',
     year: LetterYears.philemon,
     destination: JourneyStops.colossae,
     verses: [
@@ -28,7 +27,6 @@ final class PostOfficePrisonLevels {
   static const GameLevel colossians = GameLevel(
     id: 'colossians',
     title: 'كولوسي',
-    imageAsset: 'assets/levels/colossians.jpg',
     year: LetterYears.colossians,
     destination: JourneyStops.colossae,
   );
@@ -37,7 +35,6 @@ final class PostOfficePrisonLevels {
   static const GameLevel ephesians = GameLevel(
     id: 'ephesians',
     title: 'افسس',
-    imageAsset: 'assets/levels/ephesians.jpg',
     year: LetterYears.ephesians,
     destination: JourneyStops.ephesus,
   );
@@ -46,7 +43,6 @@ final class PostOfficePrisonLevels {
   static const GameLevel titus = GameLevel(
     id: 'titus',
     title: 'تيطس',
-    imageAsset: 'assets/levels/titus.jpg',
     year: LetterYears.titus,
     destination: JourneyStops.crete,
   );
@@ -55,7 +51,6 @@ final class PostOfficePrisonLevels {
   static const GameLevel timothy1 = GameLevel(
     id: 'timothy-1',
     title: 'تيمثاوس ١',
-    imageAsset: 'assets/levels/timothy-1.jpg',
     year: LetterYears.timothy1,
     destination: JourneyStops.ephesus,
   );
@@ -64,7 +59,6 @@ final class PostOfficePrisonLevels {
   static const GameLevel hebrews = GameLevel(
     id: 'hebrews',
     title: 'عبرانيين',
-    imageAsset: 'assets/levels/hebrews.jpg',
     year: LetterYears.hebrews,
     destination: JourneyStops.jerusalem,
   );
@@ -73,7 +67,6 @@ final class PostOfficePrisonLevels {
   static const GameLevel timothy2 = GameLevel(
     id: 'timothy-2',
     title: 'تيمثاوس ٢',
-    imageAsset: 'assets/levels/timothy-2.jpg',
     year: LetterYears.timothy2,
     destination: JourneyStops.ephesus,
     verses: [

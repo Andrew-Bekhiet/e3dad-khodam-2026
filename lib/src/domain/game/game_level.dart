@@ -34,11 +34,6 @@ final class GameLevel extends Equatable {
   /// quotes them. Revealed one at a time on the level's city card.
   final List<String> verses;
 
-  /// Artwork for the level's destination card, shown over the map while
-  /// the level is being played. May point at a file that does not exist
-  /// yet: the card falls back to a placeholder carrying the name alone.
-  final String? imageAsset;
-
   /// The year the letter was written, in AD, shown beside the
   /// destination's name on the card's sign.
   ///
@@ -55,7 +50,6 @@ final class GameLevel extends Equatable {
     briefing,
     clearance,
     verses,
-    imageAsset,
     year,
   ];
 
@@ -66,7 +60,6 @@ final class GameLevel extends Equatable {
     required this.destination,
     this.briefing = const [],
     this.clearance = const [],
-    this.imageAsset,
     this.verses = const [],
     this.year,
   });

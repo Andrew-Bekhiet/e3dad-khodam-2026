@@ -86,8 +86,8 @@ The Stop a given Level is about — where the Party ends up, and what the camera
 
 **Destination Card**:
 The panel shown over the map during a Level, in the middle of the screen. It only ever grows, one
-press at a time: first the Sign, then the Letter's artwork as its background, then the Verses. Named
-for the Destination, not for a city — several Destinations are provinces, not cities.
+press at a time: first the Sign, then the Verses. Named for the Destination, not for a city — several
+Destinations are provinces, not cities.
 _Avoid_: city card, level card
 
 **Sign (لافتة)**:
@@ -96,8 +96,8 @@ The Play Script's own word for it, and the only place the game names where the p
 replaced a panel that showed the Letter's title and a progress bar.
 
 **Reveal**:
-How far the Destination Card is open on the current Step: nothing, the Sign, the artwork, then one
-more for each Verse shown. A single number, because the Card only ever grows — which is what lets
+How far the Destination Card is open on the current Step: nothing, the Sign, then one more for each
+Verse shown. A single number, because the Card only ever grows — which is what lets
 forward and backward walk it with the same ±1 they use on Steps.
 
 **Verse (شاهد)**:

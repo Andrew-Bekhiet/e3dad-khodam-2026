@@ -110,12 +110,13 @@ Future<Object?> _renderAt(
       ),
     ),
   );
+  await tester.pump(const Duration(milliseconds: 300));
 
   return tester.takeException();
 }
 
-/// Renders [level]'s card fully open — artwork showing, every verse
-/// revealed — and returns whatever it threw.
+/// Renders [level]'s card fully open — every verse revealed — and returns
+/// whatever it threw.
 ///
 /// Wrapped up as one call rather than a widget-returning helper so the
 /// card is built where it is used; a bare function handing back a widget
@@ -130,7 +131,6 @@ Future<Object?> _renderCardAt(
   DestinationCard(
     level: level,
     destinationLabel: level.destination.label,
-    showsImage: true,
     verses: level.verses,
     versesSpeaker: PostOfficeCharacters.paul,
     hasMore: false,
@@ -153,7 +153,7 @@ void _neverStepped() {
 
 /// The rendered size of [text]'s font, as laid out.
 double? _fontSizeOf(WidgetTester tester, String text) =>
-    tester.widget<Text>(find.text(text)).style?.fontSize;
+    tester.widget<Text>(find.textContaining(text)).style?.fontSize;
 
 void main() {
   group('DestinationCard', () {

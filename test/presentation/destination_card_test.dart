@@ -24,13 +24,13 @@ const GameLevel _level = GameLevel(
   title: 'تسالونيكي الأولى',
   destination: _stop,
   year: 52,
-  imageAsset: 'assets/levels/thessalonians.jpg',
   verses: ['آية'],
 );
 
 /// The card on its own, with nothing else on screen to take a tap.
 final class _CardUnderTest extends StatelessWidget {
   final bool hasMore;
+  final List<String> verses;
   final VoidCallback onReveal;
   final VoidCallback onAdvance;
 
@@ -38,6 +38,7 @@ final class _CardUnderTest extends StatelessWidget {
     required this.hasMore,
     required this.onReveal,
     required this.onAdvance,
+    this.verses = const ['آية'],
   });
 
   @override
@@ -46,8 +47,7 @@ final class _CardUnderTest extends StatelessWidget {
       body: DestinationCard(
         level: _level,
         destinationLabel: _stop.label,
-        showsImage: false,
-        verses: const ['آية'],
+        verses: verses,
         versesSpeaker: _writer,
         hasMore: hasMore,
         onReveal: onReveal,
@@ -94,7 +94,7 @@ void main() {
     expect(revealed, 0);
   });
 
-  testWidgets('the card fills the screen but for a small margin', (
+  testWidgets('the card grows for its revealed verses', (
     tester,
   ) async {
     tester.view.physicalSize = const Size(390, 844);
@@ -104,15 +104,26 @@ void main() {
     await tester.pumpWidget(
       const _CardUnderTest(
         hasMore: false,
+        verses: [],
         onReveal: _never,
         onAdvance: _never,
       ),
     );
-    final card = tester.getSize(find.byType(DestinationCard));
+    await tester.pump(const Duration(milliseconds: 300));
+    final signOnlyHeight = tester.getSize(find.byType(PixelPanel)).height;
+
+    await tester.pumpWidget(
+      const _CardUnderTest(
+        hasMore: false,
+        onReveal: _never,
+        onAdvance: _never,
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 300));
     final panel = tester.getSize(find.byType(PixelPanel));
 
-    expect(panel.width, greaterThan(card.width - 40));
-    expect(panel.height, greaterThan(card.height - 40));
+    expect(panel.height, greaterThan(signOnlyHeight));
+    expect(panel.height, lessThan(200));
   });
 }
 

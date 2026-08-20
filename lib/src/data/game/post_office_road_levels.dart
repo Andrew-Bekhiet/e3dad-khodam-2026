@@ -20,7 +20,6 @@ final class PostOfficeRoadLevels {
   static const GameLevel thessalonians1 = GameLevel(
     id: 'thessalonians-1',
     title: 'الرسالة الأولى لتسالونيكي',
-    imageAsset: 'assets/levels/thessalonians.jpg',
     year: LetterYears.thessalonians1,
     destination: JourneyStops.thessalonica,
     briefing: [
@@ -40,7 +39,6 @@ final class PostOfficeRoadLevels {
   static const GameLevel thessalonians2 = GameLevel(
     id: 'thessalonians-2',
     title: 'الرسالة التانية لتسالونيكي',
-    imageAsset: 'assets/levels/thessalonians.jpg',
     year: LetterYears.thessalonians2,
     destination: JourneyStops.thessalonica,
     briefing: [
@@ -60,7 +58,6 @@ final class PostOfficeRoadLevels {
   static const GameLevel corinthians1 = GameLevel(
     id: 'corinthians-1',
     title: 'رسالة كورنثوس',
-    imageAsset: 'assets/levels/corinthians-1.png',
     year: LetterYears.corinthians1,
     destination: JourneyStops.corinth,
     briefing: [
@@ -78,7 +75,6 @@ final class PostOfficeRoadLevels {
   static const GameLevel corinthians2 = GameLevel(
     id: 'corinthians-2',
     title: 'رسالة كورنثوس الثانية',
-    imageAsset: 'assets/levels/corinthians-2.png',
     year: LetterYears.corinthians2,
     destination: JourneyStops.corinth,
   );
@@ -87,7 +83,6 @@ final class PostOfficeRoadLevels {
   static const GameLevel galatians = GameLevel(
     id: 'galatians',
     title: 'رسالة غلاطية',
-    imageAsset: 'assets/levels/galatians.png',
     year: LetterYears.galatians,
     destination: JourneyStops.galatia,
     verses: [
@@ -101,7 +96,6 @@ final class PostOfficeRoadLevels {
   static const GameLevel romans = GameLevel(
     id: 'romans',
     title: 'الرسالة الى رومية',
-    imageAsset: 'assets/levels/romans.png',
     year: LetterYears.romans,
     destination: JourneyStops.rome,
     verses: [
@@ -115,7 +109,6 @@ final class PostOfficeRoadLevels {
   static const GameLevel philippians = GameLevel(
     id: 'philippians',
     title: 'رسالة فيلبي',
-    imageAsset: 'assets/levels/philippians.png',
     year: LetterYears.philippians,
     destination: JourneyStops.philippi,
     verses: [

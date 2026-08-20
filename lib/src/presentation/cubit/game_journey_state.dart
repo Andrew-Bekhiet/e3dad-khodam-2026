@@ -14,10 +14,6 @@ final class GameJourneyState extends Equatable {
   /// and year.
   static const int signReveal = 1;
 
-  /// Reveal at which the card's background artwork appears. Every reveal
-  /// above this one is a verse.
-  static const int imageReveal = 1;
-
   /// The step currently showing.
   final GameStep step;
 
@@ -65,8 +61,8 @@ final class GameJourneyState extends Equatable {
 
   /// How far the destination card is open on this step.
   ///
-  /// `0` is nothing at all, then the sign, then the artwork, then one
-  /// more for each verse. A single number because the card only ever
+  /// `0` is nothing at all, then the sign, then one more for each verse.
+  /// A single number because the card only ever
   /// grows, and because that lets forward and backward walk it with the
   /// same `±1` they use on steps.
   final int reveal;
@@ -92,7 +88,7 @@ final class GameJourneyState extends Equatable {
     // and lets the guide speak. Never further: the prologue has no card.
     GamePhase.prologue || GamePhase.briefing => signReveal,
     GamePhase.playing ||
-    GamePhase.clearance => imageReveal + (level?.verses.length ?? 0),
+    GamePhase.clearance => signReveal + (level?.verses.length ?? 0),
   };
 
   /// Whether this step starts with a blank map.
@@ -104,13 +100,13 @@ final class GameJourneyState extends Equatable {
 
   /// The lowest [reveal] this step settles at once acknowledged.
   ///
-  /// A city already carrying verses opens straight to its artwork: the
+  /// A city already carrying verses opens straight to its sign: the
   /// player is part-way through reading that city, and dropping back to
   /// the bare sign would take away what they are still looking at.
   int get minReveal => switch (this) {
     _ when step.phase == GamePhase.opening => 0,
     _ when opensBlank => 0,
-    _ when carriedVerses.isNotEmpty => imageReveal,
+    _ when carriedVerses.isNotEmpty => signReveal,
     _ => signReveal,
   };
 
@@ -140,12 +136,9 @@ final class GameJourneyState extends Equatable {
       step.phase != GamePhase.prologue &&
       step.phase != GamePhase.briefing;
 
-  /// Whether the card is showing its background artwork.
-  bool get showsImage => reveal >= imageReveal;
-
   /// How many of the level's verses are on the card.
   int get versesShown =>
-      (reveal - imageReveal).clamp(0, level?.verses.length ?? 0);
+      (reveal - signReveal).clamp(0, level?.verses.length ?? 0);
 
   /// Every verse on the card: those already read in this city, then this
   /// level's own as they are revealed.

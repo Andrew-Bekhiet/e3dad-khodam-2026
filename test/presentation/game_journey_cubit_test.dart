@@ -5,6 +5,7 @@ import 'package:e3dad_khodam_2026/src/domain/game/game_sounds.dart';
 import 'package:e3dad_khodam_2026/src/domain/geo_bounds.dart';
 import 'package:e3dad_khodam_2026/src/domain/geo_position.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/map_camera_target.dart';
+import 'package:e3dad_khodam_2026/src/presentation/cubit/game_journey_camera.dart';
 import 'package:e3dad_khodam_2026/src/presentation/cubit/game_journey_cubit.dart';
 import 'package:e3dad_khodam_2026/src/presentation/cubit/game_step.dart';
 import 'package:e3dad_khodam_2026/src/presentation/cubit/sweep_framing.dart';
@@ -338,9 +339,9 @@ void _sweepTests() {
     final sweep = cubit.state.sweep;
 
     expect(sweep, isNotNull);
-    expect(sweep!.widest.bounds, GameJourneyCubit.sweepFrame);
+    expect(sweep!.widest.bounds, GameJourneyCamera.sweepFrame);
     expect(sweep.arrival.center, JourneyStops.corinth.position);
-    expect(sweep.arrival.zoom, GameJourneyCubit.arrivalZoom);
+    expect(sweep.arrival.zoom, GameJourneyCamera.arrivalZoom);
     // Coming in is the part worth watching, so it takes longer.
     expect(sweep.inLeg, greaterThan(sweep.outLeg));
   });
@@ -364,7 +365,7 @@ void _sweepTests() {
     expect(
       bounds.east - bounds.west,
       lessThan(
-        GameJourneyCubit.sweepFrame.east - GameJourneyCubit.sweepFrame.west,
+        GameJourneyCamera.sweepFrame.east - GameJourneyCamera.sweepFrame.west,
       ),
     );
   });
@@ -378,7 +379,7 @@ void _sweepTests() {
 
     _pressUntil(cubit, () => cubit.state.levelNumber == 3);
 
-    expect(cubit.state.sweep!.widest.bounds, GameJourneyCubit.sweepFrame);
+    expect(cubit.state.sweep!.widest.bounds, GameJourneyCamera.sweepFrame);
   });
 
   test('GameJourneyCubit_theFirstLevel_sweepsOntoItToo', () {
@@ -409,7 +410,7 @@ void _sweepTests() {
       cubit.state.camera,
       CenterZoomCameraTarget(
         center: JourneyStops.thessalonica.position,
-        zoom: GameJourneyCubit.arrivalZoom,
+        zoom: GameJourneyCamera.arrivalZoom,
       ),
     );
   });
@@ -459,7 +460,7 @@ void _sweepTests() {
         cubit.state.camera,
         CenterZoomCameraTarget(
           center: JourneyStops.thessalonica.position,
-          zoom: GameJourneyCubit.arrivalZoom,
+          zoom: GameJourneyCamera.arrivalZoom,
         ),
       );
     },

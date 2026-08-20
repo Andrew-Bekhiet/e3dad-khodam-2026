@@ -1,56 +1,85 @@
 import 'package:e3dad_khodam_2026/src/domain/game/story_beat.dart';
+import 'package:e3dad_khodam_2026/src/presentation/cubit/game_step.dart';
 import 'package:equatable/equatable.dart';
 
-/// Which part of the playthrough a [GameStep] belongs to.
-enum GamePhase {
-  /// The still opening shot: the couriers at home, before anyone sets
-  /// off. Carries no beat — there is nothing to read yet, only somewhere
-  /// to be.
-  opening,
+export 'game_phase.dart';
 
-  /// Opening beats, spoken on arrival at the first city.
-  prologue,
+sealed class GameStep extends Equatable {
+  const GameStep();
 
-  /// Beats introducing the level the player is about to play.
-  briefing,
-
-  /// The level itself: the map, with no overlay in the way.
-  playing,
-
-  /// Beats confirming the level was cleared.
-  clearance,
-
-  /// Closing beats, after the last level.
-  epilogue,
+  GamePhase get phase;
 }
 
-/// One position in the playthrough — a single story beat, or the playable
-/// map of one level.
-///
-/// The whole game is a flat list of these, which is what lets the
-/// forward/backward controls (arrow keys and on-screen arrows alike) be
-/// one `±1` on an index, whether the next thing is another line of
-/// dialogue or a whole new level.
-final class GameStep extends Equatable {
-  /// Which part of the playthrough this step belongs to.
-  final GamePhase phase;
+final class OpeningStep extends GameStep {
+  const OpeningStep();
 
-  /// Index into `LevelScript.levels`, or null during the prologue and
-  /// epilogue, which belong to no level.
-  final int? levelIndex;
+  @override
+  GamePhase get phase => GamePhase.opening;
 
-  /// The line to show, or null when [phase] is [GamePhase.playing] and
-  /// the map is meant to be unobstructed.
-  final StoryBeat? beat;
+  @override
+  List<Object?> get props => [phase];
+}
+
+final class PrologueStep extends GameStep {
+  const PrologueStep(this.beat);
+
+  final StoryBeat beat;
+
+  @override
+  GamePhase get phase => GamePhase.prologue;
+
+  @override
+  List<Object?> get props => [phase, beat];
+}
+
+sealed class LevelStep extends GameStep {
+  const LevelStep(this.levelIndex);
+
+  final int levelIndex;
+
+  @override
+  List<Object?> get props => [phase, levelIndex];
+}
+
+final class BriefingStep extends LevelStep {
+  const BriefingStep(super.levelIndex, this.beat);
+
+  final StoryBeat beat;
+
+  @override
+  GamePhase get phase => GamePhase.briefing;
 
   @override
   List<Object?> get props => [phase, levelIndex, beat];
+}
 
-  /// Creates a step. The opening shot and a playing step carry no beat;
-  /// every other phase carries exactly one.
-  const GameStep({required this.phase, this.levelIndex, this.beat})
-    : assert(
-        (phase == GamePhase.playing || phase == GamePhase.opening) ==
-            (beat == null),
-      );
+final class PlayingStep extends LevelStep {
+  const PlayingStep(super.levelIndex);
+
+  @override
+  GamePhase get phase => GamePhase.playing;
+}
+
+final class ClearanceStep extends LevelStep {
+  const ClearanceStep(super.levelIndex, this.beat);
+
+  final StoryBeat beat;
+
+  @override
+  GamePhase get phase => GamePhase.clearance;
+
+  @override
+  List<Object?> get props => [phase, levelIndex, beat];
+}
+
+final class EpilogueStep extends GameStep {
+  const EpilogueStep(this.beat);
+
+  final StoryBeat beat;
+
+  @override
+  GamePhase get phase => GamePhase.epilogue;
+
+  @override
+  List<Object?> get props => [phase, beat];
 }

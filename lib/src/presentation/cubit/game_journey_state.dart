@@ -82,13 +82,13 @@ final class GameJourneyState extends Equatable {
   /// A cleared level keeps everything it had open. The level has not
   /// changed, so taking the card away and putting it back would flicker
   /// something the player is still reading.
-  int get maxReveal => switch (step.phase) {
-    GamePhase.opening || GamePhase.epilogue => 0,
+  int get maxReveal => switch (step) {
+    OpeningStep() || EpilogueStep() => 0,
     // One press past the arrival, which is what takes the blank map away
     // and lets the guide speak. Never further: the prologue has no card.
-    GamePhase.prologue || GamePhase.briefing => signReveal,
-    GamePhase.playing ||
-    GamePhase.clearance => signReveal + (level?.verses.length ?? 0),
+    PrologueStep() || BriefingStep() => signReveal,
+    PlayingStep() ||
+    ClearanceStep() => signReveal + (level?.verses.length ?? 0),
   };
 
   /// Whether this step starts with a blank map.
@@ -103,12 +103,12 @@ final class GameJourneyState extends Equatable {
   /// A city already carrying verses opens straight to its sign: the
   /// player is part-way through reading that city, and dropping back to
   /// the bare sign would take away what they are still looking at.
-  int get minReveal => switch (this) {
-    _ when step.phase == GamePhase.opening => 0,
-    _ when opensBlank => 0,
-    _ when carriedVerses.isNotEmpty => signReveal,
-    _ => signReveal,
-  };
+  int get minReveal {
+    if (step is OpeningStep || opensBlank) {
+      return 0;
+    }
+    return signReveal;
+  }
 
   /// Whether the level has been entered but not yet acknowledged: the
   /// camera is sweeping in, or has just landed, and the screen carries
@@ -130,11 +130,7 @@ final class GameJourneyState extends Equatable {
   /// The prologue is spoken over the first city on arrival and belongs to
   /// that level, but it is the journey being introduced rather than the
   /// letter — so it never raises the card.
-  bool get showsCard =>
-      level != null &&
-      showsSign &&
-      step.phase != GamePhase.prologue &&
-      step.phase != GamePhase.briefing;
+  bool get showsCard => level != null && showsSign && step is! PrologueStep;
 
   /// How many of the level's verses are on the card.
   int get versesShown =>
@@ -156,10 +152,21 @@ final class GameJourneyState extends Equatable {
 
   /// The line to show over the map. Nothing speaks while the level is
   /// still arriving: the sweep owns the screen until it is acknowledged.
-  StoryBeat? get beat => isArriving ? null : step.beat;
+  StoryBeat? get beat {
+    if (isArriving) {
+      return null;
+    }
+    return switch (step) {
+      PrologueStep(:final beat) ||
+      BriefingStep(:final beat) ||
+      ClearanceStep(:final beat) ||
+      EpilogueStep(:final beat) => beat,
+      OpeningStep() || PlayingStep() => null,
+    };
+  }
 
   /// Whether the map is currently unobstructed.
-  bool get isPlaying => step.phase == GamePhase.playing;
+  bool get isPlaying => step is PlayingStep;
 
   /// Whether there is anything before this step.
   bool get isAtStart => stepIndex <= 0;

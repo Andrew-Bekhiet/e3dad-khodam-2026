@@ -21,7 +21,7 @@ the thing that says so, and it is why the §5 sentence now names the Cross Map e
 
 **Motion numbers live in two places on purpose.** The Cross Map's drill/back durations stay in §5.
 The game's — sweep frame, arrival zoom, the three sweep durations — sit in the game-motion section
-and are mirrored as named constants on `GameJourneyCubit`. Tuning one must not silently tune the
+and are mirrored as named constants on `GameJourneyCamera`. Tuning one must not silently tune the
 other.
 
 **"Tasteful" is no longer the test for game chrome.** The test is whether it reads from the back of

@@ -1,4 +1,3 @@
-import 'package:e3dad_khodam_2026/src/data/audio/audioplayers_game_sounds.dart';
 import 'package:e3dad_khodam_2026/src/data/game/post_office_script.dart';
 import 'package:e3dad_khodam_2026/src/domain/game/game_sounds.dart';
 import 'package:e3dad_khodam_2026/src/domain/game/level_script_repository.dart';
@@ -56,7 +55,7 @@ final class _GameUnderTest extends StatelessWidget {
         value: const StaticLevelScriptRepository(),
       ),
       RepositoryProvider<GameSounds>.value(
-        value: await AudioPlayersGameSounds.create(),
+        value: const SilentGameSounds(),
       ),
       RepositoryProvider<MapSurfaceBuilder>.value(value: surfaceBuilder),
     ],

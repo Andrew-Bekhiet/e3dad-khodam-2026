@@ -124,6 +124,28 @@ class _GameJourneyViewState extends State<_GameJourneyView>
   void initState() {
     super.initState();
     _reaimTheTail();
+    _playSoundOnSweepAnimation();
+  }
+
+  void _playSoundOnSweepAnimation() {
+    _sweep.addStatusListener(_sweepSoundListener);
+  }
+
+  Future<void> _sweepSoundListener(AnimationStatus status) async {
+    if (status == AnimationStatus.forward) {
+      final sweepOutDuration = context
+          .read<GameJourneyCubit>()
+          .state
+          .sweep
+          ?.outLeg;
+      await Future.delayed(sweepOutDuration ?? Duration.zero);
+
+      _sounds.startWalking();
+    } else if (status == AnimationStatus.completed ||
+        status == AnimationStatus.dismissed) {
+      _sounds.stopWalking();
+      if (status == AnimationStatus.completed) _sounds.playLevelReached();
+    }
   }
 
   /// Re-reads where the portrait is after the frame that moved it.
@@ -271,6 +293,7 @@ class _GameJourneyViewState extends State<_GameJourneyView>
   @override
   void dispose() {
     _sounds.stopWalking();
+    _sweep.removeStatusListener(_sweepSoundListener);
     _sweep.dispose();
     _focusNode.dispose();
     _guideAnchorX.dispose();
@@ -299,14 +322,12 @@ class _GameJourneyViewState extends State<_GameJourneyView>
   void _onCameraChanged(GameJourneyState state) {
     final sweep = state.sweep;
     if (sweep == null) {
-      _sounds.stopWalking();
       _sweep
         ..stop()
         ..value = 0;
 
       return;
     }
-    _sounds.startWalking();
     _sweep
       ..duration = sweep.total
       ..forward(from: 0).then((_) => _onSweepLanded());
@@ -323,7 +344,6 @@ class _GameJourneyViewState extends State<_GameJourneyView>
     if (!mounted) {
       return;
     }
-    _sounds.stopWalking();
     _sounds.playLevelReached();
     _drainPresses();
   }
@@ -407,7 +427,12 @@ class _GameJourneyViewState extends State<_GameJourneyView>
 
       return;
     }
-    forward ? cubit.forward() : cubit.backward();
+
+    if (forward) {
+      cubit.forward();
+    } else {
+      cubit.backward();
+    }
   }
 }
 

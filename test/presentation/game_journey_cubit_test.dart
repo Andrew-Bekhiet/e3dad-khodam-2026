@@ -596,9 +596,9 @@ void _arrivalRevealTests() {
     );
     addTearDown(cubit.close);
 
-    // غلاطية is swept into and the script gives it no briefing, so there
+    // رومية is swept into and the script gives it no briefing, so there
     // is nothing for the card to wait behind.
-    _pressUntil(cubit, () => cubit.state.level?.id == 'galatians');
+    _pressUntil(cubit, () => cubit.state.level?.id == 'romans');
     expect(cubit.state.isArriving, isTrue);
     expect(cubit.state.showsCard, isFalse);
 

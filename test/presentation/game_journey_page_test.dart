@@ -253,13 +253,17 @@ void main() {
       await tester.pump();
 
       final cubit = _cubitOf(tester);
-      // Twelve presses lands on تسالونيكي's second letter, one press short
-      // of its bubble. That level is not swept into, so the camera holds
-      // across the press that raises her — leaving the bar's growth as the
-      // only thing moving, which is what makes the count mean anything.
-      for (var press = 0; press < 12; press++) {
+      // Walk to تسالونيكي's second letter and stop one press short of the
+      // guide's bubble. Found rather than counted, so a line added earlier
+      // in the script does not silently move this off its mark. That level
+      // is not swept into, so the camera holds across the press that raises
+      // her — leaving the bar's growth as the only thing moving, which is
+      // what makes the count mean anything.
+      while (cubit.state.level?.id != 'thessalonians-2' ||
+          cubit.state.beat?.emphasis != BeatEmphasis.callout) {
         cubit.forward();
       }
+      cubit.backward();
       for (var second = 0; second < 5; second++) {
         await tester.pump(const Duration(seconds: 1));
       }

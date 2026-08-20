@@ -15,6 +15,11 @@ final class PostOfficeScript {
     title: 'الفينال',
     year: 67,
     destination: JourneyStops.rome,
+    briefing: [
+      StoryBeat.guide(
+        'خلاص كده اللعبة خلصت، وعلشان تعرفوا ترجعوا لازم تكملوا آخر تاسك بعد الرسائل: إنكم تشرحوا ملخص سريع لكل الرسائل',
+      ),
+    ],
   );
 
   /// The fourteen levels, road letters then prison letters.
@@ -26,9 +31,9 @@ final class PostOfficeScript {
 
   /// The finished script.
   ///
-  /// The opening beat is the game's own opening line in the play; the
-  /// play has no closing narration yet, so the game simply ends on its
-  /// last level rather than inventing one.
+  /// The opening beats are the game's own opening lines in the play, and
+  /// the closing beat is the verse the narrator reads over the last
+  /// scene.
   static const LevelScript script = LevelScript(
     guide: PostOfficeCharacters.guide,
     narrator: PostOfficeCharacters.narrator,
@@ -36,14 +41,21 @@ final class PostOfficeScript {
     couriers: PostOfficeCharacters.couriers,
     home: JourneyStops.ismailia,
     prologue: [
-      // The one line that sets the whole game up, so it takes the screen
+      // The two lines that set the whole game up, so they take the screen
       // rather than arriving as an aside from the app bar.
       StoryBeat.guide(
-        'أهلا بكم في لعبة post office. انتو دلوقتي في زمن ٥٢ م، ودة عصر اول رسالة لبولس الرسول. انتو دلوقتي معاكم ١٤ رسالة متقسمين ل١٤ مرحلة، لازم تفهموهم كويس اوي وتوصلوهم عشان تعرفوا تطلعوا من اللعبة',
+        'هلا بيكم في لعبة post office. لو إنتوا سامعيني دلوقتي فأكيد إنتوا مش عارفين إنتوا فين وجيتوا هنا إزاي. الصندوق اللي كان فيه الرسايل واللي إنتوا فتحتوه مكانش صندوق عادي، ده كان اللعبة بتاعتنا، وإنتوا دلوقتي جوه اللعبة في زمن ٥٢ م، ودة عصر أول رسالة لبولس الرسول',
+      ),
+      StoryBeat.guide(
+        'علشان ترجعوا بلدكم لازم تكسبوا اللعبة، وعلشان تكسبوا لازم تعدوا الـ١٤ مرحلة وتجمعوا الـ١٤ رسالة وترجعوها للصندوق. ومتقلقوش، معاكوا ٣ وسايل مساعدة علشان المراحل الصعبة',
       ),
     ],
     levels: levels,
-    epilogue: [],
+    epilogue: [
+      StoryBeat.narrator(
+        '«أَنْتُمْ رِسَالَتُنَا مَكْتُوبَةً فِي قُلُوبِنَا... وَمَقْرُوءَةً مِنْ جَمِيعِ النَّاسِ»\n(2 كو 3: 2)',
+      ),
+    ],
   );
 
   const PostOfficeScript._();

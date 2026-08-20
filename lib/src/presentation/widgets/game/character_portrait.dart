@@ -29,9 +29,11 @@ final class CharacterPortrait extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) => Container(
+  Widget build(BuildContext context) => AnimatedContainer(
     width: size,
     height: size,
+    alignment: AlignmentDirectional.topStart,
+    duration: const Duration(milliseconds: 200),
     decoration: BoxDecoration(
       color: background,
       border: Border.all(color: GamePalette.ink, width: _borderWidth),
@@ -49,16 +51,14 @@ final class CharacterPortrait extends StatelessWidget {
         character.portraitAsset,
         fit: BoxFit.cover,
         alignment: Alignment.topCenter,
-        errorBuilder: (context, error, stackTrace) => _placeholder(),
+        errorBuilder: (context, error, stackTrace) => Center(
+          child: Icon(
+            Icons.person_outline,
+            size: size * CharacterPortrait._placeholderRatio,
+            color: GamePalette.ink.withValues(alpha: 0.35),
+          ),
+        ),
       ),
-    ),
-  );
-
-  Widget _placeholder() => Center(
-    child: Icon(
-      Icons.person_outline,
-      size: size * _placeholderRatio,
-      color: GamePalette.ink.withValues(alpha: 0.35),
     ),
   );
 }

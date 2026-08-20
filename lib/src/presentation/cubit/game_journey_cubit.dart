@@ -57,7 +57,7 @@ final class GameJourneyCubit extends Cubit<GameJourneyState> {
   /// Shorter than it was: framing the leg alone rather than the whole
   /// basin makes the walk legible straight away, so the pause no longer
   /// has to hold long enough for the eye to find two dots in a sea.
-  static const Duration sweepHold = Duration(milliseconds: 500);
+  static const Duration sweepHold = Duration(milliseconds: 1000);
 
   /// How long the camera takes to come in on its destination.
   static const Duration sweepIn = Duration(milliseconds: 900);
@@ -398,7 +398,7 @@ final class GameJourneyCubit extends Cubit<GameJourneyState> {
   /// jingle exists and it will fire on every level cleared.
   factory GameJourneyCubit(
     LevelScriptRepository repository, {
-    GameSounds sounds = const SilentGameSounds(),
+    required GameSounds sounds,
     SweepFraming framing = SweepFraming.basin,
   }) {
     final script = repository.loadLevelScript();
@@ -508,11 +508,6 @@ final class GameJourneyCubit extends Cubit<GameJourneyState> {
       framing: sweepFraming,
       from: state,
     );
-    // A sweep the camera is already holding is the same departure seen
-    // from a later step, not a second one.
-    if (forward && next.sweep != null && next.camera != state.camera) {
-      _sounds.playDeparture();
-    }
     emit(next);
   }
 

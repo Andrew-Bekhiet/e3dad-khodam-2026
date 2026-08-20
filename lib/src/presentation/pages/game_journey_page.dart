@@ -174,20 +174,28 @@ class _GameJourneyViewState extends State<_GameJourneyView>
             onTap: () => _step(cubit, forward: true),
           ),
           SweepOverlay(progress: _sweep),
-          // Gated on the card being open, not merely on there being
-          // a level: a cleared level still has one, and its card
-          // must be gone before the clearance line and the next
-          // sweep.
-          if (state.showsCard)
-            DestinationCard(
-              level: state.level!,
-              destinationLabel: state.currentStop?.label ?? '',
-              showsImage: state.showsImage,
-              verses: state.revealedVerses,
-              versesSpeaker: cubit.letterWriter,
-              hasMore: state.hasMoreReveal,
-              onReveal: cubit.revealNext,
-              onAdvance: () => _step(cubit, forward: true),
+          // Mounted for as long as there is a level, and only faded on
+          // `showsCard`: mounting on `showsCard` would tear the card out
+          // of the tree before it could fade, so it would vanish and pop
+          // back at full size instead of easing away before the
+          // clearance line and the next sweep.
+          if (state.level case final level?)
+            AnimatedCrossFade(
+              duration: StoryOverlay.switchDuration ~/ 3,
+              crossFadeState: state.showsCard
+                  ? CrossFadeState.showFirst
+                  : CrossFadeState.showSecond,
+              secondChild: const SizedBox.shrink(),
+              firstChild: DestinationCard(
+                level: level,
+                destinationLabel: state.currentStop?.label ?? '',
+                showsImage: state.showsImage,
+                verses: state.revealedVerses,
+                versesSpeaker: cubit.letterWriter,
+                hasMore: state.hasMoreReveal,
+                onReveal: cubit.revealNext,
+                onAdvance: () => _step(cubit, forward: true),
+              ),
             ),
           // Listening rather than reading, so that re-aiming the tail
           // rebuilds the bubble alone and leaves the map beneath it

@@ -33,7 +33,7 @@ final class E3dadKhodamApp extends StatelessWidget {
     required this.repository,
     required this.levelScriptRepository,
     required this.mapSurfaceBuilder,
-    this.gameSounds = const SilentGameSounds(),
+    required this.gameSounds,
     super.key,
   });
 

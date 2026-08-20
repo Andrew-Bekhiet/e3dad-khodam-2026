@@ -272,16 +272,24 @@ briefing — غلاطية, رومية, most of the prison letters — has nothin
 on the press that acknowledges the arrival. A level that is not swept into keeps whatever card was
 already up, which is the rule against blinking.
 
+The card is **mounted whenever the state has a level**, and `showsCard` only decides whether it is
+faded in. Mounting on `showsCard` instead would tear the card out of the tree the moment it hides,
+so it would have nothing to fade and would pop back at full size on the next press.
+
 ### What animates what
 
-Three separate movements, deliberately sequenced rather than overlapping:
+Four separate movements, deliberately sequenced rather than overlapping:
 
 1. The destination card's own `AnimatedSize` (**260ms**) — the card growing as it opens.
-2. An `AnimatedSize` around the **verse column** (also 260ms). One widget for the whole list, not one
+2. The card's `AnimatedCrossFade` in and out of view (**one third of `StoryOverlay.switchDuration`,
+   ~233ms**) — derived from the overlay's switch rather than set on its own so the two stay in step
+   if that number moves. It is the shorter half of the pair on purpose: the card should be gone
+   before the line that replaces it arrives.
+3. An `AnimatedSize` around the **verse column** (also 260ms). One widget for the whole list, not one
    per verse. The card's own cannot carry this: once the artwork is showing the card sits on a
    400px floor, so early verses change nothing about its height. The verse column has no floor, so
    it grows on every verse.
-3. `StoryOverlay`'s switch (**700ms**), whose fade-in does not begin until 60% in — **420ms**,
+4. `StoryOverlay`'s switch (**700ms**), whose fade-in does not begin until 60% in — **420ms**,
    comfortably past the card's 260ms. Where a beat arrives on the same press that raises the card —
    stepping back into a briefing, a card reopening behind a line — two panels growing and fading
    through one another reads as a smear. The card goes first and finishes; only then does anyone

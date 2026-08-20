@@ -52,7 +52,6 @@ final class GuideCallout extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final title = beat.title;
     final text = TextTheme.of(context);
     final anchor = tailCentreX;
     final screen = GameScreenSize.of(context);
@@ -83,27 +82,12 @@ final class GuideCallout extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      if (title != null) ...[
-                        Text(
-                          title,
-                          style: screen
-                              .pick(
-                                compact: text.titleMedium,
-                                large: text.headlineSmall,
-                              )
-                              ?.copyWith(
-                                fontWeight: FontWeight.w700,
-                                color: GamePalette.ink,
-                              ),
-                        ),
-                        const SizedBox(height: 6),
-                      ],
                       Text(
                         beat.text,
                         style: screen
                             .pick(
                               compact: text.titleMedium,
-                              large: text.headlineLarge,
+                              large: text.displayMedium,
                             )
                             ?.copyWith(height: 1.5, color: GamePalette.ink),
                       ),

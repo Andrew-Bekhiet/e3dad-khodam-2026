@@ -10,10 +10,18 @@ import 'package:e3dad_khodam_2026/src/domain/game/story_beat.dart';
 /// The post-office playthrough: ١٤ رسالة على ١٤ مرحلة, in the order the
 /// play script (`المسرحية.docx`) delivers them.
 final class PostOfficeScript {
+  static const GameLevel finaleInRome = GameLevel(
+    id: 'finale',
+    title: 'الفينال',
+    year: 67,
+    destination: JourneyStops.rome,
+  );
+
   /// The fourteen levels, road letters then prison letters.
   static const List<GameLevel> levels = [
     ...PostOfficeRoadLevels.all,
     ...PostOfficePrisonLevels.all,
+    finaleInRome,
   ];
 
   /// The finished script.
@@ -31,7 +39,6 @@ final class PostOfficeScript {
       // The one line that sets the whole game up, so it takes the screen
       // rather than arriving as an aside from the app bar.
       StoryBeat.guide(
-        emphasis: BeatEmphasis.panel,
         'أهلا بكم في لعبة post office. انتو دلوقتي في زمن ٥٢ م، ودة عصر اول رسالة لبولس الرسول. انتو دلوقتي معاكم ١٤ رسالة متقسمين ل١٤ مرحلة، لازم تفهموهم كويس اوي وتوصلوهم عشان تعرفوا تطلعوا من اللعبة',
       ),
     ],

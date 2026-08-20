@@ -25,10 +25,7 @@ final class ArabicNumerals {
     final text = value.abs().toString();
 
     return sign +
-        text
-            .split('')
-            .map((digit) => _digits[int.parse(digit)])
-            .join();
+        text.split('').map((digit) => _digits[int.parse(digit)]).join();
   }
 
   const ArabicNumerals._();

@@ -76,8 +76,20 @@ extension type GlMap._(JSObject _) implements JSObject {
 
   /// Frames [bounds] — `[[west, south], [east, north]]` — inside the
   /// current viewport, honouring [options]' padding and duration.
-  external void fitBounds(JSArray<JSArray<JSNumber>> bounds,
-      GlFitBoundsOptions options);
+  external void fitBounds(
+    JSArray<JSArray<JSNumber>> bounds,
+    GlFitBoundsOptions options,
+  );
+
+  /// Features of [options]' layers rendered under [point].
+  ///
+  /// Used to tell a tap on a marker from a tap on the map: GL JS reports
+  /// both through the same `click`, and only the renderer knows where the
+  /// markers ended up on screen.
+  external JSArray<GlMapFeature> queryRenderedFeatures(
+    JSAny point,
+    GlQueryOptions options,
+  );
 
   /// The source registered under [id], or undefined before the style has
   /// loaded.
@@ -144,11 +156,22 @@ extension type GlFitBoundsOptions._(JSObject _) implements JSObject {
   }
 }
 
-/// The event GL JS passes to a layer-scoped click listener.
+/// Options for [GlMap.queryRenderedFeatures].
+extension type GlQueryOptions._(JSObject _) implements JSObject {
+  /// Creates query options restricted to [layers].
+  factory GlQueryOptions({required JSArray<JSString> layers}) =>
+      GlQueryOptions._(JSObject()..['layers'] = layers);
+}
+
+/// The event GL JS passes to a click listener.
 extension type GlMapMouseEvent._(JSObject _) implements JSObject {
   /// Features under the pointer, topmost first. Always present on a
-  /// layer-scoped listener, which only fires when something was hit.
-  external JSArray<GlMapFeature> get features;
+  /// layer-scoped listener, which only fires when something was hit, and
+  /// absent on a listener for the whole map.
+  external JSArray<GlMapFeature>? get features;
+
+  /// Where the click landed, in pixels from the container's top left.
+  external JSAny get point;
 }
 
 /// A rendered feature as surfaced by [GlMapMouseEvent].

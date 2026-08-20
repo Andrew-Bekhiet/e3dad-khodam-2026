@@ -45,6 +45,13 @@ final class MapSurfaceSpec extends Equatable {
   /// feature cannot hold a closure.
   final void Function(String markerId) onMarkerTap;
 
+  /// Called when a tap lands on the map itself rather than on a marker.
+  ///
+  /// The renderer decides which of the two a tap was: it is the only
+  /// thing that knows where the markers ended up on screen. Null for a
+  /// surface whose empty space means nothing.
+  final void Function()? onSurfaceTap;
+
   @override
   List<Object?> get props => [
     markers,
@@ -58,8 +65,8 @@ final class MapSurfaceSpec extends Equatable {
 
   /// Creates a map surface spec.
   ///
-  /// [onMarkerTap] is excluded from equality, as closures are never
-  /// structurally comparable.
+  /// [onMarkerTap] and [onSurfaceTap] are excluded from equality, as
+  /// closures are never structurally comparable.
   const MapSurfaceSpec({
     required this.markers,
     required this.camera,
@@ -69,5 +76,6 @@ final class MapSurfaceSpec extends Equatable {
     required this.onMarkerTap,
     this.trails = const [],
     this.tokens = const [],
+    this.onSurfaceTap,
   });
 }

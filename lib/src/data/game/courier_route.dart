@@ -38,7 +38,9 @@ final class CourierRoute {
   /// The route through every stop except the last — where the courier
   /// had already been before the leg they are walking now.
   static List<GeoPosition> beforeLastLeg(List<JourneyStop> path) =>
-      path.length < 2 ? through(path) : through(path.sublist(0, path.length - 1));
+      path.length < 2
+      ? through(path)
+      : through(path.sublist(0, path.length - 1));
 
   /// The geometry of the final leg, the one a courier walks while the
   /// camera comes in.

@@ -190,7 +190,7 @@ class _MapboxMapSurfaceNativeState extends State<MapboxMapSurfaceNative>
         maxZoom: widget.spec.maxZoom,
       ),
     );
-    _listenForMarkerTaps(map);
+    _listenForTaps(map);
     await _applyStyle();
   }
 
@@ -484,7 +484,11 @@ class _MapboxMapSurfaceNativeState extends State<MapboxMapSurfaceNative>
 
   /// The renderer hit-tests the marker layer and applies
   /// [MarkerLayer.interactiveFilter], so inert markers never match.
-  void _listenForMarkerTaps(MapboxMap map) {
+  ///
+  /// A tap that hits no marker falls through to the map interaction: the
+  /// SDK runs featureset interactions first and the map-surface one last,
+  /// and a marker's tap stops there, so the two never both fire.
+  void _listenForTaps(MapboxMap map) {
     map.addInteraction(
       TapInteraction(
         FeaturesetDescriptor(layerId: MarkerLayer.layerId),
@@ -497,6 +501,14 @@ class _MapboxMapSurfaceNativeState extends State<MapboxMapSurfaceNative>
         filter: jsonEncode(MarkerLayer.interactiveFilter),
         radius: _tapSlop,
       ),
+    );
+    map.addInteraction(
+      TapInteraction.onMap((_) {
+        if (!mounted) {
+          return;
+        }
+        widget.spec.onSurfaceTap?.call();
+      }),
     );
   }
 }

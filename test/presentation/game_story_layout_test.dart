@@ -135,6 +135,7 @@ Future<Object?> _renderCardAt(
     versesSpeaker: PostOfficeCharacters.paul,
     hasMore: false,
     onReveal: _neverRevealed,
+    onAdvance: _neverStepped,
   ),
 );
 
@@ -142,6 +143,12 @@ Future<Object?> _renderCardAt(
 /// `hasMore` is false, so the card is already as open as it goes.
 void _neverRevealed() {
   assert(false, 'a fully open card has nothing left to reveal');
+}
+
+/// Passed where the card wants a step callback: these tests measure how
+/// the card lays out and never tap it.
+void _neverStepped() {
+  assert(false, 'the layout tests never tap the card');
 }
 
 /// The rendered size of [text]'s font, as laid out.

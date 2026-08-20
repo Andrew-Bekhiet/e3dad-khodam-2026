@@ -248,7 +248,7 @@ class _MapboxMapSurfaceWebState extends State<MapboxMapSurfaceWeb>
       }.toJS,
     );
     map.on('moveend', ((JSAny? _) => _onMoveEnd()).toJS);
-    map.onLayer('click', MarkerLayer.layerId, _onMarkerClicked.toJS);
+    map.on('click', _onClicked.toJS);
     _map = map;
     // GL JS measured the container when it was constructed, which may
     // have been before Flutter gave the element its real size. Take that
@@ -479,8 +479,34 @@ class _MapboxMapSurfaceWebState extends State<MapboxMapSurfaceWeb>
     );
   }
 
-  void _onMarkerClicked(gl.GlMapMouseEvent event) {
-    for (final feature in event.features.toDart) {
+  /// One handler for both kinds of tap: GL JS has no event for a click
+  /// that *missed* the markers, so the marker layer is hit-tested here
+  /// and whatever is left over is a tap on the map itself.
+  void _onClicked(gl.GlMapMouseEvent event) {
+    if (!mounted) {
+      return;
+    }
+    final id = _markerAt(event);
+    if (id != null) {
+      widget.spec.onMarkerTap(id);
+
+      return;
+    }
+    widget.spec.onSurfaceTap?.call();
+  }
+
+  /// The topmost interactive marker under [event], or null if the click
+  /// landed on none.
+  String? _markerAt(gl.GlMapMouseEvent event) {
+    final map = _map;
+    if (map == null || !_styleLoaded) {
+      return null;
+    }
+    final hits = map.queryRenderedFeatures(
+      event.point,
+      gl.GlQueryOptions(layers: <JSString>[MarkerLayer.layerId.toJS].toJS),
+    );
+    for (final feature in hits.toDart) {
       final properties = feature.properties.dartify();
       if (properties is! Map) {
         continue;
@@ -492,12 +518,12 @@ class _MapboxMapSurfaceWebState extends State<MapboxMapSurfaceWeb>
         continue;
       }
       final id = MarkerLayer.idOf(typed);
-      if (id != null && mounted) {
-        widget.spec.onMarkerTap(id);
-
-        return;
+      if (id != null) {
+        return id;
       }
     }
+
+    return null;
   }
 
   static const GeoPosition _nullIsland = GeoPosition(

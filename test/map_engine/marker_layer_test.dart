@@ -33,8 +33,9 @@ void main() {
   );
 
   Map<String, Object?> featureOf(MapMarkerSpec spec) {
-    if (MarkerLayer.featureCollection([spec])['features']
-        case [final Map<String, Object?> feature]) {
+    if (MarkerLayer.featureCollection([spec])['features'] case [
+      final Map<String, Object?> feature,
+    ]) {
       return feature;
     }
 

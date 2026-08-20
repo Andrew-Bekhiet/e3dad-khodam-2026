@@ -13,7 +13,7 @@ const _c = GeoPosition(latitude: 39.5, longitude: 32.9);
 
 const _tokenStyle = MapTokenStyle(
   id: 'token-test',
-  portraitAsset: 'assets/characters/postman1-avatar.jpg',
+  portraitAsset: 'assets/characters/postman1-avatar.png',
   diameter: 54,
   ringColor: Color(0xFFFFFFFF),
   ringWidth: 4,

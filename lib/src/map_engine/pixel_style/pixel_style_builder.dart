@@ -234,10 +234,11 @@ final class PixelStyleBuilder {
   }
 
   static List<JsonMap> _landcoverLayers(String sourceId, PixelPalette palette) {
-    final level = _greenLevels[PixelTuning.greenness.clamp(
-      0,
-      _greenLevels.length - 1,
-    )];
+    final level =
+        _greenLevels[PixelTuning.greenness.clamp(
+          0,
+          _greenLevels.length - 1,
+        )];
 
     return [
       _landcoverLayer(

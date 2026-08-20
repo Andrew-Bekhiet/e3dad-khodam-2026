@@ -34,7 +34,6 @@ final class GuideDialoguePanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final title = beat.title;
     final text = TextTheme.of(context);
     final screen = GameScreenSize.of(context);
 
@@ -69,28 +68,13 @@ final class GuideDialoguePanel extends StatelessWidget {
                             color: GamePalette.accent,
                           ),
                         ),
-                        if (title != null) ...[
-                          const SizedBox(height: 6),
-                          Text(
-                            title,
-                            style: screen
-                                .pick(
-                                  compact: text.titleLarge,
-                                  large: text.headlineLarge,
-                                )
-                                ?.copyWith(
-                                  fontWeight: FontWeight.w700,
-                                  color: GamePalette.ink,
-                                ),
-                          ),
-                        ],
                         const SizedBox(height: 10),
                         Text(
                           beat.text,
                           style: screen
                               .pick(
                                 compact: text.titleMedium,
-                                large: text.headlineMedium,
+                                large: text.headlineLarge,
                               )
                               ?.copyWith(height: 1.6, color: GamePalette.ink),
                         ),

@@ -75,9 +75,7 @@ final class MarkerSprite {
   static double _marginOf(MapMarkerStyle style) {
     final shadow = style.shadow;
 
-    return shadow == null
-        ? 0
-        : shadow.blur + shadow.offsetDy + _shadowMargin;
+    return shadow == null ? 0 : shadow.blur + shadow.offsetDy + _shadowMargin;
   }
 
   static void _paintShadow(
@@ -192,8 +190,7 @@ final class MarkerSprite {
   }
 
   /// Flutter prefixes packaged fonts with `packages/<package>/`.
-  static String _fontFamilyOf(MapMarkerGlyph glyph) =>
-      glyph.fontPackage == null
+  static String _fontFamilyOf(MapMarkerGlyph glyph) => glyph.fontPackage == null
       ? glyph.fontFamily
       : 'packages/${glyph.fontPackage}/${glyph.fontFamily}';
 

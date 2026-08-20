@@ -15,7 +15,7 @@ import 'package:flutter/widgets.dart';
 final class StoryOverlay extends StatelessWidget {
   /// Long enough to hold both a fade-out and a fade-in end to end, plus
   /// the wait that lets the destination card finish first.
-  static const Duration _switchDuration = Duration(milliseconds: 700);
+  static const Duration switchDuration = Duration(milliseconds: 700);
 
   /// The outgoing line clears over the first fifth. Nothing new appears
   /// until [_fadeIn] starts, well after the card has settled.
@@ -58,7 +58,7 @@ final class StoryOverlay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => AnimatedSwitcher(
-    duration: _switchDuration,
+    duration: switchDuration,
     switchInCurve: _fadeIn,
     switchOutCurve: _fadeOut,
     child: switch (beat) {

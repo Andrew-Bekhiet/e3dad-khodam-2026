@@ -138,7 +138,7 @@ final class GameJourneyState extends Equatable {
       level != null &&
       showsSign &&
       step.phase != GamePhase.prologue &&
-      !(opensBlank && step.phase == GamePhase.briefing);
+      step.phase != GamePhase.briefing;
 
   /// Whether the card is showing its background artwork.
   bool get showsImage => reveal >= imageReveal;
@@ -150,7 +150,6 @@ final class GameJourneyState extends Equatable {
   /// Every verse on the card: those already read in this city, then this
   /// level's own as they are revealed.
   List<String> get revealedVerses => [
-    ...carriedVerses,
     ...(level?.verses ?? const <String>[]).take(versesShown),
   ];
 

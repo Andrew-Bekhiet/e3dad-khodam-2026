@@ -19,16 +19,16 @@ import 'package:e3dad_khodam_2026/src/domain/game/game_sounds.dart';
 /// remains the default and nothing constructs this.
 final class AudioPlayersGameSounds implements GameSounds {
   /// Looped while the party is travelling.
-  static const String walkingAsset = 'audio/walking.mp3';
+  static const String walkingAsset = 'sounds/trail-trek.wav';
 
   /// Rung once when a level is passed.
-  static const String levelClearedAsset = 'audio/level_cleared.mp3';
+  static const String levelClearedAsset = 'sounds/clear-blip.wav';
 
   /// Rung once when the party lands somewhere new.
-  static const String levelReachedAsset = 'audio/level_reached.mp3';
+  static const String levelReachedAsset = 'sounds/trail-trek-arrive.wav';
 
   /// Rung once as the party sets off.
-  static const String departureAsset = 'audio/departure.mp3';
+  static const String departureAsset = 'sounds/trail-trek-depart.wav';
 
   /// Loads every sound and returns a player ready to ring them.
   ///

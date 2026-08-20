@@ -1,3 +1,4 @@
+import 'package:e3dad_khodam_2026/src/data/audio/audioplayers_game_sounds.dart';
 import 'package:e3dad_khodam_2026/src/data/game/post_office_script.dart';
 import 'package:e3dad_khodam_2026/src/domain/game/game_sounds.dart';
 import 'package:e3dad_khodam_2026/src/domain/game/level_script_repository.dart';
@@ -54,7 +55,9 @@ final class _GameUnderTest extends StatelessWidget {
       RepositoryProvider<LevelScriptRepository>.value(
         value: const StaticLevelScriptRepository(),
       ),
-      RepositoryProvider<GameSounds>.value(value: const SilentGameSounds()),
+      RepositoryProvider<GameSounds>.value(
+        value: await AudioPlayersGameSounds.create(),
+      ),
       RepositoryProvider<MapSurfaceBuilder>.value(value: surfaceBuilder),
     ],
     // The app runs right-to-left; the bubble anchors on the start edge,

@@ -29,7 +29,7 @@ final class PostOfficeCharacters {
   static const GameCharacter grandma = GameCharacter(
     id: 'grandma',
     name: 'تيتا',
-    portraitAsset: 'assets/characters/grandma-avatar.jpeg',
+    portraitAsset: 'assets/characters/grandma-avatar.jpg',
   );
 
   /// The writer of every letter in the game. He has no token on the map
@@ -45,14 +45,14 @@ final class PostOfficeCharacters {
   static const GameCharacter guide = GameCharacter(
     id: 'guide',
     name: 'اللعبة',
-    portraitAsset: 'assets/characters/guide.png',
+    portraitAsset: 'assets/characters/guide.jpg',
   );
 
   /// The out-of-world voice that frames the journey between levels.
   static const GameCharacter narrator = GameCharacter(
     id: 'narrator',
     name: 'الراوي',
-    portraitAsset: 'assets/characters/narrator.png',
+    portraitAsset: 'assets/characters/narrator.jpg',
   );
 
   const PostOfficeCharacters._();

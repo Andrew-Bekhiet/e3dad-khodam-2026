@@ -43,7 +43,6 @@ final class NarratorCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final title = beat.title;
     final text = TextTheme.of(context);
     final screen = GameScreenSize.of(context);
 
@@ -93,22 +92,6 @@ final class NarratorCard extends StatelessWidget {
                       color: GamePalette.narratorOchre,
                     ),
                   ),
-                  if (title != null) ...[
-                    SizedBox(height: screen.pick(compact: 4.0, large: 8.0)),
-                    Text(
-                      title,
-                      textAlign: TextAlign.center,
-                      style: screen
-                          .pick(
-                            compact: text.titleLarge,
-                            large: text.headlineLarge,
-                          )
-                          ?.copyWith(
-                            fontWeight: FontWeight.w700,
-                            color: GamePalette.narratorOchre,
-                          ),
-                    ),
-                  ],
                   SizedBox(
                     height: screen.pick(compact: _gapCompact, large: _gapLarge),
                   ),

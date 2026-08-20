@@ -46,7 +46,7 @@ final class SeasBranch {
       ),
       PlaceNode(
         id: 'adriatic_sea',
-        label: 'البحر الأدرياتيكي',
+        label: 'بحر ادريا',
         position: _adriaticSeaPosition,
         kind: PlaceKind.sea,
         children: [],

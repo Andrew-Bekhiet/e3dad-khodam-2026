@@ -1,3 +1,4 @@
+import 'package:collection/collection.dart';
 import 'package:e3dad_khodam_2026/src/app/arabic_numerals.dart';
 import 'package:e3dad_khodam_2026/src/domain/game/game_character.dart';
 import 'package:e3dad_khodam_2026/src/domain/game/game_level.dart';
@@ -6,6 +7,7 @@ import 'package:e3dad_khodam_2026/src/presentation/widgets/game/game_palette.dar
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/game_screen_size.dart';
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/pixel_panel.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 /// The level's card, laid over the map once the sweep has landed.
 ///
@@ -17,16 +19,18 @@ import 'package:flutter/material.dart';
 /// Named for the destination rather than for a city: several of them are
 /// provinces, and كريت is an island.
 ///
-/// Only the card takes taps, so the map around it stays live. Once it is
-/// fully open a tap steps the script instead, so a phone can be played
-/// end to end on the card alone rather than on the small step arrow.
+/// Only the card takes taps, so the map around it stays live.
 final class DestinationCard extends StatelessWidget {
-  /// The strip of map left showing around the card. The card takes the
-  /// whole screen otherwise: it is what the level is about, and the
-  /// margin is there only so it reads as a card laid over the map rather
-  /// than as a second screen.
-  static const double _marginCompact = 10.0;
-  static const double _marginLarge = 24.0;
+  /// How tall the card stands once its artwork is showing. Set this to
+  /// the viewport height and the card covers the whole map — that is the
+  /// single number the full-screen question turns on.
+  ///
+  /// A constant on a big screen, where 400 is a comfortable third of the
+  /// window. On a phone it is a share of the viewport instead: 400 fixed
+  /// pixels is most of a phone held sideways, and this is only a *floor*
+  /// — the verses push past it and would have nowhere to go.
+  static const double _openHeightLarge = 400.0;
+  static const double _openHeightCompactRatio = 0.55;
 
   static const Duration _growDuration = Duration(milliseconds: 260);
 
@@ -72,88 +76,80 @@ final class DestinationCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final screen = GameScreenSize.of(context);
+    final openHeight = screen.pick(
+      compact: MediaQuery.sizeOf(context).height * _openHeightCompactRatio,
+      large: _openHeightLarge,
+    );
 
-    return SafeArea(
-      child: Padding(
-        padding: EdgeInsets.all(
-          screen.pick(compact: _marginCompact, large: _marginLarge),
-        ),
-        child: GestureDetector(
-          onTap: hasMore ? onReveal : onAdvance,
-          child: PixelPanel(
-            padding: EdgeInsets.zero,
-            color: showsImage ? GamePalette.ink : GamePalette.parchment,
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                if (showsImage) ...[
-                  _Artwork(asset: level.imageAsset, label: destinationLabel),
-                  const ColoredBox(color: GamePalette.scrim),
-                ],
-                Padding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: screen.pick(compact: 8, large: 22),
-                  ),
-                  // The card is a fixed box now, and the verses are the
-                  // one thing on it with no upper bound: a city can
-                  // collect two letters' worth. Scaling the whole column
-                  // down to fit keeps them all on screen, where a taller
-                  // column would simply run off the bottom.
-                  child: _ScaledToFit(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        _Sign(
-                          destinationLabel: destinationLabel,
-                          year: level.year,
-                          onImage: showsImage,
-                        ),
-                        _Verses(
-                          verses: verses,
-                          speaker: versesSpeaker,
-                          onImage: showsImage,
-                        ),
-                        if (hasMore) ...[
-                          const SizedBox(height: 10),
-                          const Center(
-                            widthFactor: 1,
-                            child: ContinueChevron(
-                              icon: Icons.keyboard_arrow_down,
-                            ),
+    return Center(
+      child: SafeArea(
+        child: AnimatedSize(
+          duration: _growDuration,
+          curve: Curves.easeOutBack,
+          child: GestureDetector(
+            onTap: hasMore ? onReveal : onAdvance,
+            child: PixelPanel(
+              padding: EdgeInsets.zero,
+              color: showsImage ? GamePalette.ink : GamePalette.parchment,
+              child: Stack(
+                fit: StackFit.passthrough,
+                children: [
+                  if (level.imageAsset case final asset? when showsImage)
+                    Positioned.fill(
+                      child: _Artwork(
+                        asset: asset,
+                        label: destinationLabel,
+                      ),
+                    ),
+                  if (showsImage)
+                    const Positioned.fill(
+                      child: ColoredBox(color: GamePalette.scrim),
+                    ),
+                  ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minHeight: showsImage ? openHeight : 0,
+                      minWidth: showsImage ? double.infinity : 0,
+                    ),
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: screen.pick(compact: 8, large: 22),
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          _Sign(
+                            destinationLabel: destinationLabel,
+                            year: level.year,
+                            onImage: showsImage,
                           ),
+                          _Verses(
+                            verses: verses,
+                            speaker: versesSpeaker,
+                            onImage: showsImage,
+                          ),
+                          if (hasMore) ...[
+                            const SizedBox(height: 10),
+                            const Center(
+                              widthFactor: 1,
+                              child: ContinueChevron(
+                                icon: Icons.keyboard_arrow_down,
+                              ),
+                            ),
+                          ],
                         ],
-                      ],
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
       ),
     );
   }
-}
-
-/// Centres [child] in the room it is given, shrinking it only when it is
-/// taller than that room.
-///
-/// The child is laid out at the full width available and at whatever
-/// height it wants, so lines wrap exactly as they would in a card that
-/// grew — the scale is the last resort, not the layout.
-final class _ScaledToFit extends StatelessWidget {
-  final Widget child;
-
-  const _ScaledToFit({required this.child});
-
-  @override
-  Widget build(BuildContext context) => LayoutBuilder(
-    builder: (context, constraints) => FittedBox(
-      fit: BoxFit.scaleDown,
-      child: SizedBox(width: constraints.maxWidth, child: child),
-    ),
-  );
 }
 
 /// The لافتة: where the letter was delivered, and when it was written.
@@ -235,9 +231,9 @@ final class _Verses extends StatelessWidget {
         alignment: Alignment.topCenter,
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          children: [
-            for (final verse in verses) _Verse(text: verse, onImage: onImage),
-          ],
+          children: verses
+              .mapIndexed((i, v) => _Verse(index: i, text: v, onImage: onImage))
+              .toList(),
         ),
       ),
     ],
@@ -246,16 +242,22 @@ final class _Verses extends StatelessWidget {
 
 /// One revealed verse, ruled off from the one before it.
 final class _Verse extends StatelessWidget {
+  final int index;
   final String text;
   final bool onImage;
 
-  const _Verse({required this.text, required this.onImage});
+  const _Verse({
+    required this.index,
+    required this.text,
+    required this.onImage,
+  });
 
   @override
   Widget build(BuildContext context) {
     final ink = onImage ? GamePalette.parchment : GamePalette.ink;
     final theme = TextTheme.of(context);
     final screen = GameScreenSize.of(context);
+    final numberFormat = NumberFormat('#', 'ar-EG');
 
     return Padding(
       padding: EdgeInsets.only(top: screen.pick(compact: 4, large: 10)),
@@ -264,7 +266,7 @@ final class _Verse extends StatelessWidget {
         children: [
           Divider(height: 2, color: ink.withValues(alpha: 0.2)),
           Text(
-            text,
+            '${numberFormat.format(index + 1)}. $text',
             textAlign: TextAlign.center,
             // Verses are the one thing on this card that has no upper
             // bound: a city can collect two letters' worth, and they all
@@ -275,7 +277,7 @@ final class _Verse extends StatelessWidget {
             style: screen
                 .pick(compact: theme.bodyLarge, large: theme.displaySmall)
                 ?.copyWith(
-                  height: 1.3,
+                  height: screen.pick(compact: 1.3, large: 1.8),
                   color: ink,
                   fontWeight: FontWeight.w700,
                 ),

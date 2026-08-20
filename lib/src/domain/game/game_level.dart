@@ -37,7 +37,7 @@ final class GameLevel extends Equatable {
   /// Artwork for the level's destination card, shown over the map while
   /// the level is being played. May point at a file that does not exist
   /// yet: the card falls back to a placeholder carrying the name alone.
-  final String imageAsset;
+  final String? imageAsset;
 
   /// The year the letter was written, in AD, shown beside the
   /// destination's name on the card's sign.
@@ -64,9 +64,9 @@ final class GameLevel extends Equatable {
     required this.id,
     required this.title,
     required this.destination,
-    required this.imageAsset,
     this.briefing = const [],
     this.clearance = const [],
+    this.imageAsset,
     this.verses = const [],
     this.year,
   });

@@ -4,16 +4,13 @@ import 'package:e3dad_khodam_2026/src/domain/game/story_beat.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/map_camera_target.dart';
 import 'package:e3dad_khodam_2026/src/presentation/cubit/courier_party.dart';
 import 'package:e3dad_khodam_2026/src/presentation/cubit/game_step.dart';
+import 'package:e3dad_khodam_2026/src/presentation/cubit/reveal.dart';
 import 'package:equatable/equatable.dart';
 
 /// A snapshot of the guided playthrough: which step is showing, how much
 /// of the destination card is open, what the map should draw, and where
 /// the camera should look.
 final class GameJourneyState extends Equatable {
-  /// Reveal at which the card shows its sign — the destination's name
-  /// and year.
-  static const int signReveal = 1;
-
   /// The step currently showing.
   final GameStep step;
 
@@ -60,12 +57,7 @@ final class GameJourneyState extends Equatable {
   final Duration cameraAnimationDuration;
 
   /// How far the destination card is open on this step.
-  ///
-  /// `0` is nothing at all, then the sign, then one more for each verse.
-  /// A single number because the card only ever
-  /// grows, and because that lets forward and backward walk it with the
-  /// same `±1` they use on steps.
-  final int reveal;
+  final Reveal reveal;
 
   /// Verses already read in this destination, from earlier levels
   /// delivered to the same place.
@@ -76,75 +68,12 @@ final class GameJourneyState extends Equatable {
   /// them. Cleared only when the journey sweeps to somewhere new.
   final List<String> carriedVerses;
 
-  /// The highest [reveal] this step can reach. Beyond it, a press moves
-  /// to the next step instead.
-  ///
-  /// A cleared level keeps everything it had open. The level has not
-  /// changed, so taking the card away and putting it back would flicker
-  /// something the player is still reading.
-  int get maxReveal => switch (step) {
-    OpeningStep() || EpilogueStep() => 0,
-    // One press past the arrival, which is what takes the blank map away
-    // and lets the guide speak. Never further: the prologue has no card.
-    PrologueStep() || BriefingStep() => signReveal,
-    PlayingStep() ||
-    ClearanceStep() => signReveal + (level?.verses.length ?? 0),
-  };
-
   /// Whether this step starts with a blank map.
   ///
   /// Only a level that is *swept* into does. Two letters to the same
   /// city are not swept between, so there is nothing for a blank screen
   /// to hide and the sign simply stays up.
   bool get opensBlank => isLevelOpening && camera is SweepCameraTarget;
-
-  /// The lowest [reveal] this step settles at once acknowledged.
-  ///
-  /// A city already carrying verses opens straight to its sign: the
-  /// player is part-way through reading that city, and dropping back to
-  /// the bare sign would take away what they are still looking at.
-  int get minReveal {
-    if (step is OpeningStep || opensBlank) {
-      return 0;
-    }
-    return signReveal;
-  }
-
-  /// Whether the level has been entered but not yet acknowledged: the
-  /// camera is sweeping in, or has just landed, and the screen carries
-  /// nothing over the map.
-  bool get isArriving => opensBlank && reveal == 0;
-
-  /// Whether the card is showing its destination name and year.
-  bool get showsSign => reveal >= signReveal;
-
-  /// Whether the card is on screen at all.
-  ///
-  /// A swept-into level's briefing gets the map to itself: the arrival
-  /// and the line explaining it are one moment, and raising the sign
-  /// underneath puts a second thing on screen to read. The card comes up
-  /// on the press that leaves the briefing. A level with no briefing has
-  /// nothing to wait for, so its sign rises on arrival as before — and a
-  /// level that is not swept into keeps whatever card was already up,
-  /// which is the rule against blinking.
-  /// The prologue is spoken over the first city on arrival and belongs to
-  /// that level, but it is the journey being introduced rather than the
-  /// letter — so it never raises the card.
-  bool get showsCard => level != null && showsSign && step is! PrologueStep;
-
-  /// How many of the level's verses are on the card.
-  int get versesShown =>
-      (reveal - signReveal).clamp(0, level?.verses.length ?? 0);
-
-  /// Every verse on the card: those already read in this city, then this
-  /// level's own as they are revealed.
-  List<String> get revealedVerses => [
-    ...carriedVerses,
-    ...(level?.verses ?? const <String>[]).take(versesShown),
-  ];
-
-  /// Whether this step still has something left to open.
-  bool get hasMoreReveal => reveal < maxReveal;
 
   /// The sweep this step runs, or null when the camera holds still.
   SweepCameraTarget? get sweep =>
@@ -153,9 +82,10 @@ final class GameJourneyState extends Equatable {
   /// The line to show over the map. Nothing speaks while the level is
   /// still arriving: the sweep owns the screen until it is acknowledged.
   StoryBeat? get beat {
-    if (isArriving) {
+    if (reveal.isArriving(opensBlank: opensBlank)) {
       return null;
     }
+
     return switch (step) {
       PrologueStep(:final beat) ||
       BriefingStep(:final beat) ||
@@ -205,31 +135,28 @@ final class GameJourneyState extends Equatable {
     required this.party,
     required this.camera,
     required this.cameraAnimationDuration,
-    this.reveal = 0,
+    this.reveal = const CardHidden(),
     this.carriedVerses = const [],
     this.level,
     this.currentStop,
     this.nextStop,
   });
 
-  /// The same state with the card opened to [reveal]. Nothing else can
-  /// change while the card is opening, so this is the one copy the game
-  /// needs.
-  GameJourneyState withReveal(int reveal) => GameJourneyState(
+  GameJourneyState copyWith({Reveal? reveal}) => GameJourneyState(
     step: step,
     stepIndex: stepIndex,
     stepCount: stepCount,
+    level: level,
     levelNumber: levelNumber,
     levelCount: levelCount,
     isLevelOpening: isLevelOpening,
     clearedStops: clearedStops,
+    currentStop: currentStop,
+    nextStop: nextStop,
     party: party,
     camera: camera,
     cameraAnimationDuration: cameraAnimationDuration,
-    level: level,
-    currentStop: currentStop,
-    nextStop: nextStop,
+    reveal: reveal ?? this.reveal,
     carriedVerses: carriedVerses,
-    reveal: reveal.clamp(0, maxReveal),
   );
 }

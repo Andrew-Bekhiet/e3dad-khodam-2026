@@ -8,6 +8,7 @@ import 'package:e3dad_khodam_2026/src/presentation/cubit/game_journey_projection
 import 'package:e3dad_khodam_2026/src/presentation/cubit/game_journey_state.dart';
 import 'package:e3dad_khodam_2026/src/presentation/cubit/game_script.dart';
 import 'package:e3dad_khodam_2026/src/presentation/cubit/game_step.dart';
+import 'package:e3dad_khodam_2026/src/presentation/cubit/reveal.dart';
 import 'package:e3dad_khodam_2026/src/presentation/cubit/step_direction.dart';
 import 'package:e3dad_khodam_2026/src/presentation/cubit/sweep_framing.dart';
 
@@ -61,16 +62,28 @@ final class GameJourneyCubit extends Cubit<GameJourneyState> {
   GameCharacter get letterWriter => _script.script.letterWriter;
 
   void forward() {
-    if (state.hasMoreReveal) {
-      emit(state.withReveal(state.reveal + 1));
+    final verseCount = state.level?.verses.length ?? 0;
+    if (state.reveal.hasNext(step: state.step, verseCount: verseCount)) {
+      emit(
+        state.copyWith(
+          reveal: state.reveal.next(
+            step: state.step,
+            verseCount: verseCount,
+          ),
+        ),
+      );
       return;
     }
     _goTo(state.stepIndex + 1, StepDirection.forward);
   }
 
   void backward() {
-    if (state.reveal > state.minReveal) {
-      emit(state.withReveal(state.reveal - 1));
+    final floor = Reveal.floorFor(
+      step: state.step,
+      opensBlank: state.opensBlank,
+    );
+    if (state.reveal != floor) {
+      emit(state.copyWith(reveal: state.reveal.previous(floor: floor)));
       return;
     }
     _goTo(state.stepIndex - 1, StepDirection.backward);
@@ -79,14 +92,26 @@ final class GameJourneyCubit extends Cubit<GameJourneyState> {
   void restart() => _goTo(0, StepDirection.forward);
 
   void revealNext() {
-    if (state.hasMoreReveal) {
-      emit(state.withReveal(state.reveal + 1));
+    final verseCount = state.level?.verses.length ?? 0;
+    if (state.reveal.hasNext(step: state.step, verseCount: verseCount)) {
+      emit(
+        state.copyWith(
+          reveal: state.reveal.next(
+            step: state.step,
+            verseCount: verseCount,
+          ),
+        ),
+      );
     }
   }
 
   void revealPrevious() {
-    if (state.reveal > 0) {
-      emit(state.withReveal(state.reveal - 1));
+    if (state.reveal is! CardHidden) {
+      emit(
+        state.copyWith(
+          reveal: state.reveal.previous(floor: const CardHidden()),
+        ),
+      );
     }
   }
 

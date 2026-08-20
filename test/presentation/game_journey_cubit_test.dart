@@ -7,6 +7,7 @@ import 'package:e3dad_khodam_2026/src/domain/geo_position.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/map_camera_target.dart';
 import 'package:e3dad_khodam_2026/src/presentation/cubit/game_journey_camera.dart';
 import 'package:e3dad_khodam_2026/src/presentation/cubit/game_journey_cubit.dart';
+import 'package:e3dad_khodam_2026/src/presentation/cubit/game_journey_state.dart';
 import 'package:e3dad_khodam_2026/src/presentation/cubit/game_step.dart';
 import 'package:e3dad_khodam_2026/src/presentation/cubit/sweep_framing.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -15,6 +16,24 @@ import 'package:flutter_test/flutter_test.dart';
 // exactly the script the app ships — mocking it would only add
 // indirection, not isolation.
 const _repository = StaticLevelScriptRepository();
+
+extension _RevealStateTestAccess on GameJourneyState {
+  bool get isArriving => reveal.isArriving(opensBlank: opensBlank);
+
+  bool get showsCard => reveal.showsCard(step: step, hasLevel: level != null);
+
+  bool get showsSign => reveal.showsSign;
+
+  List<String> get revealedVerses => reveal.revealedVerses(
+    carriedVerses: carriedVerses,
+    levelVerses: level?.verses ?? const [],
+  );
+
+  bool get hasMoreReveal => reveal.hasNext(
+    step: step,
+    verseCount: level?.verses.length ?? 0,
+  );
+}
 
 /// Counts the game's sounds instead of playing them.
 final class _CountingSounds implements GameSounds {

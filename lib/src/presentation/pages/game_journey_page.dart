@@ -195,16 +195,26 @@ class _GameJourneyViewState extends State<_GameJourneyView>
           if (state.level case final level?)
             AnimatedCrossFade(
               duration: StoryOverlay.switchDuration ~/ 3,
-              crossFadeState: state.showsCard
+              crossFadeState:
+                  state.reveal.showsCard(
+                    step: state.step,
+                    hasLevel: state.level != null,
+                  )
                   ? CrossFadeState.showFirst
                   : CrossFadeState.showSecond,
               secondChild: const SizedBox.shrink(),
               firstChild: DestinationCard(
                 level: level,
                 destinationLabel: state.currentStop?.label ?? '',
-                verses: state.revealedVerses,
+                verses: state.reveal.revealedVerses(
+                  carriedVerses: state.carriedVerses,
+                  levelVerses: level.verses,
+                ),
                 versesSpeaker: cubit.letterWriter,
-                hasMore: state.hasMoreReveal,
+                hasMore: state.reveal.hasNext(
+                  step: state.step,
+                  verseCount: level.verses.length,
+                ),
                 onReveal: cubit.revealNext,
                 onAdvance: () => _step(cubit, forward: true),
               ),

@@ -97,8 +97,9 @@ replaced a panel that showed the Letter's title and a progress bar.
 
 **Reveal**:
 How far the Destination Card is open on the current Step: nothing, the Sign, then one more for each
-Verse shown. A single number, because the Card only ever grows — which is what lets
-forward and backward walk it with the same ±1 they use on Steps.
+Verse shown. A sealed three-rung type: **Card Hidden**, **Sign Showing**, or **Verses Showing** with
+the number of Verses shown. The Card only ever grows, which is what lets forward and backward walk
+it with the same ±1 they use on Steps.
 
 **Verse (شاهد)**:
 A scripture citation the Play Script quotes for a Letter. Revealed one at a time on the Destination

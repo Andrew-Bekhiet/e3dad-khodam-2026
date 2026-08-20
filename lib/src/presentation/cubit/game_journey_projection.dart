@@ -5,6 +5,7 @@ import 'package:e3dad_khodam_2026/src/presentation/cubit/game_journey_camera.dar
 import 'package:e3dad_khodam_2026/src/presentation/cubit/game_journey_state.dart';
 import 'package:e3dad_khodam_2026/src/presentation/cubit/game_script.dart';
 import 'package:e3dad_khodam_2026/src/presentation/cubit/game_step.dart';
+import 'package:e3dad_khodam_2026/src/presentation/cubit/reveal.dart';
 import 'package:e3dad_khodam_2026/src/presentation/cubit/step_direction.dart';
 import 'package:e3dad_khodam_2026/src/presentation/cubit/sweep_framing.dart';
 
@@ -80,10 +81,17 @@ final class GameJourneyProjection {
     );
     if (transition.direction == StepDirection.backward ||
         step is ClearanceStep) {
-      return state.withReveal(state.maxReveal);
+      return state.copyWith(
+        reveal: Reveal.ceilingFor(
+          step: step,
+          verseCount: level?.verses.length ?? 0,
+        ),
+      );
     }
 
-    return state.withReveal(state.minReveal);
+    return state.copyWith(
+      reveal: Reveal.floorFor(step: step, opensBlank: state.opensBlank),
+    );
   }
 
   int _mapLevelIndex(GameStep step, int levelCount) => switch (step) {

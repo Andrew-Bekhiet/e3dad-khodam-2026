@@ -143,6 +143,7 @@ final class GameJourneyState extends Equatable {
   /// Every verse on the card: those already read in this city, then this
   /// level's own as they are revealed.
   List<String> get revealedVerses => [
+    ...carriedVerses,
     ...(level?.verses ?? const <String>[]).take(versesShown),
   ];
 

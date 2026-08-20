@@ -7,7 +7,6 @@ import 'package:e3dad_khodam_2026/src/presentation/widgets/game/game_palette.dar
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/game_screen_size.dart';
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/pixel_panel.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 
 /// The level's card, laid over the map once the sweep has landed.
 ///
@@ -192,7 +191,6 @@ final class _Verse extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = TextTheme.of(context);
     final screen = GameScreenSize.of(context);
-    final numberFormat = NumberFormat('#', 'ar-EG');
 
     return Padding(
       padding: EdgeInsets.only(top: screen.pick(compact: 0, large: 10)),
@@ -201,7 +199,7 @@ final class _Verse extends StatelessWidget {
         children: [
           Divider(height: 2, color: GamePalette.ink.withValues(alpha: 0.2)),
           Text(
-            '${numberFormat.format(index + 1)}. $text',
+            text,
             textAlign: TextAlign.center,
             // Verses are the one thing on this card that has no upper
             // bound: a city can collect two letters' worth, and they all

@@ -5,24 +5,22 @@ import 'package:equatable/equatable.dart';
 export 'game_phase.dart';
 
 sealed class GameStep extends Equatable {
-  const GameStep();
-
   GamePhase get phase;
+
+  const GameStep();
 }
 
 final class OpeningStep extends GameStep {
-  const OpeningStep();
-
   @override
   GamePhase get phase => GamePhase.opening;
 
   @override
   List<Object?> get props => [phase];
+
+  const OpeningStep();
 }
 
 final class PrologueStep extends GameStep {
-  const PrologueStep(this.beat);
-
   final StoryBeat beat;
 
   @override
@@ -30,20 +28,20 @@ final class PrologueStep extends GameStep {
 
   @override
   List<Object?> get props => [phase, beat];
+
+  const PrologueStep(this.beat);
 }
 
 sealed class LevelStep extends GameStep {
-  const LevelStep(this.levelIndex);
-
   final int levelIndex;
 
   @override
   List<Object?> get props => [phase, levelIndex];
+
+  const LevelStep(this.levelIndex);
 }
 
 final class BriefingStep extends LevelStep {
-  const BriefingStep(super.levelIndex, this.beat);
-
   final StoryBeat beat;
 
   @override
@@ -51,18 +49,18 @@ final class BriefingStep extends LevelStep {
 
   @override
   List<Object?> get props => [phase, levelIndex, beat];
+
+  const BriefingStep(super.levelIndex, this.beat);
 }
 
 final class PlayingStep extends LevelStep {
-  const PlayingStep(super.levelIndex);
-
   @override
   GamePhase get phase => GamePhase.playing;
+
+  const PlayingStep(super.levelIndex);
 }
 
 final class ClearanceStep extends LevelStep {
-  const ClearanceStep(super.levelIndex, this.beat);
-
   final StoryBeat beat;
 
   @override
@@ -70,11 +68,11 @@ final class ClearanceStep extends LevelStep {
 
   @override
   List<Object?> get props => [phase, levelIndex, beat];
+
+  const ClearanceStep(super.levelIndex, this.beat);
 }
 
 final class EpilogueStep extends GameStep {
-  const EpilogueStep(this.beat);
-
   final StoryBeat beat;
 
   @override
@@ -82,4 +80,6 @@ final class EpilogueStep extends GameStep {
 
   @override
   List<Object?> get props => [phase, beat];
+
+  const EpilogueStep(this.beat);
 }

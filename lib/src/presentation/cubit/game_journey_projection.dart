@@ -11,9 +11,9 @@ import 'package:e3dad_khodam_2026/src/presentation/cubit/sweep_framing.dart';
 
 /// Projects a Script and transition into the state the map and card draw.
 final class GameJourneyProjection {
-  const GameJourneyProjection(this._camera);
-
   final GameJourneyCamera _camera;
+
+  const GameJourneyProjection(this._camera);
 
   GameTransition transitionTo(
     GameScript script,
@@ -22,6 +22,7 @@ final class GameJourneyProjection {
     required StepDirection direction,
   }) {
     final arrival = script.stepAt(index);
+
     return GameTransition(
       departure: from?.step,
       arrival: arrival,
@@ -43,27 +44,14 @@ final class GameJourneyProjection {
     final levels = script.script.levels;
     final mapLevelIndex = _mapLevelIndex(step, levels.length);
     final currentStop = _stopFor(script, step);
-    final clearedCount = switch (step) {
-      EpilogueStep() => levels.length,
-      ClearanceStep(:final levelIndex) => levelIndex + 1,
-      OpeningStep() || PrologueStep() => 0,
-      BriefingStep(:final levelIndex) => levelIndex,
-      PlayingStep(:final levelIndex) => levelIndex,
-    };
-    final level = switch (step) {
-      LevelStep(:final levelIndex) => levels[levelIndex],
-      OpeningStep() || PrologueStep() || EpilogueStep() => null,
-    };
+    final clearedCount = _clearedCount(step, levels.length);
+    final level = _levelFor(step, levels);
     final state = GameJourneyState(
       step: step,
       stepIndex: index,
       stepCount: script.steps.length,
       level: level ?? (step is PrologueStep ? levels.first : null),
-      levelNumber: switch (step) {
-        LevelStep(:final levelIndex) => levelIndex + 1,
-        OpeningStep() || EpilogueStep() => 0,
-        PrologueStep() => 1,
-      },
+      levelNumber: _levelNumber(step),
       levelCount: levels.length,
       isLevelOpening: _isLevelOpening(script, index, transition),
       clearedStops: _clearedStops(levels, clearedCount, currentStop),
@@ -100,25 +88,51 @@ final class GameJourneyProjection {
     EpilogueStep() => levelCount - 1,
   };
 
+  int _clearedCount(GameStep step, int levelCount) => switch (step) {
+    EpilogueStep() => levelCount,
+    ClearanceStep(:final levelIndex) => levelIndex + 1,
+    OpeningStep() || PrologueStep() => 0,
+    BriefingStep(:final levelIndex) || PlayingStep(:final levelIndex) =>
+      levelIndex,
+  };
+
+  GameLevel? _levelFor(GameStep step, List<GameLevel> levels) => switch (step) {
+    LevelStep(:final levelIndex) => levels[levelIndex],
+    OpeningStep() || PrologueStep() || EpilogueStep() => null,
+  };
+
+  int _levelNumber(GameStep step) => switch (step) {
+    LevelStep(:final levelIndex) => levelIndex + 1,
+    OpeningStep() || EpilogueStep() => 0,
+    PrologueStep() => 1,
+  };
+
   bool _isLevelOpening(
     GameScript script,
     int index,
     GameTransition transition,
-  ) => switch (transition.arrival) {
-    PrologueStep() => script.isLevelOpening(index),
-    LevelStep(:final levelIndex) => switch (transition.departure) {
-      PrologueStep() when levelIndex == 0 => false,
-      LevelStep(levelIndex: final departureLevelIndex)
-          when levelIndex == departureLevelIndex =>
-        false,
-      OpeningStep() ||
-      PrologueStep() ||
-      LevelStep() ||
-      EpilogueStep() ||
-      null => true,
-    },
-    OpeningStep() || EpilogueStep() => false,
-  };
+  ) {
+    final arrival = transition.arrival;
+    if (arrival is PrologueStep) {
+      return script.isLevelOpening(index);
+    }
+    if (arrival is! LevelStep) {
+      return false;
+    }
+
+    return _levelStepOpens(arrival, transition.departure);
+  }
+
+  bool _levelStepOpens(LevelStep arrival, GameStep? departure) {
+    if (departure is PrologueStep && arrival.levelIndex == 0) {
+      return false;
+    }
+    if (departure is LevelStep && departure.levelIndex == arrival.levelIndex) {
+      return false;
+    }
+
+    return true;
+  }
 
   JourneyStop? _stopFor(GameScript script, GameStep step) => switch (step) {
     OpeningStep() => script.script.levels.first.destination,
@@ -148,6 +162,7 @@ final class GameJourneyProjection {
         level.destination.id: level.destination,
     };
     byId.remove(currentStop?.id);
+
     return byId.values.toList(growable: false);
   }
 
@@ -176,6 +191,7 @@ final class GameJourneyProjection {
         }
       }
     }
+
     return CourierParty(
       couriers: script.script.couriers,
       stops: List.unmodifiable(stops),

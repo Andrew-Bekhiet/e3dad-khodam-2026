@@ -14,12 +14,24 @@ import 'package:e3dad_khodam_2026/src/presentation/cubit/sweep_framing.dart';
 
 /// Walks the guided playthrough one step at a time.
 final class GameJourneyCubit extends Cubit<GameJourneyState> {
+  final GameScript _script;
+  final GameSounds _sounds;
+  final GameJourneyProjection _projection;
+  final GameCueSheet _cueSheet;
+
+  SweepFraming sweepFraming;
+
+  GameCharacter get guide => _script.script.guide;
+  GameCharacter get narrator => _script.script.narrator;
+  GameCharacter get letterWriter => _script.script.letterWriter;
+
   factory GameJourneyCubit(
     LevelScriptRepository repository, {
     required GameSounds sounds,
     SweepFraming framing = SweepFraming.basin,
   }) {
     final script = GameScript(repository.loadLevelScript());
+
     return GameJourneyCubit._(
       script,
       sounds,
@@ -50,17 +62,6 @@ final class GameJourneyCubit extends Cubit<GameJourneyState> {
         ),
       );
 
-  final GameScript _script;
-  final GameSounds _sounds;
-  final GameJourneyProjection _projection;
-  final GameCueSheet _cueSheet;
-
-  SweepFraming sweepFraming;
-
-  GameCharacter get guide => _script.script.guide;
-  GameCharacter get narrator => _script.script.narrator;
-  GameCharacter get letterWriter => _script.script.letterWriter;
-
   void forward() {
     final verseCount = state.level?.verses.length ?? 0;
     if (state.reveal.hasNext(step: state.step, verseCount: verseCount)) {
@@ -72,6 +73,7 @@ final class GameJourneyCubit extends Cubit<GameJourneyState> {
           ),
         ),
       );
+
       return;
     }
     _goTo(state.stepIndex + 1, StepDirection.forward);
@@ -84,6 +86,7 @@ final class GameJourneyCubit extends Cubit<GameJourneyState> {
     );
     if (state.reveal != floor) {
       emit(state.copyWith(reveal: state.reveal.previous(floor: floor)));
+
       return;
     }
     _goTo(state.stepIndex - 1, StepDirection.backward);
@@ -106,13 +109,15 @@ final class GameJourneyCubit extends Cubit<GameJourneyState> {
   }
 
   void revealPrevious() {
-    if (state.reveal is! CardHidden) {
-      emit(
-        state.copyWith(
-          reveal: state.reveal.previous(floor: const CardHidden()),
-        ),
-      );
+    if (state.reveal is CardHidden) {
+      return;
     }
+
+    emit(
+      state.copyWith(
+        reveal: state.reveal.previous(floor: const CardHidden()),
+      ),
+    );
   }
 
   void goToStop(String stopId) {

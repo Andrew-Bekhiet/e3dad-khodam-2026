@@ -3,26 +3,50 @@ import 'package:e3dad_khodam_2026/src/presentation/cubit/game_step.dart';
 
 /// The ordered, flattened Play Script the journey walks.
 final class GameScript {
-  GameScript(this.script) : steps = _buildSteps(script);
+  static List<GameStep> _buildSteps(LevelScript script) => [
+    const OpeningStep(),
+    for (final beat in script.prologue) PrologueStep(beat),
+    for (final (index, level) in script.levels.indexed) ...[
+      for (final beat in level.briefing) BriefingStep(index, beat),
+      PlayingStep(index),
+      for (final beat in level.clearance) ClearanceStep(index, beat),
+    ],
+    for (final beat in script.epilogue) EpilogueStep(beat),
+  ];
 
   final LevelScript script;
   final List<GameStep> steps;
 
+  GameScript(this.script) : steps = _buildSteps(script);
+
   GameStep stepAt(int index) => steps[index];
 
-  bool isLevelOpening(int index) => switch (steps[index]) {
-    LevelStep(:final levelIndex) => switch (index) {
-      0 => true,
-      _ when levelIndex == 0 && steps[index - 1] is PrologueStep => false,
-      _ => switch (steps[index - 1]) {
-        LevelStep(levelIndex: final previousLevelIndex) =>
-          previousLevelIndex != levelIndex,
-        OpeningStep() || PrologueStep() || EpilogueStep() => true,
-      },
-    },
-    OpeningStep() || EpilogueStep() => false,
-    PrologueStep() => index > 0 && steps[index - 1] is! PrologueStep,
-  };
+  bool isLevelOpening(int index) {
+    final step = steps[index];
+    if (step is PrologueStep) {
+      return index > 0 && steps[index - 1] is! PrologueStep;
+    }
+    if (step is LevelStep) {
+      return _levelStepOpens(index, step);
+    }
+
+    return false;
+  }
+
+  bool _levelStepOpens(int index, LevelStep step) {
+    if (index == 0) {
+      return true;
+    }
+    if (step.levelIndex == 0 && steps[index - 1] is PrologueStep) {
+      return false;
+    }
+
+    return switch (steps[index - 1]) {
+      LevelStep(levelIndex: final previousLevelIndex) =>
+        previousLevelIndex != step.levelIndex,
+      OpeningStep() || PrologueStep() || EpilogueStep() => true,
+    };
+  }
 
   bool isFirstClearanceStep(int index) => switch (steps[index]) {
     ClearanceStep() => index == 0 || steps[index - 1] is! ClearanceStep,
@@ -47,15 +71,4 @@ final class GameScript {
 
     return null;
   }
-
-  static List<GameStep> _buildSteps(LevelScript script) => [
-    const OpeningStep(),
-    for (final beat in script.prologue) PrologueStep(beat),
-    for (final (index, level) in script.levels.indexed) ...[
-      for (final beat in level.briefing) BriefingStep(index, beat),
-      PlayingStep(index),
-      for (final beat in level.clearance) ClearanceStep(index, beat),
-    ],
-    for (final beat in script.epilogue) EpilogueStep(beat),
-  ];
 }

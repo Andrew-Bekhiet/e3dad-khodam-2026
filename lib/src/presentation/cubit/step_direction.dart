@@ -5,6 +5,13 @@ enum StepDirection { forward, backward }
 
 /// One move through the journey and the stops it travels between.
 final class GameTransition {
+  final GameStep? departure;
+  final GameStep arrival;
+  final StepDirection direction;
+  final JourneyStop departureStop;
+  final JourneyStop? arrivalStop;
+  final bool isFirstClearance;
+
   const GameTransition({
     required this.departure,
     required this.arrival,
@@ -13,11 +20,4 @@ final class GameTransition {
     required this.arrivalStop,
     required this.isFirstClearance,
   });
-
-  final GameStep? departure;
-  final GameStep arrival;
-  final StepDirection direction;
-  final JourneyStop departureStop;
-  final JourneyStop? arrivalStop;
-  final bool isFirstClearance;
 }

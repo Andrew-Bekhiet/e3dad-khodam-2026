@@ -7,6 +7,7 @@ import 'package:e3dad_khodam_2026/src/presentation/widgets/game/pixel_panel.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+
 const GameCharacter _writer = GameCharacter(
   id: 'paul',
   name: 'بولس',
@@ -27,7 +28,6 @@ const GameLevel _level = GameLevel(
   verses: ['آية'],
 );
 
-/// The card on its own, with nothing else on screen to take a tap.
 final class _CardUnderTest extends StatelessWidget {
   final bool hasMore;
   final List<String> verses;

@@ -12,6 +12,7 @@ import 'package:e3dad_khodam_2026/src/presentation/cubit/game_step.dart';
 import 'package:e3dad_khodam_2026/src/presentation/cubit/sweep_framing.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+
 // The script is a compile-time constant, so a real repository exercises
 // exactly the script the app ships — mocking it would only add
 // indirection, not isolation.
@@ -19,16 +20,12 @@ const _repository = StaticLevelScriptRepository();
 
 extension _RevealStateTestAccess on GameJourneyState {
   bool get isArriving => reveal.isArriving(opensBlank: opensBlank);
-
   bool get showsCard => reveal.showsCard(step: step, hasLevel: level != null);
-
   bool get showsSign => reveal.showsSign;
-
   List<String> get revealedVerses => reveal.revealedVerses(
     carriedVerses: carriedVerses,
     levelVerses: level?.verses ?? const [],
   );
-
   bool get hasMoreReveal => reveal.hasNext(
     step: step,
     verseCount: level?.verses.length ?? 0,
@@ -103,7 +100,8 @@ void main() {
   _startAndStepTests();
   _mapContentTests();
   _sweepTests();
-  _revealTests();
+  _arrivalRevealTests();
+  _cardRevealTests();
   _clearanceAndJumpTests();
 }
 
@@ -545,7 +543,7 @@ void _sweepTests() {
   });
 }
 
-void _revealTests() {
+void _arrivalRevealTests() {
   test('GameJourneyCubit_arrivingAtALevel_showsNothingOverTheMap', () {
     final cubit = GameJourneyCubit(
       _repository,
@@ -648,7 +646,9 @@ void _revealTests() {
     cubit.forward();
     expect(cubit.state.stepIndex, greaterThan(step));
   });
+}
 
+void _cardRevealTests() {
   test('GameJourneyCubit_backward_closesTheCardOnePartAtATime', () {
     final cubit = GameJourneyCubit(
       _repository,

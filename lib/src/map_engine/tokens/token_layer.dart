@@ -1,3 +1,4 @@
+import 'package:e3dad_khodam_2026/src/map_engine/geo_json_encoder.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/map_token_spec.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/pixel_style/pixel_style_builder.dart';
 
@@ -52,10 +53,8 @@ final class TokenLayer {
   };
 
   /// The token features as a GeoJSON `FeatureCollection`.
-  static JsonMap featureCollection(List<MapTokenSpec> tokens) => {
-    'type': 'FeatureCollection',
-    'features': [for (final token in tokens) _feature(token)],
-  };
+  static JsonMap featureCollection(List<MapTokenSpec> tokens) =>
+      GeoJsonEncoder.tokens(tokens);
 
   /// The distinct styles [tokens] refer to; each needs a style image.
   static List<MapTokenStyle> stylesOf(List<MapTokenSpec> tokens) {
@@ -65,22 +64,6 @@ final class TokenLayer {
 
     return byId.values.toList();
   }
-
-  static JsonMap _feature(MapTokenSpec token) => {
-    'type': 'Feature',
-    'id': token.id,
-    'geometry': <String, Object?>{
-      'type': 'Point',
-      'coordinates': <double>[
-        token.position.longitude,
-        token.position.latitude,
-      ],
-    },
-    'properties': <String, Object?>{
-      spriteProperty: token.style.id,
-      _offsetProperty: <double>[token.offset.dx, token.offset.dy],
-    },
-  };
 
   const TokenLayer._();
 }

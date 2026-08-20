@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:e3dad_khodam_2026/src/domain/geo_bounds.dart';
 import 'package:e3dad_khodam_2026/src/domain/geo_position.dart';
+import 'package:e3dad_khodam_2026/src/map_engine/geo_json_encoder.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/map_camera_target.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/map_marker_spec.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/map_surface_builder.dart';
@@ -9,6 +10,7 @@ import 'package:e3dad_khodam_2026/src/map_engine/map_surface_spec.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/map_surface_state_mixin.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/map_token_spec.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/map_trail_spec.dart';
+import 'package:e3dad_khodam_2026/src/map_engine/mapbox/map_sprite_registrations.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/mapbox/mapbox_style.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/mapbox/missing_access_token_notice.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/mapbox/pixel_style_source.dart';
@@ -17,9 +19,11 @@ import 'package:e3dad_khodam_2026/src/map_engine/markers/marker_sprite.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/pixel_style/pixel_sprite.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/pixel_style/pixel_sprite_png.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/pixel_style/pixel_tuning.dart';
+import 'package:e3dad_khodam_2026/src/map_engine/sweep_sequence.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/tokens/token_layer.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/tokens/token_sprite.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/trails/trail_layer.dart';
+import 'package:e3dad_khodam_2026/src/map_engine/zoom_snap.dart';
 import 'package:flutter/widgets.dart';
 // `Size` collides with `dart:ui`'s, and only the latter is wanted here.
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart' hide Size;
@@ -64,10 +68,6 @@ final class MapboxMapSurfaceNative extends StatefulWidget {
 
 class _MapboxMapSurfaceNativeState extends State<MapboxMapSurfaceNative>
     with MapSurfaceStateMixin<MapboxMapSurfaceNative> {
-  /// One image pixel per screen pixel; scaling would smooth the very
-  /// edges the pixel-art look is made of.
-  static const double _patternScale = 1.0;
-
   /// Hit-test radius in logical pixels; city dots are only 18px across.
   static const double _tapSlop = 12.0;
 
@@ -118,7 +118,7 @@ class _MapboxMapSurfaceNativeState extends State<MapboxMapSurfaceNative>
   void pushTrails(List<MapTrailSpec> trails) {
     _setSourceData(
       TrailLayer.sourceId,
-      TrailLayer.featureCollection(trails),
+      GeoJsonEncoder.trails(trails),
     );
   }
 
@@ -256,20 +256,14 @@ class _MapboxMapSurfaceNativeState extends State<MapboxMapSurfaceNative>
     if (style == null) {
       return;
     }
-    for (final sprite in style.sprites) {
-      await _addSprite(sprite);
-    }
-    for (final sprite in await MarkerSprite.renderAll(style.markerStyles)) {
-      await _addSprite(sprite, scale: MarkerSprite.scale);
-    }
-    for (final sprite in await TokenSprite.renderAll(style.tokenStyles)) {
-      await _addSprite(sprite, scale: TokenSprite.scale);
+    for (final registration in await MapSpriteRegistrations.forStyle(style)) {
+      await _addSprite(registration.sprite, scale: registration.scale);
     }
   }
 
   Future<void> _addSprite(
     PixelSprite sprite, {
-    double scale = _patternScale,
+    double scale = 1,
   }) async {
     final map = _map;
     if (map == null) {
@@ -322,7 +316,7 @@ class _MapboxMapSurfaceNativeState extends State<MapboxMapSurfaceNative>
     }
     await _setSourceData(
       MarkerLayer.sourceId,
-      MarkerLayer.featureCollection(markers),
+      GeoJsonEncoder.markers(markers),
     );
   }
 
@@ -347,7 +341,7 @@ class _MapboxMapSurfaceNativeState extends State<MapboxMapSurfaceNative>
     }
     await _setSourceData(
       TokenLayer.sourceId,
-      TokenLayer.featureCollection(tokens),
+      GeoJsonEncoder.tokens(tokens),
     );
   }
 
@@ -396,12 +390,12 @@ class _MapboxMapSurfaceNativeState extends State<MapboxMapSurfaceNative>
   /// `cameraForCoordinateBounds`, which knows the real viewport and
   /// projection, so nothing here reimplements Web Mercator.
   Future<void> _moveCamera(MapCameraTarget target, Duration duration) async {
-    if (target is SweepCameraTarget) {
-      await _flySweep(target);
-
-      return;
+    switch (target) {
+      case SweepCameraTarget():
+        await _flySweep(target);
+      case CameraLeg():
+        await _flyLeg(target, duration);
     }
-    await _flyLeg(target, duration);
   }
 
   /// Flies a sweep as its three parts: out to the whole basin, a pause,
@@ -412,23 +406,20 @@ class _MapboxMapSurfaceNativeState extends State<MapboxMapSurfaceNative>
   /// leave the ground — and because the native SDK exposes no way to ask
   /// for a given zoom at the peak of the flight.
   Future<void> _flySweep(SweepCameraTarget sweep) async {
-    await _flyLeg(sweep.widest, sweep.outLeg);
-    await Future<void>.delayed(sweep.outLeg + sweep.hold);
-    if (!mounted) {
-      return;
-    }
-    await _flyLeg(sweep.arrival, sweep.inLeg);
+    await SweepSequence.run(
+      sweep,
+      flyLeg: _flyLeg,
+      isMounted: () => mounted,
+    );
   }
 
   /// Moves the camera to one plain target over [duration].
-  Future<void> _flyLeg(MapCameraTarget target, Duration duration) async {
+  Future<void> _flyLeg(CameraLeg target, Duration duration) async {
     final map = _map;
     if (map == null || !_styleLoaded) {
       return;
     }
     final camera = switch (target) {
-      // A sweep is three legs, never one; `_moveCamera` splits it first.
-      SweepCameraTarget() => throw StateError('a sweep is not a leg'),
       CenterZoomCameraTarget(:final center, :final zoom) => CameraOptions(
         center: center.toMapboxPoint(),
         zoom: zoom,
@@ -466,14 +457,16 @@ class _MapboxMapSurfaceNativeState extends State<MapboxMapSurfaceNative>
   /// resamples the patterns and the pixel art turns to mush.
   Future<void> _onMapIdle(MapIdleEventData _) async {
     final map = _map;
-    if (map == null || PixelTuning.zoomSnap <= 0) {
+    if (map == null) {
       return;
     }
     final state = await map.getCameraState();
-    final snapped =
-        (state.zoom / PixelTuning.zoomSnap).roundToDouble() *
-        PixelTuning.zoomSnap;
-    if (!mounted || (snapped - state.zoom).abs() < _zoomEpsilon) {
+    final snapped = ZoomSnap.targetFor(
+      state.zoom,
+      increment: PixelTuning.zoomSnap,
+      epsilon: _zoomEpsilon,
+    );
+    if (!mounted || snapped == null) {
       return;
     }
     await map.easeTo(

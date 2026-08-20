@@ -18,3 +18,9 @@ sealed class MapCameraTarget extends Equatable {
   /// Const constructor for subclasses.
   const MapCameraTarget();
 }
+
+/// A single camera movement, as opposed to a composed [SweepCameraTarget].
+sealed class CameraLeg extends MapCameraTarget {
+  /// Const constructor for concrete legs.
+  const CameraLeg();
+}

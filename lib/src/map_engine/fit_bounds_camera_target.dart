@@ -2,7 +2,7 @@ part of 'map_camera_target.dart';
 
 /// Requests the camera frame exactly [bounds], inset by [padding] so
 /// markers near the edge remain fully visible.
-final class FitBoundsCameraTarget extends MapCameraTarget {
+final class FitBoundsCameraTarget extends CameraLeg {
   /// The geographic area to fit within the viewport.
   final GeoBounds bounds;
 

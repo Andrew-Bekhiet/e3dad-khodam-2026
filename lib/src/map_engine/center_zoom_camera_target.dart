@@ -1,7 +1,7 @@
 part of 'map_camera_target.dart';
 
 /// Requests the camera center on [center] at [zoom].
-final class CenterZoomCameraTarget extends MapCameraTarget {
+final class CenterZoomCameraTarget extends CameraLeg {
   /// The point to center the viewport on.
   final GeoPosition center;
 

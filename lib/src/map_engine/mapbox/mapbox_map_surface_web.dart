@@ -5,6 +5,7 @@ import 'dart:ui_web' as ui_web;
 
 import 'package:e3dad_khodam_2026/src/app/app_features.dart';
 import 'package:e3dad_khodam_2026/src/domain/geo_position.dart';
+import 'package:e3dad_khodam_2026/src/map_engine/geo_json_encoder.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/map_camera_target.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/map_marker_spec.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/map_surface_builder.dart';
@@ -12,6 +13,7 @@ import 'package:e3dad_khodam_2026/src/map_engine/map_surface_spec.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/map_surface_state_mixin.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/map_token_spec.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/map_trail_spec.dart';
+import 'package:e3dad_khodam_2026/src/map_engine/mapbox/map_sprite_registrations.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/mapbox/mapbox_gl_js.dart'
     as gl;
 import 'package:e3dad_khodam_2026/src/map_engine/mapbox/mapbox_style.dart';
@@ -22,9 +24,11 @@ import 'package:e3dad_khodam_2026/src/map_engine/markers/marker_layer.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/markers/marker_sprite.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/pixel_style/pixel_sprite.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/pixel_style/pixel_tuning.dart';
+import 'package:e3dad_khodam_2026/src/map_engine/sweep_sequence.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/tokens/token_layer.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/tokens/token_sprite.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/trails/trail_layer.dart';
+import 'package:e3dad_khodam_2026/src/map_engine/zoom_snap.dart';
 import 'package:flutter/widgets.dart';
 import 'package:web/web.dart' as web;
 
@@ -61,9 +65,6 @@ class _MapboxMapSurfaceWebState extends State<MapboxMapSurfaceWeb>
     with MapSurfaceStateMixin<MapboxMapSurfaceWeb> {
   /// Platform view type, registered once per app run.
   static const String _viewType = 'e3dad-khodam-mapbox-gl';
-
-  /// Pattern sprites are authored at one image pixel per CSS pixel.
-  static const double _patternScale = 1.0;
 
   static const Duration _snapDuration = Duration(milliseconds: 120);
   static const double _zoomEpsilon = 1e-3;
@@ -127,7 +128,7 @@ class _MapboxMapSurfaceWebState extends State<MapboxMapSurfaceWeb>
 
   @override
   void pushTrails(List<MapTrailSpec> trails) {
-    _setSourceData(TrailLayer.sourceId, TrailLayer.featureCollection(trails));
+    _setSourceData(TrailLayer.sourceId, GeoJsonEncoder.trails(trails));
   }
 
   @override
@@ -272,12 +273,8 @@ class _MapboxMapSurfaceWebState extends State<MapboxMapSurfaceWeb>
     if (map == null || style == null) {
       return;
     }
-    for (final sprite in style.sprites) {
-      _addSprite(sprite, scale: _patternScale);
-    }
-    await _addMarkerSprites(MarkerLayer.stylesOf(widget.spec.markers));
-    if (mounted) {
-      await _addTokenSprites(TokenLayer.stylesOf(widget.spec.tokens));
+    for (final registration in await MapSpriteRegistrations.forStyle(style)) {
+      _addSprite(registration.sprite, scale: registration.scale);
     }
   }
 
@@ -351,7 +348,7 @@ class _MapboxMapSurfaceWebState extends State<MapboxMapSurfaceWeb>
     }
     _setSourceData(
       MarkerLayer.sourceId,
-      MarkerLayer.featureCollection(markers),
+      GeoJsonEncoder.markers(markers),
     );
   }
 
@@ -366,7 +363,7 @@ class _MapboxMapSurfaceWebState extends State<MapboxMapSurfaceWeb>
     if (!mounted) {
       return;
     }
-    _setSourceData(TokenLayer.sourceId, TokenLayer.featureCollection(tokens));
+    _setSourceData(TokenLayer.sourceId, GeoJsonEncoder.tokens(tokens));
   }
 
   /// Swaps a `geojson` source's features, going through the browser's own
@@ -382,12 +379,12 @@ class _MapboxMapSurfaceWebState extends State<MapboxMapSurfaceWeb>
   /// A [FitBoundsCameraTarget] goes straight to `fitBounds`, which knows
   /// the real viewport and projection.
   void _moveCamera(MapCameraTarget target, Duration duration) {
-    if (target is SweepCameraTarget) {
-      _flySweep(target);
-
-      return;
+    switch (target) {
+      case SweepCameraTarget():
+        _flySweep(target);
+      case CameraLeg():
+        _flyLeg(target, duration);
     }
-    _flyLeg(target, duration);
   }
 
   /// Flies a sweep as its three parts, and blurs the map while it runs.
@@ -398,18 +395,18 @@ class _MapboxMapSurfaceWebState extends State<MapboxMapSurfaceWeb>
   /// stop at the boundary. The element is already held here, so the real
   /// map blurs on the web build and only there.
   Future<void> _flySweep(SweepCameraTarget sweep) async {
-    _flyLeg(sweep.widest, sweep.outLeg);
-    _blur(_sweepBlurPixels);
-    await Future<void>.delayed(sweep.outLeg + sweep.hold);
-    if (!mounted) {
-      return;
-    }
-    _flyLeg(sweep.arrival, sweep.inLeg);
-    await Future<void>.delayed(sweep.inLeg);
-    if (!mounted) {
-      return;
-    }
-    _blur(0);
+    await SweepSequence.run(
+      sweep,
+      flyLeg: _flyLeg,
+      isMounted: () => mounted,
+      onOutStarted: () => _blur(_sweepBlurPixels),
+      onArrivalStarted: () async {
+        await Future<void>.delayed(sweep.inLeg);
+        if (mounted) {
+          _blur(0);
+        }
+      },
+    );
   }
 
   /// Sets the map container's blur in CSS pixels; zero clears it.
@@ -426,16 +423,13 @@ class _MapboxMapSurfaceWebState extends State<MapboxMapSurfaceWeb>
   }
 
   /// Moves the camera to one plain target over [duration].
-  void _flyLeg(MapCameraTarget target, Duration duration) {
+  void _flyLeg(CameraLeg target, Duration duration) {
     final map = _map;
     if (map == null || !_styleLoaded) {
       return;
     }
     final millis = duration.inMilliseconds.toDouble();
     switch (target) {
-      // A sweep is three legs, never one; `_moveCamera` splits it first.
-      case SweepCameraTarget():
-        throw StateError('a sweep is not a leg');
       case CenterZoomCameraTarget(:final center, :final zoom):
         final options = gl.GlCameraOptions(
           zoom: zoom,
@@ -462,13 +456,16 @@ class _MapboxMapSurfaceWebState extends State<MapboxMapSurfaceWeb>
   /// resamples the patterns and the pixel art turns to mush.
   void _onMoveEnd() {
     final map = _map;
-    if (map == null || PixelTuning.zoomSnap <= 0) {
+    if (map == null) {
       return;
     }
     final zoom = map.getZoom();
-    final snapped =
-        (zoom / PixelTuning.zoomSnap).roundToDouble() * PixelTuning.zoomSnap;
-    if ((snapped - zoom).abs() < _zoomEpsilon) {
+    final snapped = ZoomSnap.targetFor(
+      zoom,
+      increment: PixelTuning.zoomSnap,
+      epsilon: _zoomEpsilon,
+    );
+    if (snapped == null) {
       return;
     }
     map.easeTo(

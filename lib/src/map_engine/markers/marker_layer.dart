@@ -1,6 +1,4 @@
-import 'dart:math';
-import 'dart:ui';
-
+import 'package:e3dad_khodam_2026/src/map_engine/geo_json_encoder.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/map_marker_spec.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/markers/map_marker_style.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/pixel_style/pixel_style_builder.dart';
@@ -97,10 +95,8 @@ final class MarkerLayer {
   };
 
   /// The marker features as a GeoJSON `FeatureCollection`.
-  static JsonMap featureCollection(List<MapMarkerSpec> markers) => {
-    'type': 'FeatureCollection',
-    'features': [for (final marker in markers) _feature(marker)],
-  };
+  static JsonMap featureCollection(List<MapMarkerSpec> markers) =>
+      GeoJsonEncoder.markers(markers);
 
   /// The distinct styles [markers] refer to; each needs a style image.
   static List<MapMarkerStyle> stylesOf(List<MapMarkerSpec> markers) {
@@ -119,53 +115,6 @@ final class MarkerLayer {
   /// `click` takes no filter, unlike the native interaction.
   static bool isInteractive(Map<String, Object?> properties) =>
       properties[_interactiveProperty] == true;
-
-  static JsonMap _feature(MapMarkerSpec marker) {
-    final style = marker.style;
-    final label = style.label;
-
-    return {
-      'type': 'Feature',
-      'id': marker.id,
-      'geometry': <String, Object?>{
-        'type': 'Point',
-        'coordinates': <double>[
-          marker.position.longitude,
-          marker.position.latitude,
-        ],
-      },
-      'properties': <String, Object?>{
-        idProperty: marker.id,
-        spriteProperty: style.id,
-        labelProperty: marker.label,
-        _fontSizeProperty: label.fontSize,
-        _offsetProperty: _labelOffsetEms(style, marker.labelClearance),
-        _colorProperty: _hex(label.color),
-        _haloColorProperty: _hex(label.haloColor),
-        _haloWidthProperty: label.haloWidth,
-        _interactiveProperty: marker.isInteractive,
-      },
-    };
-  }
-
-  /// Vertical `text-offset`, measured in ems of the label's font size.
-  /// The icon is centred on the coordinate, so the label must clear half
-  /// the shape plus the gap, plus whatever [clearance] the caller adds
-  /// for things drawn over the marker.
-  static List<double> _labelOffsetEms(MapMarkerStyle style, double clearance) =>
-      [
-        0,
-        (max(style.diameter / 2, clearance) + style.label.gap) /
-            style.label.fontSize,
-      ];
-
-  /// Mapbox parses colours from CSS strings.
-  static String _hex(Color color) {
-    final argb = color.toARGB32();
-    final rgb = (argb & 0xFFFFFF).toRadixString(16).padLeft(6, '0');
-
-    return '#$rgb';
-  }
 
   const MarkerLayer._();
 }

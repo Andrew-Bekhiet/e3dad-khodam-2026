@@ -17,7 +17,7 @@ const _repository = StaticJourneyMapRepository();
 // `_rootBounds`/`_fitPadding` constants.
 const _rootCamera = FitBoundsCameraTarget(
   bounds: GeoBounds(south: 28.5, west: 15.0, north: 46.5, east: 37.0),
-  padding: EdgeInsets.only(top: 100, left: 84, right: 84, bottom: 56),
+  padding: EdgeInsets.only(top: 100, left: 144, right: 144, bottom: 56),
 );
 
 /// Matches a [MapHierarchyState] back at the root cross — shared by the

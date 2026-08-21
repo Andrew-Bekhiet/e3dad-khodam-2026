@@ -8,6 +8,7 @@ import 'package:e3dad_khodam_2026/src/presentation/widgets/journey_map_view.dart
 import 'package:e3dad_khodam_2026/src/presentation/widgets/map_arrow_controls.dart';
 import 'package:e3dad_khodam_2026/src/presentation/widgets/non_geographic_sheet.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 /// The app's single screen: owns the [MapHierarchyCubit], the app bar
@@ -28,79 +29,7 @@ final class JourneyMapPage extends StatelessWidget {
   Widget build(BuildContext context) => BlocProvider(
     create: (context) =>
         MapHierarchyCubit(context.read<JourneyMapRepository>()),
-    child: BlocBuilder<MapHierarchyCubit, MapHierarchyState>(
-      builder: (context, state) {
-        final cubit = context.read<MapHierarchyCubit>();
-
-        final breadcrumbText = _breadcrumbText(
-          state.breadcrumb.map((node) => node.label).toList(growable: false),
-        );
-
-        return PopScope(
-          canPop: state.isAtRoot,
-          onPopInvokedWithResult: (didPop, _) {
-            if (didPop) return;
-
-            cubit.goBack();
-          },
-          child: Scaffold(
-            appBar: AppBar(
-              leading: state.isAtRoot
-                  ? null
-                  : IconButton(
-                      icon: const Icon(Icons.arrow_back),
-                      tooltip: AppStrings.backButtonTooltip,
-                      onPressed: cubit.goBack,
-                    ),
-              title: AnimatedSwitcher(
-                duration: _titleSwitchDuration,
-                child: Text(
-                  breadcrumbText ?? AppStrings.appTitle,
-                  key: ValueKey(breadcrumbText ?? AppStrings.appTitle),
-                  style: breadcrumbText == null
-                      ? TextTheme.of(
-                          context,
-                        ).titleLarge?.copyWith(fontWeight: FontWeight.w700)
-                      : TextTheme.of(
-                          context,
-                        ).titleMedium?.copyWith(fontWeight: FontWeight.w600),
-                ),
-              ),
-              actions: [
-                IconButton(
-                  icon: const Icon(Icons.videogame_asset_outlined),
-                  tooltip: AppStrings.gameTitle,
-                  onPressed: () => _openGame(context),
-                ),
-                if (AppFeatures.showNonGeographicGroups)
-                  IconButton(
-                    icon: const Icon(Icons.people_outline),
-                    tooltip: AppStrings.nonGeographicSheetTitle,
-                    onPressed: () => _showNonGeographicSheet(context),
-                  ),
-              ],
-            ),
-            body: Stack(
-              fit: StackFit.expand,
-              alignment: AlignmentDirectional.center,
-              children: [
-                const JourneyMapView(),
-                PositionedDirectional(
-                  end: 16,
-                  bottom: 16,
-                  child: SafeArea(
-                    child: MapArrowControls(
-                      onBackward: cubit.backward,
-                      onForward: cubit.forward,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    ),
+    child: const _JourneyMapView(),
   );
 
   /// Opens the guided game. It reads its script and map provider from the
@@ -125,3 +54,157 @@ final class JourneyMapPage extends StatelessWidget {
     );
   }
 }
+
+/// The Cross Map body, split out so its focus node survives map surface
+/// updates while the hierarchy cubit emits new camera targets.
+final class _JourneyMapView extends StatefulWidget {
+  const _JourneyMapView();
+
+  @override
+  State<_JourneyMapView> createState() => _JourneyMapViewState();
+}
+
+final class _JourneyMapViewState extends State<_JourneyMapView> {
+  static final Set<LogicalKeyboardKey> _forwardKeys = Set.unmodifiable([
+    LogicalKeyboardKey.arrowLeft,
+    LogicalKeyboardKey.space,
+    LogicalKeyboardKey.enter,
+    LogicalKeyboardKey.arrowDown,
+  ]);
+  static final Set<LogicalKeyboardKey> _backwardKeys = Set.unmodifiable([
+    LogicalKeyboardKey.arrowRight,
+    LogicalKeyboardKey.backspace,
+    LogicalKeyboardKey.arrowUp,
+  ]);
+
+  final FocusNode _focusNode = FocusNode(debugLabel: 'journey-map-keys');
+
+  @override
+  Widget build(BuildContext context) =>
+      BlocBuilder<MapHierarchyCubit, MapHierarchyState>(
+        builder: (context, state) {
+          final cubit = context.read<MapHierarchyCubit>();
+          final breadcrumbText = JourneyMapPage._breadcrumbText(
+            state.breadcrumb.map((node) => node.label).toList(growable: false),
+          );
+
+          return PopScope(
+            canPop: state.isAtRoot,
+            onPopInvokedWithResult: (didPop, _) {
+              if (didPop) {
+                return;
+              }
+              cubit.goBack();
+            },
+            child: Scaffold(
+              appBar: AppBar(
+                leading: state.isAtRoot
+                    ? null
+                    : IconButton(
+                        icon: const Icon(Icons.arrow_back),
+                        tooltip: AppStrings.backButtonTooltip,
+                        onPressed: cubit.goBack,
+                      ),
+                title: AnimatedSwitcher(
+                  duration: JourneyMapPage._titleSwitchDuration,
+                  child: Text(
+                    breadcrumbText ?? AppStrings.appTitle,
+                    key: ValueKey(breadcrumbText ?? AppStrings.appTitle),
+                    style: breadcrumbText == null
+                        ? TextTheme.of(
+                            context,
+                          ).titleLarge?.copyWith(fontWeight: FontWeight.w700)
+                        : TextTheme.of(
+                            context,
+                          ).titleMedium?.copyWith(fontWeight: FontWeight.w600),
+                  ),
+                ),
+                actions: [
+                  IconButton(
+                    icon: const Icon(Icons.videogame_asset_outlined),
+                    tooltip: AppStrings.gameTitle,
+                    onPressed: () => JourneyMapPage._openGame(context),
+                  ),
+                  if (AppFeatures.showNonGeographicGroups)
+                    IconButton(
+                      icon: const Icon(Icons.people_outline),
+                      tooltip: AppStrings.nonGeographicSheetTitle,
+                      onPressed: () => JourneyMapPage._showNonGeographicSheet(
+                        context,
+                      ),
+                    ),
+                ],
+              ),
+              body: Focus(
+                focusNode: _focusNode,
+                autofocus: true,
+                onKeyEvent: (_, event) => _onKeyEvent(cubit, event),
+                child: Stack(
+                  fit: StackFit.expand,
+                  alignment: AlignmentDirectional.center,
+                  children: [
+                    const JourneyMapView(),
+                    PositionedDirectional(
+                      end: 16,
+                      bottom: 16,
+                      child: SafeArea(
+                        child: MapArrowControls(
+                          onBackward: () => _step(cubit, forward: false),
+                          onForward: () => _step(cubit, forward: true),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      );
+
+  @override
+  void dispose() {
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  KeyEventResult _onKeyEvent(MapHierarchyCubit cubit, KeyEvent event) {
+    if (event is! KeyDownEvent && event is! KeyRepeatEvent) {
+      return KeyEventResult.ignored;
+    }
+
+    switch (_stepForKey(event.logicalKey)) {
+      case _MapStep.forward:
+        _step(cubit, forward: true);
+      case _MapStep.backward:
+        _step(cubit, forward: false);
+      case null:
+        return KeyEventResult.ignored;
+    }
+
+    return KeyEventResult.handled;
+  }
+
+  _MapStep? _stepForKey(LogicalKeyboardKey key) {
+    if (_forwardKeys.contains(key)) {
+      return _MapStep.forward;
+    }
+    if (_backwardKeys.contains(key)) {
+      return _MapStep.backward;
+    }
+
+    return null;
+  }
+
+  void _step(MapHierarchyCubit cubit, {required bool forward}) {
+    _focusNode.requestFocus();
+    if (forward) {
+      cubit.forward();
+
+      return;
+    }
+    cubit.backward();
+  }
+}
+
+enum _MapStep { forward, backward }

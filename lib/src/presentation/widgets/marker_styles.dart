@@ -76,7 +76,7 @@ final class MarkerStyles {
     shadow: null,
     glyph: null,
     label: MapMarkerLabelStyle(
-      fontSize: 14,
+      fontSize: 34,
       color: Color(0xFF14243A),
       haloColor: _white,
       haloWidth: 1.5,
@@ -89,7 +89,7 @@ final class MarkerStyles {
   static const double _categoryIconSize = 28;
 
   static const MapMarkerLabelStyle _categoryLabel = MapMarkerLabelStyle(
-    fontSize: 15,
+    fontSize: 34,
     color: Color(0xFF1A1A1A),
     haloColor: _white,
     haloWidth: 2,
@@ -97,7 +97,7 @@ final class MarkerStyles {
   );
 
   static const MapMarkerLabelStyle _placeLabel = MapMarkerLabelStyle(
-    fontSize: 13,
+    fontSize: 34,
     color: Color(0xFF1A1A1A),
     haloColor: _white,
     haloWidth: 2,

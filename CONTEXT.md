@@ -82,12 +82,16 @@ is read. Positioned from the Gazetteer.
 _Avoid_: waypoint, station, node
 
 **Destination**:
-The Stop a given Level is about — where the Party ends up, and what the camera frames.
+The Stop a given Level is about — where the Party ends up, and what the camera frames. It is the
+place the Letter was addressed to, not the place it was written. A Letter addressed to a person
+rather than to a church has no recipient city, so its Level stands where بولس wrote it: فيلمون،
+تيطس and both letters to تيموثاوس are all in رومية.
 
 **Destination Card**:
-The panel shown over the map during a Level, in the middle of the screen. It only ever grows, one
-press at a time: first the Sign, then the Verses. Named for the Destination, not for a city — several
-Destinations are provinces, not cities.
+The panel shown over the map during a Level, in the middle of the screen. It opens one press at a
+time: first the Sign, then one Verse. Each further press replaces the Verse on the card with the
+next one, so exactly one Verse is ever on screen. Named for the Destination, not for a city —
+several Destinations are provinces, not cities.
 _Avoid_: city card, level card
 
 **Sign (لافتة)**:
@@ -96,14 +100,16 @@ The Play Script's own word for it, and the only place the game names where the p
 replaced a panel that showed the Letter's title and a progress bar.
 
 **Reveal**:
-How far the Destination Card is open on the current Step: nothing, the Sign, then one more for each
-Verse shown. A sealed three-rung type: **Card Hidden**, **Sign Showing**, or **Verses Showing** with
-the number of Verses shown. The Card only ever grows, which is what lets forward and backward walk
-it with the same ±1 they use on Steps.
+How far the Destination Card is open on the current Step: nothing, the Sign, then one rung per Verse.
+A sealed three-rung type: **Card Hidden**, **Sign Showing**, or **Verses Showing** with the number of
+the Verse on screen. The rung only ever climbs on a forward press, which is what lets forward and
+backward walk it with the same ±1 they use on Steps — but the card shows only the Verse that rung
+names, never the ones below it.
 
 **Verse (شاهد)**:
-A scripture citation the Play Script quotes for a Letter. Revealed one at a time on the Destination
-Card, as the reward for understanding the Level rather than as its content.
+A scripture citation the Play Script quotes for a Letter, carrying its reference. Shown one at a
+time on the Destination Card — each press replaces the last — as the reward for understanding the
+Level rather than as its content.
 
 **Character**:
 Anyone who takes part in the game — a Courier, the Guide, the Narrator, or the Letter Writer. The

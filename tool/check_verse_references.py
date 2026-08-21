@@ -43,6 +43,18 @@ BOOK_INDEX = {
     'عب': 68,
 }
 
+# Places the game deliberately shows something other than St-Takla's text,
+# keyed by citation. The play is normative for what the room hears, so where
+# it glosses a word the card follows the play and this records why. Any
+# other drift from St-Takla still fails.
+DELIBERATE = {
+    'غل 1: 8': (
+        'The play has the actor say «محروماً» where Van Dyck reads '
+        '«أَنَاثِيمَا». The card follows the play so the room does not read '
+        'one word while hearing another.'
+    ),
+}
+
 FILES = (
     'lib/src/data/game/post_office_road_levels.dart',
     'lib/src/data/game/post_office_prison_levels.dart',
@@ -149,7 +161,7 @@ def main() -> int:
             if normalize(segment) not in normalize(' '.join(actual))
         ]
         checked += 1
-        if unmatched:
+        if unmatched and citation not in DELIBERATE:
             mismatches.append((relative, citation, unmatched, actual))
     print(f'checked {checked} quoted entries')
     print(f'checked {checked_ranges} referenced verse ranges')
@@ -157,6 +169,8 @@ def main() -> int:
         print(f'NO CITATION {relative}: {shown}')
     if not mismatches and not uncited:
         print('all quoted text matches its cited St-Takla verses')
+    for citation, reason in DELIBERATE.items():
+        print(f'ALLOWED {citation}: {reason}')
     for relative, citation, unmatched, actual in mismatches:
         print(f'MISMATCH {relative}: {citation}')
         print(f'  unmatched: {unmatched}')

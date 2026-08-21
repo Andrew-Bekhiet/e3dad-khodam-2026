@@ -1,4 +1,3 @@
-import 'package:e3dad_khodam_2026/src/domain/game/game_character.dart';
 import 'package:e3dad_khodam_2026/src/domain/game/game_level.dart';
 import 'package:e3dad_khodam_2026/src/domain/game/journey_stop.dart';
 import 'package:e3dad_khodam_2026/src/domain/geo_position.dart';
@@ -6,13 +5,6 @@ import 'package:e3dad_khodam_2026/src/presentation/widgets/game/destination_card
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/pixel_panel.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
-
-const GameCharacter _writer = GameCharacter(
-  id: 'paul',
-  name: 'بولس',
-  portraitAsset: 'assets/characters/paul-avatar.jpg',
-);
 
 const JourneyStop _stop = JourneyStop(
   id: 'thessalonica',
@@ -28,17 +20,17 @@ const GameLevel _level = GameLevel(
   verses: ['آية'],
 );
 
-final class _CardUnderTest extends StatelessWidget {
+final class _DestinationCardTest extends StatelessWidget {
   final bool hasMore;
-  final List<String> verses;
+  final String? verse;
   final VoidCallback onReveal;
   final VoidCallback onAdvance;
 
-  const _CardUnderTest({
+  const _DestinationCardTest({
     required this.hasMore,
     required this.onReveal,
     required this.onAdvance,
-    this.verses = const ['آية'],
+    this.verse = 'آية',
   });
 
   @override
@@ -47,8 +39,7 @@ final class _CardUnderTest extends StatelessWidget {
       body: DestinationCard(
         level: _level,
         destinationLabel: _stop.label,
-        verses: verses,
-        versesSpeaker: _writer,
+        verse: verse,
         hasMore: hasMore,
         onReveal: onReveal,
         onAdvance: onAdvance,
@@ -65,7 +56,7 @@ void main() {
     var advanced = 0;
 
     await tester.pumpWidget(
-      _CardUnderTest(
+      _DestinationCardTest(
         hasMore: true,
         onReveal: () => revealed++,
         onAdvance: () => advanced++,
@@ -82,7 +73,7 @@ void main() {
     var advanced = 0;
 
     await tester.pumpWidget(
-      _CardUnderTest(
+      _DestinationCardTest(
         hasMore: false,
         onReveal: () => revealed++,
         onAdvance: () => advanced++,
@@ -94,7 +85,7 @@ void main() {
     expect(revealed, 0);
   });
 
-  testWidgets('the card grows for its revealed verses', (
+  testWidgets('the card makes room for its revealed verse', (
     tester,
   ) async {
     tester.view.physicalSize = const Size(390, 844);
@@ -102,9 +93,9 @@ void main() {
     addTearDown(tester.view.reset);
 
     await tester.pumpWidget(
-      const _CardUnderTest(
+      const _DestinationCardTest(
         hasMore: false,
-        verses: [],
+        verse: null,
         onReveal: _never,
         onAdvance: _never,
       ),
@@ -113,7 +104,7 @@ void main() {
     final signOnlyHeight = tester.getSize(find.byType(PixelPanel)).height;
 
     await tester.pumpWidget(
-      const _CardUnderTest(
+      const _DestinationCardTest(
         hasMore: false,
         onReveal: _never,
         onAdvance: _never,
@@ -124,6 +115,33 @@ void main() {
 
     expect(panel.height, greaterThan(signOnlyHeight));
     expect(panel.height, lessThan(200));
+  });
+
+  testWidgets('the card replaces a verse instead of adding another', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const _DestinationCardTest(
+        hasMore: false,
+        verse: 'الآية الأولى',
+        onReveal: _never,
+        onAdvance: _never,
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 200));
+
+    await tester.pumpWidget(
+      const _DestinationCardTest(
+        hasMore: false,
+        verse: 'الآية الثانية',
+        onReveal: _never,
+        onAdvance: _never,
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 200));
+
+    expect(find.text('الآية الأولى'), findsNothing);
+    expect(find.text('الآية الثانية'), findsOneWidget);
   });
 }
 

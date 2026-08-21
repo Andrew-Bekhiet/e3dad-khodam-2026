@@ -39,10 +39,7 @@ sealed class Reveal extends Equatable {
   /// belongs to that level, but it introduces the journey rather than the
   /// letter, so it never raises the card either.
   bool showsCard({required GameStep step, required bool hasLevel}) =>
-      hasLevel &&
-      showsSign &&
-      step is! PrologueStep &&
-      step is! BriefingStep;
+      hasLevel && showsSign && step is! PrologueStep && step is! BriefingStep;
 
   bool isArriving({required bool opensBlank}) =>
       opensBlank && this is CardHidden;
@@ -76,13 +73,13 @@ sealed class Reveal extends Equatable {
     };
   }
 
-  List<String> revealedVerses({
-    required List<String> carriedVerses,
-    required List<String> levelVerses,
-  }) => [
-    ...carriedVerses,
-    ...levelVerses.take(versesShown),
-  ];
+  String? revealedVerse({required List<String> levelVerses}) {
+    if (versesShown == 0 || versesShown > levelVerses.length) {
+      return null;
+    }
+
+    return levelVerses[versesShown - 1];
+  }
 }
 
 final class CardHidden extends Reveal {

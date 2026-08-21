@@ -1,6 +1,4 @@
-import 'package:collection/collection.dart';
 import 'package:e3dad_khodam_2026/src/app/arabic_numerals.dart';
-import 'package:e3dad_khodam_2026/src/domain/game/game_character.dart';
 import 'package:e3dad_khodam_2026/src/domain/game/game_level.dart';
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/continue_chevron.dart';
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/game_palette.dart';
@@ -11,15 +9,14 @@ import 'package:flutter/material.dart';
 /// The level's card, laid over the map once the sweep has landed.
 ///
 /// It opens one part at a time: the **sign** — the destination's name and
-/// year, the play's own لافتة — then the verses one at a time. The card
-/// only ever grows, which is why one number says how far it is open.
+/// year, the play's own لافتة — then the verses one at a time.
 ///
 /// Named for the destination rather than for a city: several of them are
 /// provinces, and كريت is an island.
 ///
 /// Only the card takes taps, so the map around it stays live.
 final class DestinationCard extends StatelessWidget {
-  static const Duration _growDuration = Duration(milliseconds: 260);
+  static const Duration _verseTransitionDuration = Duration(milliseconds: 150);
 
   /// The level being played.
   final GameLevel level;
@@ -27,11 +24,8 @@ final class DestinationCard extends StatelessWidget {
   /// The name of the destination the level is delivered to.
   final String destinationLabel;
 
-  /// The verses revealed so far.
-  final List<String> verses;
-
-  /// Whose words those verses are; shown once above them.
-  final GameCharacter versesSpeaker;
+  /// The verse currently revealed, if any.
+  final String? verse;
 
   /// Whether another part of the card is waiting behind a press.
   final bool hasMore;
@@ -48,8 +42,7 @@ final class DestinationCard extends StatelessWidget {
   const DestinationCard({
     required this.level,
     required this.destinationLabel,
-    required this.verses,
-    required this.versesSpeaker,
+    required this.verse,
     required this.hasMore,
     required this.onReveal,
     required this.onAdvance,
@@ -62,32 +55,28 @@ final class DestinationCard extends StatelessWidget {
 
     return Center(
       child: SafeArea(
-        child: AnimatedSize(
-          duration: _growDuration,
-          curve: Curves.easeOutBack,
-          child: GestureDetector(
-            onTap: hasMore ? onReveal : onAdvance,
-            child: PixelPanel(
-              child: Padding(
-                padding: EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: screen.pick(compact: 0, large: 22),
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    _Sign(destinationLabel: destinationLabel, year: level.year),
-                    _Verses(verses: verses, speaker: versesSpeaker),
-                    if (hasMore) ...[
-                      const SizedBox(height: 10),
-                      const Center(
-                        widthFactor: 1,
-                        child: ContinueChevron(icon: Icons.keyboard_arrow_down),
-                      ),
-                    ],
+        child: GestureDetector(
+          onTap: hasMore ? onReveal : onAdvance,
+          child: PixelPanel(
+            child: Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: screen.pick(compact: 0, large: 22),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  _Sign(destinationLabel: destinationLabel, year: level.year),
+                  _Verses(verse: verse),
+                  if (hasMore) ...[
+                    const SizedBox(height: 10),
+                    const Center(
+                      widthFactor: 1,
+                      child: ContinueChevron(icon: Icons.keyboard_arrow_down),
+                    ),
                   ],
-                ),
+                ],
               ),
             ),
           ),
@@ -147,44 +136,37 @@ final class _Sign extends StatelessWidget {
   }
 }
 
-/// The verses revealed so far, under the name of whoever wrote them.
+/// The current verse.
 final class _Verses extends StatelessWidget {
-  final List<String> verses;
-  final GameCharacter speaker;
-  const _Verses({
-    required this.verses,
-    required this.speaker,
-  });
+  final String? verse;
+  const _Verses({required this.verse});
 
   @override
-  Widget build(BuildContext context) => Column(
-    mainAxisSize: MainAxisSize.min,
-    children: [
-      SizedBox(
-        height: GameScreenSize.of(context).pick(compact: 0, large: 14.0),
-      ),
-      AnimatedSize(
-        duration: DestinationCard._growDuration,
-        curve: Curves.easeOutCubic,
-        alignment: Alignment.topCenter,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: verses
-              .mapIndexed((i, v) => _Verse(index: i, text: v))
-              .toList(),
+  Widget build(BuildContext context) => switch (verse) {
+    null => const SizedBox.shrink(),
+    final currentVerse => Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        SizedBox(
+          height: GameScreenSize.of(context).pick(compact: 0, large: 14.0),
         ),
-      ),
-    ],
-  );
+        AnimatedSwitcher(
+          duration: DestinationCard._verseTransitionDuration,
+          switchInCurve: Curves.easeOut,
+          switchOutCurve: Curves.easeIn,
+          child: _Verse(key: ValueKey(currentVerse), text: currentVerse),
+        ),
+      ],
+    ),
+  };
 }
 
-/// One revealed verse, ruled off from the one before it.
+/// The current verse, ruled off from the sign above it.
 final class _Verse extends StatelessWidget {
-  final int index;
   final String text;
   const _Verse({
-    required this.index,
     required this.text,
+    super.key,
   });
 
   @override
@@ -201,12 +183,6 @@ final class _Verse extends StatelessWidget {
           Text(
             text,
             textAlign: TextAlign.center,
-            // Verses are the one thing on this card that has no upper
-            // bound: a city can collect two letters' worth, and they all
-            // have to be on screen at once because nothing here scrolls.
-            // Hence the tighter leading on a phone as well as the
-            // smaller face — the line height is doing as much of the
-            // work as the size is.
             style: screen
                 .pick(compact: theme.bodyLarge, large: theme.displaySmall)
                 ?.copyWith(

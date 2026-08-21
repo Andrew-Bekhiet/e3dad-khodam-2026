@@ -7,6 +7,7 @@ import 'package:e3dad_khodam_2026/src/map_engine/map_surface_spec.dart';
 import 'package:e3dad_khodam_2026/src/presentation/cubit/game_journey_cubit.dart';
 import 'package:e3dad_khodam_2026/src/presentation/pages/game_journey_page.dart';
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/character_portrait.dart';
+import 'package:e3dad_khodam_2026/src/presentation/widgets/game/destination_card.dart';
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/guide_callout.dart';
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/guide_dialogue_panel.dart';
 import 'package:flutter/material.dart';
@@ -137,6 +138,40 @@ void main() {
 
     expect(tester.takeException(), isNull);
     expect(find.byType(GuideDialoguePanel), findsOneWidget);
+  });
+
+  testWidgets('GameJourneyPage_theCardFadesFromTheMiddleOfTheMap', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(const _GameUnderTest());
+    final cubit = _cubitOf(tester);
+
+    for (var press = 0; press < 60; press++) {
+      final state = cubit.state;
+      if (state.isPlaying &&
+          state.reveal.showsCard(step: state.step, hasLevel: true) &&
+          !state.reveal.hasNext(
+            step: state.step,
+            verseCount: state.level?.verses.length ?? 0,
+          )) {
+        break;
+      }
+      cubit.forward();
+    }
+    await tester.pump();
+    expect(find.byType(DestinationCard), findsOneWidget);
+    await tester.pump(const Duration(seconds: 1));
+    final beforeFade = tester.getCenter(find.byType(DestinationCard));
+
+    cubit.forward();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 80));
+    final duringFade = tester.getCenter(find.byType(DestinationCard));
+
+    expect(duringFade, beforeFade);
   });
 
   testWidgets('GameJourneyPage_aGuideCallout_isActuallyOnScreen', (

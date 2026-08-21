@@ -203,15 +203,25 @@ class _GameJourneyViewState extends State<_GameJourneyView>
                   ? CrossFadeState.showFirst
                   : CrossFadeState.showSecond,
               alignment: Alignment.center,
+              layoutBuilder:
+                  (topChild, topChildKey, bottomChild, bottomChildKey) =>
+                      SizedBox.expand(
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            KeyedSubtree(
+                              key: bottomChildKey,
+                              child: bottomChild,
+                            ),
+                            KeyedSubtree(key: topChildKey, child: topChild),
+                          ],
+                        ),
+                      ),
               secondChild: const SizedBox.shrink(),
               firstChild: DestinationCard(
                 level: level,
                 destinationLabel: state.currentStop?.label ?? '',
-                verses: state.reveal.revealedVerses(
-                  carriedVerses: [],
-                  levelVerses: level.verses,
-                ),
-                versesSpeaker: cubit.letterWriter,
+                verse: state.reveal.revealedVerse(levelVerses: level.verses),
                 hasMore: state.reveal.hasNext(
                   step: state.step,
                   verseCount: level.verses.length,

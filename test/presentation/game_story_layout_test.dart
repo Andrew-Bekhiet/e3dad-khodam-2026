@@ -40,17 +40,19 @@ const Size _desktop = Size(1440, 900);
 const double _narratorBodySize = 45.0;
 const double _verseSize = 36.0;
 
-/// The level whose verses run longest, found rather than named.
+/// The level with the longest single verse, found rather than named.
 ///
 /// The guard has to follow the script: naming تسالونيكي here would keep
 /// passing on the day someone writes a longer letter, which is the exact
 /// day it is meant to fail.
 GameLevel get _wordiestLevel => PostOfficeScript.levels.reduce(
-  (a, b) => _versesLength(b) > _versesLength(a) ? b : a,
+  (a, b) => _longestVerseLength(b) > _longestVerseLength(a) ? b : a,
 );
 
-int _versesLength(GameLevel level) =>
-    level.verses.fold(0, (sum, verse) => sum + verse.length);
+int _longestVerseLength(GameLevel level) => level.verses.fold(
+  0,
+  (longest, verse) => verse.length > longest ? verse.length : longest,
+);
 
 /// Every beat the script contains, in no particular order.
 List<StoryBeat> get _allBeats => [
@@ -115,8 +117,7 @@ Future<Object?> _renderAt(
   return tester.takeException();
 }
 
-/// Renders [level]'s card fully open — every verse revealed — and returns
-/// whatever it threw.
+/// Renders [level]'s card on its final verse and returns whatever it threw.
 ///
 /// Wrapped up as one call rather than a widget-returning helper so the
 /// card is built where it is used; a bare function handing back a widget
@@ -131,8 +132,7 @@ Future<Object?> _renderCardAt(
   DestinationCard(
     level: level,
     destinationLabel: level.destination.label,
-    verses: level.verses,
-    versesSpeaker: PostOfficeCharacters.paul,
+    verse: level.verses.isEmpty ? null : level.verses.last,
     hasMore: false,
     onReveal: _neverRevealed,
     onAdvance: _neverStepped,
@@ -247,7 +247,7 @@ void main() {
       final level = _wordiestLevel;
       await _renderCardAt(tester, _desktop, level);
 
-      expect(_fontSizeOf(tester, level.verses.first), _verseSize);
+      expect(_fontSizeOf(tester, level.verses.last), _verseSize);
     });
   });
 }

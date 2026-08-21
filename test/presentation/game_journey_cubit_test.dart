@@ -1,6 +1,7 @@
 import 'package:e3dad_khodam_2026/src/data/game/post_office_characters.dart';
 import 'package:e3dad_khodam_2026/src/data/game/post_office_script.dart';
 import 'package:e3dad_khodam_2026/src/data/journey_stops.dart';
+import 'package:e3dad_khodam_2026/src/domain/game/game_level.dart';
 import 'package:e3dad_khodam_2026/src/domain/game/game_sounds.dart';
 import 'package:e3dad_khodam_2026/src/domain/geo_bounds.dart';
 import 'package:e3dad_khodam_2026/src/domain/geo_position.dart';
@@ -12,24 +13,39 @@ import 'package:e3dad_khodam_2026/src/presentation/cubit/game_step.dart';
 import 'package:e3dad_khodam_2026/src/presentation/cubit/sweep_framing.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-
 // The script is a compile-time constant, so a real repository exercises
 // exactly the script the app ships — mocking it would only add
 // indirection, not isolation.
 const _repository = StaticLevelScriptRepository();
 
-extension _RevealStateTestAccess on GameJourneyState {
+extension GameJourneyCubitTest on GameJourneyState {
   bool get isArriving => reveal.isArriving(opensBlank: opensBlank);
   bool get showsCard => reveal.showsCard(step: step, hasLevel: level != null);
   bool get showsSign => reveal.showsSign;
-  List<String> get revealedVerses => reveal.revealedVerses(
-    carriedVerses: carriedVerses,
-    levelVerses: level?.verses ?? const [],
-  );
+  String? get revealedVerse =>
+      reveal.revealedVerse(levelVerses: level?.verses ?? const []);
   bool get hasMoreReveal => reveal.hasNext(
     step: step,
     verseCount: level?.verses.length ?? 0,
   );
+}
+
+GameLevel _levelFor(GameJourneyState state) {
+  final level = state.level;
+  if (level == null) {
+    fail('the current step should have a level');
+  }
+
+  return level;
+}
+
+SweepCameraTarget _sweepFor(GameJourneyState state) {
+  final sweep = state.sweep;
+  if (sweep == null) {
+    fail('the current step should sweep');
+  }
+
+  return sweep;
 }
 
 /// Counts the game's sounds instead of playing them.
@@ -353,10 +369,9 @@ void _sweepTests() {
     addTearDown(cubit.close);
 
     _pressUntil(cubit, () => cubit.state.levelNumber == 3);
-    final sweep = cubit.state.sweep;
+    final sweep = _sweepFor(cubit.state);
 
-    expect(sweep, isNotNull);
-    expect(sweep!.widest.bounds, GameJourneyCamera.sweepFrame);
+    expect(sweep.widest.bounds, GameJourneyCamera.sweepFrame);
     expect(sweep.arrival.center, JourneyStops.corinth.position);
     expect(sweep.arrival.zoom, GameJourneyCamera.arrivalZoom);
     // Coming in is the part worth watching, so it takes longer.
@@ -373,7 +388,7 @@ void _sweepTests() {
 
     // Level ٣ is the move from تسالونيكي to كورنثوس.
     _pressUntil(cubit, () => cubit.state.levelNumber == 3);
-    final bounds = cubit.state.sweep!.widest.bounds;
+    final bounds = _sweepFor(cubit.state).widest.bounds;
 
     expect(_contains(bounds, JourneyStops.thessalonica.position), isTrue);
     expect(_contains(bounds, JourneyStops.corinth.position), isTrue);
@@ -396,7 +411,10 @@ void _sweepTests() {
 
     _pressUntil(cubit, () => cubit.state.levelNumber == 3);
 
-    expect(cubit.state.sweep!.widest.bounds, GameJourneyCamera.sweepFrame);
+    expect(
+      _sweepFor(cubit.state).widest.bounds,
+      GameJourneyCamera.sweepFrame,
+    );
   });
 
   test('GameJourneyCubit_theFirstLevel_sweepsOntoItToo', () {
@@ -585,7 +603,7 @@ void _arrivalRevealTests() {
       // sign raised but nothing quoted yet.
       cubit.forward();
       expect(cubit.state.showsCard, isTrue);
-      expect(cubit.state.revealedVerses, isEmpty);
+      expect(cubit.state.revealedVerse, isNull);
     },
   );
 
@@ -614,19 +632,19 @@ void _arrivalRevealTests() {
     addTearDown(cubit.close);
 
     _pressToLevel(cubit, 1);
-    final verses = cubit.state.level!.verses;
+    final verses = _levelFor(cubit.state).verses;
 
     // The playing step starts with the sign up and nothing quoted yet.
     expect(cubit.state.showsSign, isTrue);
-    expect(cubit.state.revealedVerses, isEmpty);
+    expect(cubit.state.revealedVerse, isNull);
 
     cubit.forward();
-    expect(cubit.state.revealedVerses, [verses.first]);
+    expect(cubit.state.revealedVerse, verses.first);
 
     for (var shown = 1; shown < verses.length; shown++) {
       cubit.forward();
     }
-    expect(cubit.state.revealedVerses, verses);
+    expect(cubit.state.revealedVerse, verses.last);
     expect(cubit.state.hasMoreReveal, isFalse);
   });
 
@@ -661,14 +679,15 @@ void _cardRevealTests() {
     cubit
       ..forward()
       ..forward();
-    expect(cubit.state.revealedVerses, hasLength(2));
+    final verses = _levelFor(cubit.state).verses;
+    expect(cubit.state.revealedVerse, verses[1]);
 
     cubit.backward();
-    expect(cubit.state.revealedVerses, hasLength(1));
+    expect(cubit.state.revealedVerse, verses.first);
     expect(cubit.state.stepIndex, step);
 
     cubit.backward();
-    expect(cubit.state.revealedVerses, isEmpty);
+    expect(cubit.state.revealedVerse, isNull);
     expect(cubit.state.showsSign, isTrue);
     expect(cubit.state.stepIndex, step);
   });
@@ -681,7 +700,7 @@ void _cardRevealTests() {
     addTearDown(cubit.close);
 
     _pressToLevel(cubit, 1);
-    final verses = cubit.state.level!.verses;
+    final verses = _levelFor(cubit.state).verses;
     _pressUntil(cubit, () => !cubit.state.isPlaying);
 
     // Returning to a step already seen should not make the operator
@@ -689,7 +708,7 @@ void _cardRevealTests() {
     cubit.backward();
 
     expect(cubit.state.isPlaying, isTrue);
-    expect(cubit.state.revealedVerses, verses);
+    expect(cubit.state.revealedVerse, verses.last);
   });
 
   test('GameJourneyCubit_aClearedLevel_keepsItsCardOpen', () {
@@ -705,17 +724,10 @@ void _cardRevealTests() {
     // them away to say "well done" and then putting them back is the
     // flicker this is here to prevent.
     expect(cubit.state.showsSign, isTrue);
-    // Everything the city has said so far: this letter's verses, and —
-    // since the first clearance in the script is تسالونيكي's second
-    // letter — the first letter's above them.
-    expect(cubit.state.revealedVerses, [
-      ...cubit.state.carriedVerses,
-      ...cubit.state.level!.verses,
-    ]);
-    expect(cubit.state.revealedVerses, isNotEmpty);
+    expect(cubit.state.revealedVerse, _levelFor(cubit.state).verses.last);
   });
 
-  test('GameJourneyCubit_aSecondLetterToACity_keepsTheFirstLettersVerses', () {
+  test('GameJourneyCubit_aSecondLetterToACity_revealsOnlyItsCurrentVerse', () {
     final cubit = GameJourneyCubit(
       _repository,
       sounds: const SilentGameSounds(),
@@ -723,37 +735,19 @@ void _cardRevealTests() {
     addTearDown(cubit.close);
 
     _pressToLevel(cubit, 1);
-    final first = cubit.state.level!.verses;
     _pressToLevel(cubit, 2);
-    final second = cubit.state.level!.verses;
+    final second = _levelFor(cubit.state).verses;
 
-    // تسالونيكي receives two letters and they are read in one sitting,
-    // so the second letter's verses go below the first letter's rather
-    // than replacing them.
-    expect(cubit.state.revealedVerses, first);
+    expect(cubit.state.revealedVerse, isNull);
 
     for (var verse = 0; verse < second.length; verse++) {
       cubit.forward();
     }
 
-    expect(cubit.state.revealedVerses, [...first, ...second]);
+    expect(cubit.state.revealedVerse, second.last);
   });
 
-  test('GameJourneyCubit_sweepingToANewCity_leavesTheOldVersesBehind', () {
-    final cubit = GameJourneyCubit(
-      _repository,
-      sounds: const SilentGameSounds(),
-    );
-    addTearDown(cubit.close);
-
-    // كورنثوس is a new city, so nothing is carried across the water.
-    _pressToLevel(cubit, 3);
-
-    expect(cubit.state.carriedVerses, isEmpty);
-    expect(cubit.state.revealedVerses, isEmpty);
-  });
-
-  test('GameJourneyCubit_corinth_accumulatesAcrossBothItsLetters', () {
+  test('GameJourneyCubit_sweepingToANewCity_startsWithNoRevealedVerse', () {
     final cubit = GameJourneyCubit(
       _repository,
       sounds: const SilentGameSounds(),
@@ -761,10 +755,21 @@ void _cardRevealTests() {
     addTearDown(cubit.close);
 
     _pressToLevel(cubit, 3);
-    final first = cubit.state.level!.verses;
+
+    expect(cubit.state.revealedVerse, isNull);
+  });
+
+  test('GameJourneyCubit_anotherLetterToTheSameCity_startsWithNoVerse', () {
+    final cubit = GameJourneyCubit(
+      _repository,
+      sounds: const SilentGameSounds(),
+    );
+    addTearDown(cubit.close);
+
+    _pressToLevel(cubit, 3);
     _pressToLevel(cubit, 4);
 
-    expect(cubit.state.carriedVerses, first);
+    expect(cubit.state.revealedVerse, isNull);
   });
 
   test('GameJourneyCubit_anotherLetterToTheSameCity_keepsTheSignUp', () {
@@ -810,7 +815,7 @@ void _cardRevealTests() {
     expect(cubit.state.isPlaying, isFalse);
     cubit.revealNext();
 
-    expect(cubit.state.revealedVerses, isEmpty);
+    expect(cubit.state.revealedVerse, isNull);
     expect(cubit.state.showsSign, isFalse);
   });
 
@@ -824,7 +829,7 @@ void _cardRevealTests() {
     for (var level = 1; level <= cubit.state.levelCount; level++) {
       _pressUntil(cubit, () => cubit.state.levelNumber == level);
       expect(
-        cubit.state.level!.year,
+        _levelFor(cubit.state).year,
         isNotNull,
         reason: 'level $level has no year',
       );

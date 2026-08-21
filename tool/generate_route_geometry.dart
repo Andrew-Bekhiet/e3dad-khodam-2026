@@ -107,7 +107,7 @@ Future<List<GeoPosition>> _fetchRoad(
     for (final point in coordinates)
       GeoPosition(
         latitude: ((point as List)[1] as num).toDouble(),
-        longitude: (point[0] as num).toDouble(),
+        longitude: (point.first as num).toDouble(),
       ),
   ];
 

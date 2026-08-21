@@ -19,8 +19,7 @@ final class JourneyStops {
     position: StopPositions.thessalonica,
   );
 
-  /// كورنثوس — the two Corinthian letters, and where both letters to
-  /// Thessalonica were written from.
+  /// كورنثوس — the two Corinthian letters.
   static const JourneyStop corinth = JourneyStop(
     id: 'corinth',
     label: 'كورنثوس',
@@ -49,25 +48,20 @@ final class JourneyStops {
     position: StopPositions.philippi,
   );
 
-  /// كولوسي — where both فليمون and أهل كولوسي received their letters.
+  /// كولوسي — where أهل كولوسي received their letter. فيلمون lived
+  /// here too, but his letter is addressed to him rather than to a
+  /// church, so its level stands where بولس wrote it.
   static const JourneyStop colossae = JourneyStop(
     id: 'colossae',
     label: 'كولوسي',
     position: StopPositions.colossae,
   );
 
-  /// أفسس — also where تيموثاوس was serving.
+  /// أفسس — the letter to أهل أفسس.
   static const JourneyStop ephesus = JourneyStop(
     id: 'ephesus',
     label: 'أفسس',
     position: StopPositions.ephesus,
-  );
-
-  /// كريت — where تيطس was left to finish the work.
-  static const JourneyStop crete = JourneyStop(
-    id: 'crete',
-    label: 'كريت',
-    position: StopPositions.crete,
   );
 
   /// أورشليم — the letter to العبرانيين, and the only stop the mnemonic

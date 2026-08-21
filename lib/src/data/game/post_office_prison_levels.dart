@@ -5,9 +5,9 @@ import 'package:e3dad_khodam_2026/src/domain/game/story_beat.dart';
 
 /// Levels ٨–١٤ of the post-office game, in the order the play
 /// (`المسرحية.docx`) lists them — فيلمون، كولوسي، افسس، تيطس،
-/// تيمثاوس ١، عبرانيين، تيمثاوس ٢.
+/// تيموثاوس ١، عبرانيين، تيموثاوس ٢.
 ///
-/// تيطس and تيمثاوس ١ are still headings in that document with no scene
+/// تيطس and تيموثاوس ١ are still headings in that document with no scene
 /// written, so they carry a card and nothing else. When the script grows,
 /// its lines and verses drop straight in.
 final class PostOfficePrisonLevels {
@@ -16,7 +16,7 @@ final class PostOfficePrisonLevels {
     id: 'philemon',
     title: 'فيلمون',
     year: LetterYears.philemon,
-    destination: JourneyStops.colossae,
+    destination: JourneyStops.rome,
     verses: [
       '"بُولُسُ، أَسِيرُ يَسُوعَ الْمَسِيحِ، وَتِيمُوثَاوُسُ الأَخُ، إِلَى فِلِيمُونَ الْمَحْبُوبِ وَالْعَامِلِ مَعَنَا."\n(فل 1: 1)',
       '"لاَ كَعَبْدٍ فِي مَا بَعْدُ، بَلْ أَفْضَلَ مِنْ عَبْدٍ: أَخًا مَحْبُوبًا، وَلاَ سِيَّمَا إِلَيَّ، فَكَمْ بِالْحَرِيِّ إِلَيْكَ فِي الْجَسَدِ وَالرَّبِّ جَمِيعًا."\n(فل 1: 16)',
@@ -68,15 +68,15 @@ final class PostOfficePrisonLevels {
     id: 'titus',
     title: 'تيطس',
     year: LetterYears.titus,
-    destination: JourneyStops.crete,
+    destination: JourneyStops.rome,
   );
 
-  /// المرحلة ١٢ — تيمثاوس ١.
+  /// المرحلة ١٢ — تيموثاوس ١.
   static const GameLevel timothy1 = GameLevel(
     id: 'timothy-1',
-    title: 'تيمثاوس ١',
+    title: 'تيموثاوس ١',
     year: LetterYears.timothy1,
-    destination: JourneyStops.ephesus,
+    destination: JourneyStops.rome,
   );
 
   /// المرحلة ١٣ — عبرانيين.
@@ -100,12 +100,12 @@ final class PostOfficePrisonLevels {
     ],
   );
 
-  /// المرحلة ١٤ — تيمثاوس ٢.
+  /// المرحلة ١٤ — تيموثاوس ٢.
   static const GameLevel timothy2 = GameLevel(
     id: 'timothy-2',
-    title: 'تيمثاوس ٢',
+    title: 'تيموثاوس ٢',
     year: LetterYears.timothy2,
-    destination: JourneyStops.ephesus,
+    destination: JourneyStops.rome,
     briefing: [
       StoryBeat.narrator(
         'آخر رسالة وصلت لتيموثاوس مكانتش زي أي رسالة قبلها: معلمه كان في السجن، وأيامه على الأرض قربت تخلص',

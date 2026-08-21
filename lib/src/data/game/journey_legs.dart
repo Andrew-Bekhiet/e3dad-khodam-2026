@@ -8,12 +8,12 @@ import 'package:e3dad_khodam_2026/src/domain/geo_position.dart';
 /// Every leg the post-office journey travels, and how each was travelled.
 ///
 /// Only two of them are land: تسالونيكي → كورنثوس inside Greece, and
-/// كولوسي → أفسس down the Meander valley. Paul made the rest by ship, so
-/// asking a road service for them would draw him on a motorway through
-/// the Balkans — plausible-looking and false. Their charts are picked by
-/// hand instead, tracing the coast and the islands.
+/// كولوسي → أفسس down the Meander valley. The rest are chiefly by ship,
+/// so asking a road service for them would draw the couriers on a motorway
+/// through the Balkans — plausible-looking and false. Their charts are
+/// picked by hand instead, tracing the coast and the islands.
 ///
-/// The two return journeys (كريت → أفسس, أورشليم → أفسس) are not listed:
+/// The two return journeys (فيلبي → رومية, أورشليم → رومية) are not listed:
 /// the same water read backwards is the same route, and
 /// [JourneyLegs.geometryBetween] reverses a known leg rather than
 /// duplicating its chart.
@@ -121,26 +121,32 @@ final class JourneyLegs {
     ],
   );
 
-  /// فيلبي → كولوسي: down from Neapolis through the north Aegean islands
-  /// to أفسس, then inland up the Meander.
-  static const JourneyLeg philippiToColossae = JourneyLeg(
-    from: JourneyStops.philippi,
+  /// رومية → كولوسي: down the Via Appia to Brundisium, across the Ionian,
+  /// through the Aegean to أفسس, then inland along the Meander.
+  static const JourneyLeg romeToColossae = JourneyLeg(
+    from: JourneyStops.rome,
     to: JourneyStops.colossae,
     kind: LegKind.sea,
     chart: [
-      // Neapolis, the port of فيلبي.
-      GeoPosition(latitude: 40.94, longitude: 24.41),
-      // Thasos.
-      GeoPosition(latitude: 40.7, longitude: 24.65),
-      // Lemnos.
-      GeoPosition(latitude: 39.9, longitude: 25.25),
-      // Lesbos.
-      GeoPosition(latitude: 39.1, longitude: 26.3),
-      // Chios.
-      GeoPosition(latitude: 38.35, longitude: 26.05),
-      // أفسس.
+      // Via Appia: Terracina.
+      GeoPosition(latitude: 41.29, longitude: 13.25),
+      // Via Appia: Beneventum.
+      GeoPosition(latitude: 41.13, longitude: 14.78),
+      // Via Appia: Tarentum.
+      GeoPosition(latitude: 40.47, longitude: 17.24),
+      // Brundisium, where the road meets the sea.
+      GeoPosition(latitude: 40.63, longitude: 17.94),
+      // Corfu, at the mouth of the Adriatic.
+      GeoPosition(latitude: 39.62, longitude: 19.92),
+      // Cape Malea, rounding the Peloponnese.
+      GeoPosition(latitude: 36.45, longitude: 23.2),
+      // Naxos, in the Cyclades.
+      GeoPosition(latitude: 37.1, longitude: 25.38),
+      // Samos, off the Ionian coast.
+      GeoPosition(latitude: 37.7, longitude: 26.9),
+      // Ephesus, the port for the Meander valley.
       GeoPosition(latitude: 37.94, longitude: 27.15),
-      // Inland along the Meander.
+      // The Meander valley near Aydın.
       GeoPosition(latitude: 37.85, longitude: 28.3),
     ],
   );
@@ -152,47 +158,58 @@ final class JourneyLegs {
     kind: LegKind.land,
   );
 
-  /// أفسس → كريت: south past Samos and the Dodecanese, then west along
-  /// the Cretan Sea. Also travelled in reverse.
-  static const JourneyLeg ephesusToCrete = JourneyLeg(
+  /// أفسس → رومية: out through the Aegean, round the Peloponnese and
+  /// across the Ionian, then up the Via Appia from Brundisium.
+  static const JourneyLeg ephesusToRome = JourneyLeg(
     from: JourneyStops.ephesus,
-    to: JourneyStops.crete,
+    to: JourneyStops.rome,
     kind: LegKind.sea,
     chart: [
       // Samos.
       GeoPosition(latitude: 37.7, longitude: 26.9),
-      // Kos.
-      GeoPosition(latitude: 36.85, longitude: 27.2),
-      // Karpathos, between Rhodes and Crete.
-      GeoPosition(latitude: 35.7, longitude: 27.15),
-      // The eastern cape of Crete, off Sitia.
-      GeoPosition(latitude: 35.25, longitude: 26.1),
+      // Naxos, in the Cyclades.
+      GeoPosition(latitude: 37.1, longitude: 25.38),
+      // Cape Malea, rounding the Peloponnese.
+      GeoPosition(latitude: 36.45, longitude: 23.2),
+      // Corfu, at the mouth of the Adriatic.
+      GeoPosition(latitude: 39.62, longitude: 19.92),
+      // Brundisium, where the Via Appia begins.
+      GeoPosition(latitude: 40.63, longitude: 17.94),
+      // Via Appia: Tarentum.
+      GeoPosition(latitude: 40.47, longitude: 17.24),
+      // Via Appia: Beneventum.
+      GeoPosition(latitude: 41.13, longitude: 14.78),
+      // Via Appia: Terracina.
+      GeoPosition(latitude: 41.29, longitude: 13.25),
     ],
   );
 
-  /// أفسس → أورشليم: down the Ionian coast, along Lycia, past Cyprus to
-  /// the Syrian shore, then inland from Caesarea. The route of Acts 21.
-  /// Also travelled in reverse.
-  static const JourneyLeg ephesusToJerusalem = JourneyLeg(
-    from: JourneyStops.ephesus,
+  /// رومية → أورشليم: down the Via Appia to Brundisium, around Greece
+  /// and Cyprus to the Levantine coast, then inland from Caesarea.
+  static const JourneyLeg romeToJerusalem = JourneyLeg(
+    from: JourneyStops.rome,
     to: JourneyStops.jerusalem,
     kind: LegKind.sea,
     chart: [
-      // Miletus, where Paul met the Ephesian elders.
-      GeoPosition(latitude: 37.53, longitude: 27.28),
-      // Kos.
-      GeoPosition(latitude: 36.85, longitude: 27.25),
+      // Via Appia: Terracina.
+      GeoPosition(latitude: 41.29, longitude: 13.25),
+      // Via Appia: Beneventum.
+      GeoPosition(latitude: 41.13, longitude: 14.78),
+      // Via Appia: Tarentum.
+      GeoPosition(latitude: 40.47, longitude: 17.24),
+      // Brundisium, where the road meets the sea.
+      GeoPosition(latitude: 40.63, longitude: 17.94),
+      // Corfu, at the mouth of the Adriatic.
+      GeoPosition(latitude: 39.62, longitude: 19.92),
+      // Cape Malea, rounding the Peloponnese.
+      GeoPosition(latitude: 36.45, longitude: 23.2),
       // Rhodes.
       GeoPosition(latitude: 36.2, longitude: 28.05),
-      // Patara, on the Lycian coast.
-      GeoPosition(latitude: 36.27, longitude: 29.32),
       // South of Cyprus.
       GeoPosition(latitude: 34.6, longitude: 33.0),
       // Tyre.
       GeoPosition(latitude: 33.27, longitude: 35.2),
-      // Ptolemais.
-      GeoPosition(latitude: 32.92, longitude: 35.07),
-      // Caesarea, where the ship was left for the road inland.
+      // Caesarea, where the ship is left for the road inland.
       GeoPosition(latitude: 32.5, longitude: 34.89),
     ],
   );
@@ -203,10 +220,10 @@ final class JourneyLegs {
     corinthToGalatia,
     galatiaToRome,
     romeToPhilippi,
-    philippiToColossae,
+    romeToColossae,
     colossaeToEphesus,
-    ephesusToCrete,
-    ephesusToJerusalem,
+    ephesusToRome,
+    romeToJerusalem,
   ];
 
   /// Legs the journey crosses without tracing anything.
@@ -231,8 +248,8 @@ final class JourneyLegs {
   /// when no leg joins them.
   ///
   /// A leg travelled the other way returns the same geometry reversed:
-  /// أفسس → كريت and كريت → أفسس are one stretch of water, and charting
-  /// it twice would only invite the two copies to drift apart.
+  /// رومية → أورشليم and أورشليم → رومية are one stretch of water, and
+  /// charting it twice would only invite the two copies to drift apart.
   static List<GeoPosition>? geometryBetween(String fromId, String toId) {
     final forward = RouteGeometry.byLegId['$fromId>$toId'];
     if (forward != null) {

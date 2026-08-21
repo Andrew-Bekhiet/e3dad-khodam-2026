@@ -36,7 +36,16 @@ void main() {
 
   test('JourneyLegs_everyRoute_runsBetweenItsOwnStops', () {
     for (final (from, to) in _travelledPairs()) {
-      final route = JourneyLegs.geometryBetween(from.id, to.id)!;
+      final route = JourneyLegs.geometryBetween(from.id, to.id);
+
+      expect(
+        route,
+        isNotNull,
+        reason: 'no route charted for ${from.id} > ${to.id}',
+      );
+      if (route == null) {
+        continue;
+      }
 
       expect(route.first, from.position, reason: '${from.id} > ${to.id}');
       expect(route.last, to.position, reason: '${from.id} > ${to.id}');
@@ -45,8 +54,19 @@ void main() {
 
   test('JourneyLegs_everyRoute_hasEnoughPointsToDraw', () {
     for (final leg in JourneyLegs.all) {
+      final route = JourneyLegs.geometryBetween(leg.from.id, leg.to.id);
+
       expect(
-        JourneyLegs.geometryBetween(leg.from.id, leg.to.id)!.length,
+        route,
+        isNotNull,
+        reason: 'no route charted for ${leg.id}',
+      );
+      if (route == null) {
+        continue;
+      }
+
+      expect(
+        route.length,
         greaterThan(1),
         reason: '${leg.id} is not a line',
       );
@@ -54,11 +74,17 @@ void main() {
   });
 
   test('JourneyLegs_aLegTravelledBackwards_isTheSameWaterReversed', () {
-    // كريت is only ever reached from أفسس and left the same way. The
-    // return trip must retrace the outward one exactly, or the trail
-    // will show two different sea lanes between the same two stops.
-    final out = JourneyLegs.geometryBetween('ephesus', 'crete')!;
-    final back = JourneyLegs.geometryBetween('crete', 'ephesus')!;
+    // أورشليم is only ever left for رومية along the same water the party
+    // arrived on. The return trip must retrace the outward one exactly,
+    // or the trail will show two different sea lanes between the stops.
+    final out = JourneyLegs.geometryBetween('rome', 'jerusalem');
+    final back = JourneyLegs.geometryBetween('jerusalem', 'rome');
+
+    expect(out, isNotNull);
+    expect(back, isNotNull);
+    if (out == null || back == null) {
+      return;
+    }
 
     expect(back, out.reversed.toList());
   });

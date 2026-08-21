@@ -7,8 +7,11 @@ import 'package:e3dad_khodam_2026/src/domain/place_kind.dart';
 /// The "جزر" (islands) root category and its leaf children.
 ///
 /// كريت reads its coordinates from `StopPositions`, the app's one
-/// gazetteer, since the journey stops there too. قبرص and مالطة are
-/// cross-only, so they keep their coordinates here.
+/// gazetteer. The journey no longer stops there — تيطس is addressed to a
+/// person, so its level stands in رومية where بولس wrote it — but the
+/// island keeps its gazetteer entry so the cross and any future stop
+/// cannot disagree about where it is. قبرص and مالطة are cross-only, so
+/// they keep their coordinates here.
 final class IslandsBranch {
   static const GeoPosition _islandsPosition = GeoPosition(
     latitude: 36.5,

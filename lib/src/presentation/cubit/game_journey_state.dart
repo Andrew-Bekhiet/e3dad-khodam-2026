@@ -11,62 +11,73 @@ import 'package:equatable/equatable.dart';
 /// of the destination card is open, what the map should draw, and where
 /// the camera should look.
 final class GameJourneyState extends Equatable {
-  /// The step currently showing.
-  final GameStep step;
+  final ({
+    GameStep step,
+    int stepIndex,
+    int stepCount,
+    int levelNumber,
+    int levelCount,
+    bool isLevelOpening,
+  })
+  position;
 
-  /// Position of [step] in the flat list of steps, and the total.
-  final int stepIndex;
-
-  /// How many steps the whole playthrough has.
-  final int stepCount;
+  final ({
+    List<JourneyStop> clearedStops,
+    JourneyStop? currentStop,
+    JourneyStop? nextStop,
+    CourierParty party,
+    MapCameraTarget camera,
+    Duration cameraAnimationDuration,
+  })
+  map;
 
   /// The level being briefed, played or cleared; null in the prologue and
   /// epilogue.
   final GameLevel? level;
 
+  /// How far the destination card is open on this step.
+  final Reveal reveal;
+
+  /// The step currently showing.
+  GameStep get step => position.step;
+
+  /// Position of [step] in the flat list of steps, and the total.
+  int get stepIndex => position.stepIndex;
+
+  /// How many steps the whole playthrough has.
+  int get stepCount => position.stepCount;
+
   /// 1-based number of [level], or 0 when there is none.
-  final int levelNumber;
+  int get levelNumber => position.levelNumber;
 
   /// How many levels the script has.
-  final int levelCount;
+  int get levelCount => position.levelCount;
 
   /// Whether [step] is the first step of its level — the one the sweep
   /// runs on, and the only one that starts with a blank screen.
-  final bool isLevelOpening;
+  bool get isLevelOpening => position.isLevelOpening;
 
   /// Stops already delivered to, drawn as cleared markers.
-  final List<JourneyStop> clearedStops;
+  List<JourneyStop> get clearedStops => map.clearedStops;
 
   /// The stop this step is about, drawn as the highlighted marker.
-  final JourneyStop? currentStop;
+  JourneyStop? get currentStop => map.currentStop;
 
   /// The next stop in the script, drawn dimmed as a preview of where the
   /// journey goes next; null on the last level.
-  final JourneyStop? nextStop;
+  JourneyStop? get nextStop => map.nextStop;
 
   /// Everyone on the move and the one route they share: the stops behind
   /// them, and the geometry to draw for any point of the leg they are
   /// walking now.
-  final CourierParty party;
+  CourierParty get party => map.party;
 
   /// Where the map should be looking.
-  final MapCameraTarget camera;
+  MapCameraTarget get camera => map.camera;
 
   /// How long the map surface should take to animate to [camera]. A
   /// [SweepCameraTarget] ignores this and times its own three parts.
-  final Duration cameraAnimationDuration;
-
-  /// How far the destination card is open on this step.
-  final Reveal reveal;
-
-  /// Verses already read in this destination, from earlier levels
-  /// delivered to the same place.
-  ///
-  /// كورنثوس and تسالونيكي each receive two letters. Their verses belong
-  /// to one city and are read in one sitting, so the second letter's
-  /// verses are added below the first letter's rather than replacing
-  /// them. Cleared only when the journey sweeps to somewhere new.
-  final List<String> carriedVerses;
+  Duration get cameraAnimationDuration => map.cameraAnimationDuration;
 
   /// Whether this step starts with a blank map.
   ///
@@ -98,6 +109,30 @@ final class GameJourneyState extends Equatable {
   /// Whether the map is currently unobstructed.
   bool get isPlaying => step is PlayingStep;
 
+  /// The presenter's position among this level's beats and card reveals.
+  LevelStepProgress? get levelProgress {
+    final currentLevel = level;
+    if (currentLevel == null) {
+      return null;
+    }
+    final briefingCount = currentLevel.briefing.length;
+    final cardCount = 1 + currentLevel.verses.length;
+    final total = briefingCount + cardCount + currentLevel.clearance.length;
+
+    final current = switch (step) {
+      BriefingStep(:final beat) => currentLevel.briefing.indexOf(beat) + 1,
+      PlayingStep() => briefingCount + 1 + reveal.versesShown,
+      ClearanceStep(:final beat) =>
+        briefingCount + cardCount + currentLevel.clearance.indexOf(beat) + 1,
+      OpeningStep() || PrologueStep() || EpilogueStep() => null,
+    };
+    if (current == null) {
+      return null;
+    }
+
+    return LevelStepProgress(current: current, total: total);
+  }
+
   /// Whether there is anything before this step.
   bool get isAtStart => stepIndex <= 0;
 
@@ -106,57 +141,24 @@ final class GameJourneyState extends Equatable {
 
   @override
   List<Object?> get props => [
-    step,
-    stepIndex,
-    stepCount,
+    position,
     level,
-    levelNumber,
-    levelCount,
-    isLevelOpening,
-    clearedStops,
-    currentStop,
-    nextStop,
-    party,
-    camera,
-    cameraAnimationDuration,
+    map,
     reveal,
-    carriedVerses,
   ];
 
   /// Creates a playthrough state.
   const GameJourneyState({
-    required this.step,
-    required this.stepIndex,
-    required this.stepCount,
-    required this.levelNumber,
-    required this.levelCount,
-    required this.isLevelOpening,
-    required this.clearedStops,
-    required this.party,
-    required this.camera,
-    required this.cameraAnimationDuration,
+    required this.position,
+    required this.map,
     this.reveal = const CardHidden(),
-    this.carriedVerses = const [],
     this.level,
-    this.currentStop,
-    this.nextStop,
   });
 
   GameJourneyState copyWith({Reveal? reveal}) => GameJourneyState(
-    step: step,
-    stepIndex: stepIndex,
-    stepCount: stepCount,
+    position: position,
     level: level,
-    levelNumber: levelNumber,
-    levelCount: levelCount,
-    isLevelOpening: isLevelOpening,
-    clearedStops: clearedStops,
-    currentStop: currentStop,
-    nextStop: nextStop,
-    party: party,
-    camera: camera,
-    cameraAnimationDuration: cameraAnimationDuration,
+    map: map,
     reveal: reveal ?? this.reveal,
-    carriedVerses: carriedVerses,
   );
 }

@@ -55,28 +55,39 @@ final class DestinationCard extends StatelessWidget {
 
     return Center(
       child: SafeArea(
-        child: GestureDetector(
-          onTap: hasMore ? onReveal : onAdvance,
-          child: PixelPanel(
-            child: Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: screen.pick(compact: 0, large: 22),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  _Sign(destinationLabel: destinationLabel, year: level.year),
-                  _Verses(verse: verse),
-                  if (hasMore) ...[
-                    const SizedBox(height: 10),
-                    const Center(
-                      widthFactor: 1,
-                      child: ContinueChevron(icon: Icons.keyboard_arrow_down),
-                    ),
-                  ],
-                ],
+        child: ConstrainedBox(
+          constraints: BoxConstraints.loose(MediaQuery.sizeOf(context) * 0.9),
+          child: GestureDetector(
+            onTap: hasMore ? onReveal : onAdvance,
+            child: PixelPanel(
+              child: AnimatedSize(
+                duration: _verseTransitionDuration,
+                child: Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: screen.pick(compact: 0, large: 22),
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      _Sign(
+                        destinationLabel: destinationLabel,
+                        year: level.year,
+                      ),
+                      _Verses(verse: verse),
+                      if (hasMore) ...[
+                        const SizedBox(height: 10),
+                        const Center(
+                          widthFactor: 1,
+                          child: ContinueChevron(
+                            icon: Icons.keyboard_arrow_down,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
               ),
             ),
           ),

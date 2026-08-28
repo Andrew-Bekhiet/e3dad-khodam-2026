@@ -65,12 +65,13 @@ final class GameJourneyCubit extends Cubit<GameJourneyState> {
   void forward() {
     final verseCount = state.level?.verses.length ?? 0;
     if (state.reveal.hasNext(step: state.step, verseCount: verseCount)) {
+      final reveal = state.reveal.next(
+        step: state.step,
+        verseCount: verseCount,
+      );
       emit(
         state.copyWith(
-          reveal: state.reveal.next(
-            step: state.step,
-            verseCount: verseCount,
-          ),
+          reveal: reveal,
         ),
       );
 
@@ -85,7 +86,12 @@ final class GameJourneyCubit extends Cubit<GameJourneyState> {
       opensBlank: state.opensBlank,
     );
     if (state.reveal != floor) {
-      emit(state.copyWith(reveal: state.reveal.previous(floor: floor)));
+      final reveal = state.reveal.previous(floor: floor);
+      emit(
+        state.copyWith(
+          reveal: reveal,
+        ),
+      );
 
       return;
     }
@@ -97,12 +103,13 @@ final class GameJourneyCubit extends Cubit<GameJourneyState> {
   void revealNext() {
     final verseCount = state.level?.verses.length ?? 0;
     if (state.reveal.hasNext(step: state.step, verseCount: verseCount)) {
+      final reveal = state.reveal.next(
+        step: state.step,
+        verseCount: verseCount,
+      );
       emit(
         state.copyWith(
-          reveal: state.reveal.next(
-            step: state.step,
-            verseCount: verseCount,
-          ),
+          reveal: reveal,
         ),
       );
     }
@@ -113,9 +120,10 @@ final class GameJourneyCubit extends Cubit<GameJourneyState> {
       return;
     }
 
+    final reveal = state.reveal.previous(floor: const CardHidden());
     emit(
       state.copyWith(
-        reveal: state.reveal.previous(floor: const CardHidden()),
+        reveal: reveal,
       ),
     );
   }

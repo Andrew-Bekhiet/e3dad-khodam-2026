@@ -10,6 +10,21 @@ sealed class GameStep extends Equatable {
   const GameStep();
 }
 
+/// The presenter's position among the beats and card reveals in one level.
+final class LevelStepProgress extends Equatable {
+  /// One-based position within the level.
+  final int current;
+
+  /// Total positions in the level.
+  final int total;
+
+  @override
+  List<Object?> get props => [current, total];
+
+  /// Creates a level progress position.
+  const LevelStepProgress({required this.current, required this.total});
+}
+
 final class OpeningStep extends GameStep {
   @override
   GamePhase get phase => GamePhase.opening;

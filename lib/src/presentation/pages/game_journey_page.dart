@@ -9,15 +9,15 @@ import 'package:e3dad_khodam_2026/src/presentation/widgets/game/character_portra
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/destination_card.dart';
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/game_map_view.dart';
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/game_screen_size.dart';
+import 'package:e3dad_khodam_2026/src/presentation/widgets/game/game_step_controls.dart';
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/guide_dialogue_panel.dart'
     show GuideDialoguePanel;
-import 'package:e3dad_khodam_2026/src/presentation/widgets/game/pixel_panel.dart';
+import 'package:e3dad_khodam_2026/src/presentation/widgets/game/level_step_counter.dart';
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/story_overlay.dart';
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/sweep_clock.dart';
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/sweep_overlay.dart';
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/sweep_phase.dart';
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/sweep_press_queue.dart';
-import 'package:e3dad_khodam_2026/src/presentation/widgets/map_arrow_controls.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -243,18 +243,21 @@ class _GameJourneyViewState extends State<_GameJourneyView>
               onAdvance: () => _step(cubit, forward: true),
             ),
           ),
+          Positioned(
+            bottom: screen.pick(compact: 16, large: 24),
+            child: SafeArea(
+              child: LevelStepCounter(progress: state.levelProgress),
+            ),
+          ),
           PositionedDirectional(
             end: 12,
             bottom: 12,
             child: SafeArea(
-              child: PixelPanel(
-                padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
-                child: MapArrowControls(
-                  onBackward: () => _step(cubit, forward: false),
-                  onForward: () => _step(cubit, forward: true),
-                  canGoBackward: !state.isAtStart,
-                  canGoForward: !state.isAtEnd,
-                ),
+              child: GameStepControls(
+                onBackward: () => _step(cubit, forward: false),
+                onForward: () => _step(cubit, forward: true),
+                canGoBackward: !state.isAtStart,
+                canGoForward: !state.isAtEnd,
               ),
             ),
           ),

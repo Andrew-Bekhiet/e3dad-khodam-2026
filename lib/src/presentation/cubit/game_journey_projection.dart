@@ -47,38 +47,45 @@ final class GameJourneyProjection {
     final clearedCount = _clearedCount(step, levels.length);
     final level = _levelFor(step, levels);
     final state = GameJourneyState(
-      step: step,
-      stepIndex: index,
-      stepCount: script.steps.length,
-      level: level ?? (step is PrologueStep ? levels.first : null),
-      levelNumber: _levelNumber(step),
-      levelCount: levels.length,
-      isLevelOpening: _isLevelOpening(script, index, transition),
-      clearedStops: _clearedStops(levels, clearedCount, currentStop),
-      currentStop: currentStop,
-      nextStop: _nextStop(levels, mapLevelIndex, step),
-      party: _partyThrough(script, mapLevelIndex, step),
-      camera: _camera.targetFor(
-        script.script,
-        transition,
-        previous: from?.camera,
-        framing: framing,
+      position: (
+        step: step,
+        stepIndex: index,
+        stepCount: script.steps.length,
+        levelNumber: _levelNumber(step),
+        levelCount: levels.length,
+        isLevelOpening: _isLevelOpening(script, index, transition),
       ),
-      cameraAnimationDuration: GameJourneyCamera.stepDuration,
-      carriedVerses: _carriedVerses(levels, step),
+      level: level ?? (step is PrologueStep ? levels.first : null),
+      map: (
+        clearedStops: _clearedStops(levels, clearedCount, currentStop),
+        currentStop: currentStop,
+        nextStop: _nextStop(levels, mapLevelIndex, step),
+        party: _partyThrough(script, mapLevelIndex, step),
+        camera: _camera.targetFor(
+          script.script,
+          transition,
+          previous: from?.camera,
+          framing: framing,
+        ),
+        cameraAnimationDuration: GameJourneyCamera.stepDuration,
+      ),
     );
     if (transition.direction == StepDirection.backward ||
         step is ClearanceStep) {
+      final reveal = Reveal.ceilingFor(
+        step: step,
+        verseCount: level?.verses.length ?? 0,
+      );
+
       return state.copyWith(
-        reveal: Reveal.ceilingFor(
-          step: step,
-          verseCount: level?.verses.length ?? 0,
-        ),
+        reveal: reveal,
       );
     }
 
+    final reveal = Reveal.floorFor(step: step, opensBlank: state.opensBlank);
+
     return state.copyWith(
-      reveal: Reveal.floorFor(step: step, opensBlank: state.opensBlank),
+      reveal: reveal,
     );
   }
 
@@ -92,8 +99,8 @@ final class GameJourneyProjection {
     EpilogueStep() => levelCount,
     ClearanceStep(:final levelIndex) => levelIndex + 1,
     OpeningStep() || PrologueStep() => 0,
-    BriefingStep(:final levelIndex) || PlayingStep(:final levelIndex) =>
-      levelIndex,
+    BriefingStep(:final levelIndex) ||
+    PlayingStep(:final levelIndex) => levelIndex,
   };
 
   GameLevel? _levelFor(GameStep step, List<GameLevel> levels) => switch (step) {
@@ -141,16 +148,6 @@ final class GameJourneyProjection {
       script.script.levels[levelIndex].destination,
     EpilogueStep() => null,
   };
-
-  List<String> _carriedVerses(List<GameLevel> levels, GameStep step) =>
-      switch (step) {
-        LevelStep(:final levelIndex) => [
-          for (final level in levels.take(levelIndex))
-            if (level.destination.id == levels[levelIndex].destination.id)
-              ...level.verses,
-        ],
-        OpeningStep() || PrologueStep() || EpilogueStep() => const [],
-      };
 
   List<JourneyStop> _clearedStops(
     List<GameLevel> levels,

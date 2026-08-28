@@ -1,3 +1,4 @@
+import 'package:e3dad_khodam_2026/src/app/arabic_numerals.dart';
 import 'package:e3dad_khodam_2026/src/data/game/post_office_script.dart';
 import 'package:e3dad_khodam_2026/src/domain/game/game_sounds.dart';
 import 'package:e3dad_khodam_2026/src/domain/game/level_script_repository.dart';
@@ -5,11 +6,14 @@ import 'package:e3dad_khodam_2026/src/domain/game/story_beat.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/map_surface_builder.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/map_surface_spec.dart';
 import 'package:e3dad_khodam_2026/src/presentation/cubit/game_journey_cubit.dart';
+import 'package:e3dad_khodam_2026/src/presentation/cubit/game_step.dart';
 import 'package:e3dad_khodam_2026/src/presentation/pages/game_journey_page.dart';
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/character_portrait.dart';
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/destination_card.dart';
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/guide_callout.dart';
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/guide_dialogue_panel.dart';
+import 'package:e3dad_khodam_2026/src/presentation/widgets/game/level_step_counter.dart';
+import 'package:e3dad_khodam_2026/src/presentation/widgets/game/platform_view_interceptor.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -19,16 +23,16 @@ import 'package:flutter_test/flutter_test.dart';
 ///
 /// A tear-off of a widget constructor, per `MapSurfaceBuilder`'s own doc:
 /// a bare function returning a widget is flagged by the linter.
-final class _BlankSurface extends StatelessWidget {
+final class GameJourneyPageTest extends StatelessWidget {
   final MapSurfaceSpec spec;
 
-  const _BlankSurface(this.spec);
+  const GameJourneyPageTest(this.spec);
 
   @override
   Widget build(BuildContext context) => const SizedBox.expand();
 }
 
-const MapSurfaceBuilder _blankSurface = _BlankSurface.new;
+const MapSurfaceBuilder _blankSurface = GameJourneyPageTest.new;
 
 /// How many times the map has been handed a spec to draw.
 ///
@@ -37,11 +41,20 @@ const MapSurfaceBuilder _blankSurface = _BlankSurface.new;
 /// for it.
 int _surfaceBuilds = 0;
 
-Widget _countingSurface(MapSurfaceSpec spec) {
-  _surfaceBuilds++;
+final class _CountingSurface extends StatelessWidget {
+  final MapSurfaceSpec spec;
 
-  return _BlankSurface(spec);
+  const _CountingSurface(this.spec);
+
+  @override
+  Widget build(BuildContext context) {
+    _surfaceBuilds++;
+
+    return const SizedBox.expand();
+  }
 }
+
+const MapSurfaceBuilder _countingSurface = _CountingSurface.new;
 
 /// The game screen with its dependencies stubbed.
 final class _GameUnderTest extends StatelessWidget {
@@ -78,7 +91,9 @@ GameJourneyCubit _cubitOf(WidgetTester tester) =>
 /// is a platform view that hit-tests inside the renderer, so the seam it
 /// reports through is the thing to drive.
 void _tapTheMap(WidgetTester tester) {
-  final spec = tester.widget<_BlankSurface>(find.byType(_BlankSurface)).spec;
+  final spec = tester
+      .widget<GameJourneyPageTest>(find.byType(GameJourneyPageTest))
+      .spec;
   expect(spec.onSurfaceTap, isNotNull, reason: 'the map should take taps');
   spec.onSurfaceTap?.call();
 }
@@ -100,6 +115,16 @@ void _advanceUntil(WidgetTester tester, BeatEmphasis emphasis) {
 double _appBarHeight(WidgetTester tester) =>
     tester.widget<AppBar>(find.byType(AppBar)).toolbarHeight ?? kToolbarHeight;
 
+String _progressText(GameJourneyCubit cubit) {
+  final progress = cubit.state.levelProgress;
+  if (progress == null) {
+    fail('the current state should be inside a level');
+  }
+
+  return '${ArabicNumerals.format(progress.current)} / '
+      '${ArabicNumerals.format(progress.total)}';
+}
+
 /// Runs the app bar's growth all the way to its end.
 ///
 /// Written out rather than `pumpAndSettle`: the card's chevron pulses on
@@ -114,6 +139,14 @@ Future<void> _growTheBar(WidgetTester tester) async {
 }
 
 void main() {
+  _openingTests();
+  _cardTests();
+  _guideTests();
+  _mapTapTests();
+  _presenterControlTests();
+}
+
+void _openingTests() {
   testWidgets('GameJourneyPage_theOpeningShot_saysNothing', (tester) async {
     await tester.pumpWidget(const _GameUnderTest());
     await tester.pump();
@@ -139,7 +172,9 @@ void main() {
     expect(tester.takeException(), isNull);
     expect(find.byType(GuideDialoguePanel), findsOneWidget);
   });
+}
 
+void _cardTests() {
   testWidgets('GameJourneyPage_theCardFadesFromTheMiddleOfTheMap', (
     tester,
   ) async {
@@ -173,7 +208,9 @@ void main() {
 
     expect(duringFade, beforeFade);
   });
+}
 
+void _guideTests() {
   testWidgets('GameJourneyPage_aGuideCallout_isActuallyOnScreen', (
     tester,
   ) async {
@@ -332,7 +369,9 @@ void main() {
       );
     });
   });
+}
 
+void _mapTapTests() {
   group('a tap on the map steps the script', () {
     testWidgets('from the opening shot, which nothing else covers', (
       tester,
@@ -368,7 +407,7 @@ void main() {
       await tester.pump();
       final cubit = _cubitOf(tester);
       final spec = tester
-          .widget<_BlankSurface>(find.byType(_BlankSurface))
+          .widget<GameJourneyPageTest>(find.byType(GameJourneyPageTest))
           .spec;
       final stop = cubit.state.currentStop;
       if (stop == null) {
@@ -384,5 +423,50 @@ void main() {
       expect(cubit.state.stepIndex, before + 1);
       expect(tester.takeException(), isNull);
     });
+  });
+}
+
+void _presenterControlTests() {
+  testWidgets('GameJourneyPage_thePresenterCounter_tracksTheCurrentLevel', (
+    tester,
+  ) async {
+    await tester.pumpWidget(const _GameUnderTest());
+    final cubit = _cubitOf(tester);
+    while (cubit.state.step is! BriefingStep) {
+      cubit.forward();
+    }
+    await tester.pump();
+    final start = _progressText(cubit);
+
+    expect(find.text(start), findsOneWidget);
+    expect(find.byType(LevelStepCounter), findsOneWidget);
+
+    cubit.forward();
+    await tester.pump();
+    final next = _progressText(cubit);
+    expect(next, isNot(start));
+    expect(find.text(next), findsOneWidget);
+
+    cubit.backward();
+    await tester.pump();
+    expect(_progressText(cubit), start);
+    expect(find.text(start), findsOneWidget);
+  });
+
+  testWidgets('GameJourneyPage_theBackwardArrow_movesOnceBackward', (
+    tester,
+  ) async {
+    await tester.pumpWidget(const _GameUnderTest());
+    final cubit = _cubitOf(tester);
+    cubit.forward();
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 5));
+    final before = cubit.state.stepIndex;
+
+    await tester.tap(find.byIcon(Icons.arrow_left));
+    await tester.pump();
+
+    expect(cubit.state.stepIndex, before - 1);
+    expect(find.byType(PlatformViewInterceptor), findsOneWidget);
   });
 }

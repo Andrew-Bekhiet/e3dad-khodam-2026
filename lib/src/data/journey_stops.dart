@@ -64,6 +64,13 @@ final class JourneyStops {
     position: StopPositions.ephesus,
   );
 
+  /// كريت.
+  static const JourneyStop crete = JourneyStop(
+    id: 'crete',
+    label: 'كريت',
+    position: StopPositions.crete,
+  );
+
   /// أورشليم — the letter to العبرانيين, and the only stop the mnemonic
   /// cross never lists.
   static const JourneyStop jerusalem = JourneyStop(

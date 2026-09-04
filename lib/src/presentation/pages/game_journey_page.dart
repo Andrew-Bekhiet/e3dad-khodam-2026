@@ -1,11 +1,9 @@
 import 'package:e3dad_khodam_2026/src/app/app_strings.dart';
 import 'package:e3dad_khodam_2026/src/domain/game/game_sounds.dart';
 import 'package:e3dad_khodam_2026/src/domain/game/level_script_repository.dart';
-import 'package:e3dad_khodam_2026/src/domain/game/story_beat.dart';
 import 'package:e3dad_khodam_2026/src/presentation/cubit/game_journey_cubit.dart';
 import 'package:e3dad_khodam_2026/src/presentation/cubit/game_journey_state.dart';
 import 'package:e3dad_khodam_2026/src/presentation/cubit/sweep_framing.dart';
-import 'package:e3dad_khodam_2026/src/presentation/widgets/game/character_portrait.dart';
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/destination_card.dart';
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/game_map_view.dart';
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/game_screen_size.dart';
@@ -53,31 +51,6 @@ final class _GameJourneyView extends StatefulWidget {
 
 class _GameJourneyViewState extends State<_GameJourneyView>
     with SingleTickerProviderStateMixin {
-  /// How big the guide's portrait in the app bar grows while she is
-  /// speaking.
-  ///
-  /// She is only given the larger size on a big screen and only while one
-  /// of her beats is up, because the height comes out of the map and out
-  /// of whatever else is on screen.
-  static const double _guideAvatarCompact = 40.0;
-  static const double _guideAvatarLarge = 120.0;
-
-  /// Clearance above and below the portrait. The app bar is sized from
-  /// the portrait plus this, so the portrait is the only number to
-  /// change when tuning how big she should be — set it alone and the bar
-  /// grows to hold her instead of clipping her.
-  ///
-  /// At [_guideAvatarCompact] the sum is exactly `kToolbarHeight`.
-  static const double _guideAvatarClearance = 16.0;
-
-  /// How long the bar takes to grow around her and settle back.
-  ///
-  /// Short on purpose: this is chrome moving out of the way of a line
-  /// somebody is about to read, not something to watch. `CharacterPortrait`
-  /// eases its own frame on top of this, so the face lands a beat after
-  /// the bar rather than snapping with it.
-  static const Duration _guideAvatarGrow = Duration(milliseconds: 100);
-
   final FocusNode _focusNode = FocusNode(debugLabel: 'game-journey-keys');
 
   /// Runs from 0 to 1 across a whole sweep. Drives the couriers walking,
@@ -125,16 +98,7 @@ class _GameJourneyViewState extends State<_GameJourneyView>
       large: SweepFraming.basin,
     );
     final state = cubit.state;
-    final beat = state.beat;
-    final guideIsSpeaking = beat != null && beat.speaker == StorySpeaker.guide;
-    final guideAvatarSize = guideIsSpeaking
-        ? screen.pick(compact: _guideAvatarCompact, large: _guideAvatarLarge)
-        : _guideAvatarCompact;
 
-    // Built outside the builder below so the same widget instance is
-    // handed back on every frame of the bar's growth: the element sees an
-    // identical child and skips the whole subtree, which is what keeps the
-    // map off a 200ms rebuild loop.
     final body = Focus(
       focusNode: _focusNode,
       autofocus: true,
@@ -223,40 +187,19 @@ class _GameJourneyViewState extends State<_GameJourneyView>
     return BlocListener<GameJourneyCubit, GameJourneyState>(
       listenWhen: (previous, current) => previous.camera != current.camera,
       listener: (context, state) => _onCameraChanged(state),
-      // The whole `Scaffold` is rebuilt per frame, not just the bar: the
-      // bar's height is `PreferredSize`'s, and `Scaffold` only re-reads
-      // that when it is handed a new one. Animating inside the bar would
-      // grow the portrait against a body that jumps.
-      child: TweenAnimationBuilder<double>(
-        tween: Tween(end: guideAvatarSize),
-        duration: _guideAvatarGrow,
-        curve: Curves.easeOutCubic,
-        builder: (context, size, child) => Scaffold(
-          appBar: PreferredSize(
-            preferredSize: Size.fromHeight(size + _guideAvatarClearance),
-            child: AppBar(
-              centerTitle: false,
-              toolbarHeight: size + _guideAvatarClearance,
-              title: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  CharacterPortrait(character: cubit.guide, size: size),
-                  const SizedBox(width: 12),
-                  const Flexible(child: Text(AppStrings.gameTitle)),
-                ],
-              ),
-              actions: [
-                IconButton(
-                  icon: const Icon(Icons.replay),
-                  tooltip: AppStrings.restartTooltip,
-                  onPressed: cubit.restart,
-                ),
-              ],
+      child: Scaffold(
+        appBar: AppBar(
+          centerTitle: false,
+          title: const Text(AppStrings.gameTitle),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.replay),
+              tooltip: AppStrings.restartTooltip,
+              onPressed: cubit.restart,
             ),
-          ),
-          body: child,
+          ],
         ),
-        child: body,
+        body: body,
       ),
     );
   }

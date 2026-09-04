@@ -4,7 +4,6 @@ import 'package:e3dad_khodam_2026/src/data/game/post_office_script.dart';
 import 'package:e3dad_khodam_2026/src/domain/game/game_level.dart';
 import 'package:e3dad_khodam_2026/src/domain/game/story_beat.dart';
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/destination_card.dart';
-import 'package:e3dad_khodam_2026/src/presentation/widgets/game/guide_callout.dart';
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/guide_dialogue_panel.dart';
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/narrator_card.dart';
 import 'package:flutter/material.dart';
@@ -64,18 +63,14 @@ List<StoryBeat> get _allBeats => [
   ],
 ];
 
-/// The longest thing [speaker] says anywhere in the script.
+/// The longest thing the narrator says anywhere in the script.
 ///
-/// Split by speaker because the panels are not interchangeable: feeding
-/// the guide's longest line to the narrator's card measures a pairing the
-/// game never produces, and the narrator's card is the tighter of the
-/// two.
-StoryBeat _longestBeatBy(StorySpeaker speaker) => _allBeats
-    .where((beat) => beat.speaker == speaker)
+/// Only the narrator's text is ever painted — the guide's line is spoken
+/// live on stage — so the narrator is the only speaker whose card needs
+/// an overflow guard driven by line length.
+StoryBeat get _longestNarratorBeat => _allBeats
+    .where((beat) => beat.speaker == StorySpeaker.narrator)
     .reduce((a, b) => b.text.length > a.text.length ? b : a);
-
-StoryBeat get _longestGuideBeat => _longestBeatBy(StorySpeaker.guide);
-StoryBeat get _longestNarratorBeat => _longestBeatBy(StorySpeaker.narrator);
 
 /// Renders [child] on a screen of [size] and returns whatever it threw.
 ///
@@ -131,7 +126,6 @@ Future<Object?> _renderCardAt(
   size,
   DestinationCard(
     level: level,
-    destinationLabel: level.destination.label,
     verse: level.verses.isEmpty ? null : level.verses.last,
     hasMore: false,
     onReveal: _neverRevealed,
@@ -202,24 +196,27 @@ void main() {
       expect(error, isNull);
     });
 
-    testWidgets('the guide dialogue panel', (tester) async {
+    testWidgets('the guide dialogue panel, held upright', (tester) async {
       final error = await _renderAt(
         tester,
-        _phoneLandscape,
-        GuideDialoguePanel(
+        _phonePortrait,
+        const GuideDialoguePanel(
           character: PostOfficeCharacters.guide,
-          beat: _longestGuideBeat,
+          beat: StoryBeat.guide('نص لا يُرسم على الشاشة'),
         ),
       );
 
       expect(error, isNull);
     });
 
-    testWidgets('the guide callout', (tester) async {
+    testWidgets('the guide dialogue panel, on its side', (tester) async {
       final error = await _renderAt(
         tester,
-        _phonePortrait,
-        GuideCallout(beat: _longestGuideBeat),
+        _phoneLandscape,
+        const GuideDialoguePanel(
+          character: PostOfficeCharacters.guide,
+          beat: StoryBeat.guide('نص لا يُرسم على الشاشة'),
+        ),
       );
 
       expect(error, isNull);

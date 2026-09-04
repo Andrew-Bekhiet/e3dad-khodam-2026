@@ -2,28 +2,31 @@ import 'package:e3dad_khodam_2026/src/domain/game/story_beat.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  test('StoryBeat_aGuideLine_speaksFromTheAppBarUnlessToldOtherwise', () {
+  test('StoryBeat_theGuide_keepsHerTextEvenThoughItIsNeverPainted', () {
     const beat = StoryBeat.guide('نبدأ من تسالونيكي');
 
-    expect(beat.emphasis, BeatEmphasis.callout);
+    expect(beat.text, 'نبدأ من تسالونيكي');
+    expect(beat.speaker, StorySpeaker.guide);
   });
 
-  test('StoryBeat_aGuideLineGivenThePanel_keepsIt', () {
-    const beat = StoryBeat.guide('طويل', emphasis: BeatEmphasis.panel);
-
-    expect(beat.emphasis, BeatEmphasis.panel);
-  });
-
-  test('StoryBeat_theNarrator_isAlwaysStagedAsACutscene', () {
+  test('StoryBeat_theNarrator_keepsHerText', () {
     const beat = StoryBeat.narrator('في تلك الأيام');
 
-    expect(beat.emphasis, BeatEmphasis.panel);
+    expect(beat.text, 'في تلك الأيام');
+    expect(beat.speaker, StorySpeaker.narrator);
   });
 
-  test('StoryBeat_twoLinesDifferingOnlyInEmphasis_areNotEqual', () {
-    const callout = StoryBeat.guide('نفس الكلام');
-    const panel = StoryBeat.guide('نفس الكلام', emphasis: BeatEmphasis.panel);
+  test('StoryBeat_sameSpeakerAndText_areEqual', () {
+    const first = StoryBeat.guide('نفس الكلام');
+    const second = StoryBeat.guide('نفس الكلام');
 
-    expect(callout, isNot(panel));
+    expect(first, second);
+  });
+
+  test('StoryBeat_theSameLineFromDifferentSpeakers_areNotEqual', () {
+    const guide = StoryBeat.guide('نفس الكلام');
+    const narrator = StoryBeat.narrator('نفس الكلام');
+
+    expect(guide, isNot(narrator));
   });
 }

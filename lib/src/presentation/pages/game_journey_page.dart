@@ -10,8 +10,6 @@ import 'package:e3dad_khodam_2026/src/presentation/widgets/game/destination_card
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/game_map_view.dart';
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/game_screen_size.dart';
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/game_step_controls.dart';
-import 'package:e3dad_khodam_2026/src/presentation/widgets/game/guide_dialogue_panel.dart'
-    show GuideDialoguePanel;
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/level_step_counter.dart';
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/story_overlay.dart';
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/sweep_clock.dart';
@@ -55,17 +53,12 @@ final class _GameJourneyView extends StatefulWidget {
 
 class _GameJourneyViewState extends State<_GameJourneyView>
     with SingleTickerProviderStateMixin {
-  /// Edge of the guide's portrait in the app bar. `GuideCallout` points
-  /// its tail at the middle of it, whichever size it is: the tail is
-  /// measured off the laid-out box rather than assumed, so it follows
-  /// this on its own.
+  /// How big the guide's portrait in the app bar grows while she is
+  /// speaking.
   ///
-  /// She is only given the larger size on a big screen and only while a
-  /// bubble is hanging off her, because the height comes out of the map
-  /// and out of whatever else is on screen. A `BeatEmphasis.panel` beat
-  /// is deliberately not counted: that panel carries its own portrait at
-  /// [GuideDialoguePanel] size, so growing the bar behind its scrim would
-  /// cost height to show a second, smaller copy of the same face.
+  /// She is only given the larger size on a big screen and only while one
+  /// of her beats is up, because the height comes out of the map and out
+  /// of whatever else is on screen.
   static const double _guideAvatarCompact = 40.0;
   static const double _guideAvatarLarge = 120.0;
 
@@ -87,23 +80,6 @@ class _GameJourneyViewState extends State<_GameJourneyView>
 
   final FocusNode _focusNode = FocusNode(debugLabel: 'game-journey-keys');
 
-  /// Finds the guide's portrait so her bubble's tail can point at it.
-  ///
-  /// Measured rather than linked: a `LayerLink` cannot reach from an app
-  /// bar into a body, because `Scaffold` paints the body first and the
-  /// bar over it, and a follower painted before its leader trips a
-  /// framework assertion that takes the whole overlay off the screen.
-  final GlobalKey _guideAvatarKey = GlobalKey();
-
-  /// Where that portrait sits, in global x.
-  ///
-  /// A notifier rather than a field behind `setState`, because it is
-  /// re-read on every frame the bar is growing. Calling `setState` for it
-  /// would rebuild this whole widget — and with it the map, which is a
-  /// platform view being handed a fresh spec sixty times a second for a
-  /// number only the bubble's tail cares about.
-  final ValueNotifier<double?> _guideAnchorX = ValueNotifier(null);
-
   /// Runs from 0 to 1 across a whole sweep. Drives the couriers walking,
   /// their trail drawing itself behind them, and the streaks over the
   /// map — all three are the same movement, so they share one clock.
@@ -117,7 +93,6 @@ class _GameJourneyViewState extends State<_GameJourneyView>
   @override
   void initState() {
     super.initState();
-    _reaimTheTail();
     _sweepClock.addListener(_playSoundForSweepPhase);
   }
 
@@ -139,15 +114,6 @@ class _GameJourneyViewState extends State<_GameJourneyView>
     }
   }
 
-  /// Re-reads where the portrait is after the frame that moved it.
-  ///
-  /// She slides as the bar grows, so the tail has to be re-aimed for as
-  /// long as that lasts — which is why the answer lives in a notifier
-  /// rather than in this widget's state.
-  void _reaimTheTail() {
-    WidgetsBinding.instance.addPostFrameCallback((_) => _findGuideAvatar());
-  }
-
   @override
   Widget build(BuildContext context) {
     final cubit = context.watch<GameJourneyCubit>();
@@ -160,11 +126,8 @@ class _GameJourneyViewState extends State<_GameJourneyView>
     );
     final state = cubit.state;
     final beat = state.beat;
-    final guideHasABubbleUp =
-        beat != null &&
-        beat.speaker == StorySpeaker.guide &&
-        beat.emphasis == BeatEmphasis.callout;
-    final guideAvatarSize = guideHasABubbleUp
+    final guideIsSpeaking = beat != null && beat.speaker == StorySpeaker.guide;
+    final guideAvatarSize = guideIsSpeaking
         ? screen.pick(compact: _guideAvatarCompact, large: _guideAvatarLarge)
         : _guideAvatarCompact;
 
@@ -220,7 +183,6 @@ class _GameJourneyViewState extends State<_GameJourneyView>
               secondChild: const SizedBox.shrink(),
               firstChild: DestinationCard(
                 level: level,
-                destinationLabel: state.currentStop?.label ?? '',
                 verse: state.reveal.revealedVerse(levelVerses: level.verses),
                 hasMore: state.reveal.hasNext(
                   step: state.step,
@@ -230,18 +192,11 @@ class _GameJourneyViewState extends State<_GameJourneyView>
                 onAdvance: () => _step(cubit, forward: true),
               ),
             ),
-          // Listening rather than reading, so that re-aiming the tail
-          // rebuilds the bubble alone and leaves the map beneath it
-          // untouched.
-          ValueListenableBuilder<double?>(
-            valueListenable: _guideAnchorX,
-            builder: (context, anchorX, _) => StoryOverlay(
-              guide: cubit.guide,
-              guideAnchorX: anchorX,
-              narrator: cubit.narrator,
-              beat: state.beat,
-              onAdvance: () => _step(cubit, forward: true),
-            ),
+          StoryOverlay(
+            guide: cubit.guide,
+            narrator: cubit.narrator,
+            beat: state.beat,
+            onAdvance: () => _step(cubit, forward: true),
           ),
           Positioned(
             bottom: screen.pick(compact: 16, large: 24),
@@ -276,39 +231,31 @@ class _GameJourneyViewState extends State<_GameJourneyView>
         tween: Tween(end: guideAvatarSize),
         duration: _guideAvatarGrow,
         curve: Curves.easeOutCubic,
-        builder: (context, size, child) {
-          _reaimTheTail();
-
-          return Scaffold(
-            appBar: PreferredSize(
-              preferredSize: Size.fromHeight(size + _guideAvatarClearance),
-              child: AppBar(
-                centerTitle: false,
-                toolbarHeight: size + _guideAvatarClearance,
-                title: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    CharacterPortrait(
-                      key: _guideAvatarKey,
-                      character: cubit.guide,
-                      size: size,
-                    ),
-                    const SizedBox(width: 12),
-                    const Flexible(child: Text(AppStrings.gameTitle)),
-                  ],
-                ),
-                actions: [
-                  IconButton(
-                    icon: const Icon(Icons.replay),
-                    tooltip: AppStrings.restartTooltip,
-                    onPressed: cubit.restart,
-                  ),
+        builder: (context, size, child) => Scaffold(
+          appBar: PreferredSize(
+            preferredSize: Size.fromHeight(size + _guideAvatarClearance),
+            child: AppBar(
+              centerTitle: false,
+              toolbarHeight: size + _guideAvatarClearance,
+              title: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CharacterPortrait(character: cubit.guide, size: size),
+                  const SizedBox(width: 12),
+                  const Flexible(child: Text(AppStrings.gameTitle)),
                 ],
               ),
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.replay),
+                  tooltip: AppStrings.restartTooltip,
+                  onPressed: cubit.restart,
+                ),
+              ],
             ),
-            body: child,
-          );
-        },
+          ),
+          body: child,
+        ),
         child: body,
       ),
     );
@@ -322,21 +269,7 @@ class _GameJourneyViewState extends State<_GameJourneyView>
       ..dispose();
     _sweep.dispose();
     _focusNode.dispose();
-    _guideAnchorX.dispose();
     super.dispose();
-  }
-
-  /// Notes where the guide's portrait ended up, so her bubble can point
-  /// at it.
-  void _findGuideAvatar() {
-    if (!mounted) {
-      return;
-    }
-    final box = _guideAvatarKey.currentContext?.findRenderObject();
-    if (box is! RenderBox || !box.hasSize) {
-      return;
-    }
-    _guideAnchorX.value = box.localToGlobal(box.size.center(Offset.zero)).dx;
   }
 
   /// Starts the sweep clock when the camera is given one to fly, and

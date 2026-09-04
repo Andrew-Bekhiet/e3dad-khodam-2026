@@ -21,9 +21,6 @@ final class DestinationCard extends StatelessWidget {
   /// The level being played.
   final GameLevel level;
 
-  /// The name of the destination the level is delivered to.
-  final String destinationLabel;
-
   /// The verse currently revealed, if any.
   final String? verse;
 
@@ -41,7 +38,6 @@ final class DestinationCard extends StatelessWidget {
   /// Creates the card.
   const DestinationCard({
     required this.level,
-    required this.destinationLabel,
     required this.verse,
     required this.hasMore,
     required this.onReveal,
@@ -72,7 +68,7 @@ final class DestinationCard extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       _Sign(
-                        destinationLabel: destinationLabel,
+                        signLabel: level.signLabel,
                         year: level.year,
                       ),
                       _Verses(verse: verse),
@@ -97,16 +93,18 @@ final class DestinationCard extends StatelessWidget {
   }
 }
 
-/// The لافتة: where the letter was delivered, and when it was written.
+/// The لافتة: the letter's own name, and when it was written.
 ///
 /// The play stages exactly this — `لافتة كبيرة مكتوب عليها تسالونيكي 52م`
-/// — so it is the one thing on screen naming the place, and the top panel
-/// it replaced carried a progress bar nobody needed.
+/// — so it is the one thing on screen naming the letter, and the top panel
+/// it replaced carried a progress bar nobody needed. Named for the letter,
+/// not the destination: a prison letter's sign still reads its own name
+/// even though its level stands at رومية.
 final class _Sign extends StatelessWidget {
-  final String destinationLabel;
+  final String signLabel;
   final int? year;
   const _Sign({
-    required this.destinationLabel,
+    required this.signLabel,
     required this.year,
   });
 
@@ -119,7 +117,7 @@ final class _Sign extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(
-          destinationLabel,
+          signLabel,
           textAlign: TextAlign.center,
           style: screen
               .pick(compact: text.headlineSmall, large: text.displaySmall)

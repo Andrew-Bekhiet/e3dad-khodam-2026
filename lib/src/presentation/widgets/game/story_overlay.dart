@@ -1,7 +1,6 @@
 import 'package:e3dad_khodam_2026/src/domain/game/game_character.dart';
 import 'package:e3dad_khodam_2026/src/domain/game/story_beat.dart';
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/game_palette.dart';
-import 'package:e3dad_khodam_2026/src/presentation/widgets/game/guide_callout.dart';
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/guide_dialogue_panel.dart';
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/narrator_card.dart';
 import 'package:flutter/widgets.dart';
@@ -33,10 +32,6 @@ final class StoryOverlay extends StatelessWidget {
   /// The character shown for [StorySpeaker.guide] beats.
   final GameCharacter guide;
 
-  /// Where the guide's portrait sits, so her bubble's tail can point at
-  /// it. Null until she has been measured.
-  final double? guideAnchorX;
-
   /// The character shown for [StorySpeaker.narrator] beats.
   final GameCharacter narrator;
 
@@ -52,7 +47,6 @@ final class StoryOverlay extends StatelessWidget {
     required this.narrator,
     required this.onAdvance,
     this.beat,
-    this.guideAnchorX,
     super.key,
   });
 
@@ -64,7 +58,7 @@ final class StoryOverlay extends StatelessWidget {
     child: switch (beat) {
       null => const SizedBox.shrink(),
       final current => GestureDetector(
-        key: ValueKey('${current.speaker}:${current.text}'),
+        key: ValueKey(current),
         behavior: HitTestBehavior.opaque,
         onTap: onAdvance,
         // Both voices dim the map behind them: a beat is something to
@@ -72,19 +66,10 @@ final class StoryOverlay extends StatelessWidget {
         child: ColoredBox(
           color: GamePalette.scrim,
           child: switch (current.speaker) {
-            // The guide is already on screen in the app bar, so most of
-            // what she says arrives as a bubble from her. The panel is
-            // for the lines that earn the whole screen.
-            StorySpeaker.guide => switch (current.emphasis) {
-              BeatEmphasis.callout => GuideCallout(
-                beat: current,
-                tailCentreX: guideAnchorX,
-              ),
-              BeatEmphasis.panel => GuideDialoguePanel(
-                character: guide,
-                beat: current,
-              ),
-            },
+            StorySpeaker.guide => GuideDialoguePanel(
+              character: guide,
+              beat: current,
+            ),
             StorySpeaker.narrator => NarratorCard(
               character: narrator,
               beat: current,

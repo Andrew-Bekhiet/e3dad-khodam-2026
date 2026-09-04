@@ -8,9 +8,7 @@ import 'package:e3dad_khodam_2026/src/map_engine/map_surface_spec.dart';
 import 'package:e3dad_khodam_2026/src/presentation/cubit/game_journey_cubit.dart';
 import 'package:e3dad_khodam_2026/src/presentation/cubit/game_step.dart';
 import 'package:e3dad_khodam_2026/src/presentation/pages/game_journey_page.dart';
-import 'package:e3dad_khodam_2026/src/presentation/widgets/game/character_portrait.dart';
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/destination_card.dart';
-import 'package:e3dad_khodam_2026/src/presentation/widgets/game/guide_callout.dart';
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/guide_dialogue_panel.dart';
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/level_step_counter.dart';
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/platform_view_interceptor.dart';
@@ -73,8 +71,8 @@ final class _GameUnderTest extends StatelessWidget {
       ),
       RepositoryProvider<MapSurfaceBuilder>.value(value: surfaceBuilder),
     ],
-    // The app runs right-to-left; the bubble anchors on the start edge,
-    // so the direction is load-bearing for where it lands.
+    // The app runs right-to-left, and the overlay's own layout mirrors
+    // with it, so the direction is load-bearing for how it renders.
     child: const Directionality(
       textDirection: TextDirection.rtl,
       child: MaterialApp(home: GameJourneyPage()),
@@ -98,16 +96,16 @@ void _tapTheMap(WidgetTester tester) {
   spec.onSurfaceTap?.call();
 }
 
-/// Steps the script until a beat of [emphasis] is showing.
-void _advanceUntil(WidgetTester tester, BeatEmphasis emphasis) {
+/// Steps the script until a beat spoken by [speaker] is showing.
+void _advanceUntil(WidgetTester tester, StorySpeaker speaker) {
   final cubit = _cubitOf(tester);
   for (var press = 0; press < 60; press++) {
-    if (cubit.state.beat?.emphasis == emphasis) {
+    if (cubit.state.beat?.speaker == speaker) {
       return;
     }
     cubit.forward();
   }
-  fail('never reached a $emphasis beat');
+  fail('never reached a beat spoken by $speaker');
 }
 
 /// The app bar's height as the page asked for it; an unset height is
@@ -154,7 +152,6 @@ void _openingTests() {
     expect(tester.takeException(), isNull);
     // The map, framed on the post office, with nobody talking over it.
     expect(find.byType(GuideDialoguePanel), findsNothing);
-    expect(find.byType(GuideCallout), findsNothing);
   });
 
   testWidgets('GameJourneyPage_thePrologue_showsTheGuidesPanelAfterTheFlight', (
@@ -211,47 +208,27 @@ void _cardTests() {
 }
 
 void _guideTests() {
-  testWidgets('GameJourneyPage_aGuideCallout_isActuallyOnScreen', (
+  testWidgets('GameJourneyPage_theGuidesDialoguePanel_isActuallyOnScreen', (
     tester,
   ) async {
     await tester.pumpWidget(const _GameUnderTest());
-    final cubit = _cubitOf(tester);
-
-    // Walk forward until a beat wants the bubble rather than the panel.
-    for (var press = 0; press < 60; press++) {
-      if (cubit.state.beat?.emphasis == BeatEmphasis.callout) {
-        break;
-      }
-      cubit.forward();
-    }
-    expect(
-      cubit.state.beat?.emphasis,
-      BeatEmphasis.callout,
-      reason: 'never reached a beat that wants the bubble',
-    );
+    _advanceUntil(tester, StorySpeaker.guide);
 
     await tester.pump();
     await tester.pump(const Duration(seconds: 1));
 
-    expect(find.byType(GuideCallout), findsOneWidget);
+    expect(find.byType(GuideDialoguePanel), findsOneWidget);
     // The symptom: the dialogue never appears, because painting it throws
     // and the frame's layer tree is dropped.
     expect(tester.takeException(), isNull);
 
-    // And it is aimed at her, not merely on screen: the tail sits over
-    // the portrait in the app bar.
-    final callout = tester.widget<GuideCallout>(find.byType(GuideCallout));
-    final avatar = tester.getRect(
-      find.descendant(
-        of: find.byType(AppBar),
-        matching: find.byType(CharacterPortrait),
-      ),
-    );
-    expect(callout.tailCentreX, isNotNull);
+    // On screen, not merely built: its rect sits inside the viewport.
+    final panel = tester.getRect(find.byType(GuideDialoguePanel));
+    final viewport = tester.getRect(find.byType(Scaffold));
     expect(
-      callout.tailCentreX,
-      inInclusiveRange(avatar.left, avatar.right),
-      reason: 'the tail should point at the guide, not past her',
+      viewport.contains(panel.topLeft) && viewport.contains(panel.bottomRight),
+      isTrue,
+      reason: 'the dialogue panel should be inside the viewport, not off it',
     );
   });
 
@@ -273,9 +250,9 @@ void _guideTests() {
       expect(_appBarHeight(tester), kToolbarHeight);
     });
 
-    testWidgets('a callout raises it', (tester) async {
+    testWidgets('a guide beat raises it', (tester) async {
       await pumpBig(tester);
-      _advanceUntil(tester, BeatEmphasis.callout);
+      _advanceUntil(tester, StorySpeaker.guide);
       await _growTheBar(tester);
 
       expect(_appBarHeight(tester), greaterThan(kToolbarHeight));
@@ -283,8 +260,8 @@ void _guideTests() {
 
     testWidgets('and it grows into it rather than jumping', (tester) async {
       await pumpBig(tester);
-      _advanceUntil(tester, BeatEmphasis.callout);
-      // The frame the bubble arrives on, then one part-way through the
+      _advanceUntil(tester, StorySpeaker.guide);
+      // The frame the beat arrives on, then one part-way through the
       // growth: the bar is on its way up rather than already there.
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 1));
@@ -298,11 +275,11 @@ void _guideTests() {
       expect(partWay, lessThan(_appBarHeight(tester)));
     });
 
-    testWidgets('a panel beat does not, having its own portrait', (
+    testWidgets('a narrator beat does not, having its own portrait', (
       tester,
     ) async {
       await pumpBig(tester);
-      _advanceUntil(tester, BeatEmphasis.panel);
+      _advanceUntil(tester, StorySpeaker.narrator);
       await _growTheBar(tester);
 
       expect(_appBarHeight(tester), kToolbarHeight);
@@ -325,14 +302,14 @@ void _guideTests() {
       await tester.pump();
 
       final cubit = _cubitOf(tester);
-      // Walk to تسالونيكي's second letter and stop one press short of the
-      // guide's bubble. Found rather than counted, so a line added earlier
-      // in the script does not silently move this off its mark. That level
+      // Walk to تسالونيكي's second letter and stop one press short of a
+      // guide beat. Found rather than counted, so a line added earlier in
+      // the script does not silently move this off its mark. That level
       // is not swept into, so the camera holds across the press that raises
       // her — leaving the bar's growth as the only thing moving, which is
       // what makes the count mean anything.
       while (cubit.state.level?.id != 'thessalonians-2' ||
-          cubit.state.beat?.emphasis != BeatEmphasis.callout) {
+          cubit.state.beat?.speaker != StorySpeaker.guide) {
         cubit.forward();
       }
       cubit.backward();
@@ -342,10 +319,10 @@ void _guideTests() {
       final camera = cubit.state.camera;
 
       cubit.forward();
-      expect(cubit.state.beat?.emphasis, BeatEmphasis.callout);
+      expect(cubit.state.beat?.speaker, StorySpeaker.guide);
       expect(cubit.state.camera, camera, reason: 'the camera must hold');
 
-      // Two frames: the one the bubble arrives on, where the map may
+      // Two frames: the one the beat arrives on, where the map may
       // redraw because the game state genuinely changed, and the one
       // after it, which is where the cubit's own notification lands.
       await tester.pump();

@@ -7,22 +7,24 @@ import 'package:e3dad_khodam_2026/src/presentation/widgets/game/game_screen_size
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/pixel_panel.dart';
 import 'package:flutter/material.dart';
 
-/// The in-world guide talking: a large framed portrait beside a pixel
-/// speech panel, centred on the screen over a dimmed map.
+/// The in-world guide talking: a centred card staged like the narrator's
+/// — portrait above the name, over a dimmed map — but in her own
+/// parchment/ink/accent palette, so the two voices are never confused for
+/// each other.
 ///
-/// The narrator gets a deliberately different treatment
-/// (`NarratorCard`) so the two voices are never confused for each other.
+/// The line itself is never painted: an actor performs it live on stage,
+/// so [StoryBeat.text] is read for the record but not shown here.
 final class GuideDialoguePanel extends StatelessWidget {
-  /// She stands beside her words rather than above them, so on a phone
-  /// the portrait is competing with the line for width, not height.
-  static const double _portraitSizeLarge = 180.0;
-  static const double _portraitSizeCompact = 104.0;
-  static const double _maxWidth = 900.0;
+  static const double _portraitSizeLarge = 160.0;
+  static const double _portraitSizeCompact = 72.0;
+  static const double _maxWidth = 860.0;
+  static const double _gapLarge = 12.0;
+  static const double _gapCompact = 4.0;
 
   /// Who is speaking.
   final GameCharacter character;
 
-  /// The line being spoken.
+  /// The line being spoken. Its text is not shown; see the class doc.
   final StoryBeat beat;
 
   /// Creates the guide's dialogue panel.
@@ -40,12 +42,14 @@ final class GuideDialoguePanel extends StatelessWidget {
     return Center(
       child: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+          padding: EdgeInsets.symmetric(
+            horizontal: 20,
+            vertical: screen.pick(compact: 8, large: 24),
+          ),
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: _maxWidth),
             child: PixelPanel(
-              padding: const EdgeInsets.fromLTRB(22, 20, 22, 18),
-              child: Row(
+              child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   CharacterPortrait(
@@ -55,37 +59,18 @@ final class GuideDialoguePanel extends StatelessWidget {
                       large: _portraitSizeLarge,
                     ),
                   ),
-                  const SizedBox(width: 20),
-                  Flexible(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          character.name,
-                          style: text.titleLarge?.copyWith(
-                            fontWeight: FontWeight.w700,
-                            color: GamePalette.accent,
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        Text(
-                          beat.text,
-                          style: screen
-                              .pick(
-                                compact: text.titleMedium,
-                                large: text.headlineLarge,
-                              )
-                              ?.copyWith(height: 1.6, color: GamePalette.ink),
-                        ),
-                        const SizedBox(height: 8),
-                        const Align(
-                          alignment: AlignmentDirectional.centerEnd,
-                          child: ContinueChevron(),
-                        ),
-                      ],
+                  SizedBox(
+                    height: screen.pick(compact: _gapCompact, large: _gapLarge),
+                  ),
+                  Text(
+                    character.name,
+                    style: text.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: GamePalette.accent,
                     ),
                   ),
+                  SizedBox(height: screen.pick(compact: 6.0, large: 18.0)),
+                  const ContinueChevron(),
                 ],
               ),
             ),

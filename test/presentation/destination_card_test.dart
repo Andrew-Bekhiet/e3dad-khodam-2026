@@ -14,10 +14,24 @@ const JourneyStop _stop = JourneyStop(
 
 const GameLevel _level = GameLevel(
   id: 'thessalonians-1',
-  title: 'تسالونيكي الأولى',
+  signLabel: 'تسالونيكي الأولى والثانية',
   destination: _stop,
   year: 52,
   verses: ['آية'],
+);
+
+/// A prison letter's stop: the level stands where بولس wrote it, رومية,
+/// but the sign still names the letter it delivers.
+const JourneyStop _rome = JourneyStop(
+  id: 'rome',
+  label: 'رومية',
+  position: GeoPosition(latitude: 41.9, longitude: 12.5),
+);
+
+const GameLevel _prisonLevel = GameLevel(
+  id: 'philippians',
+  signLabel: 'فيلبي',
+  destination: _rome,
 );
 
 final class _DestinationCardTest extends StatelessWidget {
@@ -38,7 +52,6 @@ final class _DestinationCardTest extends StatelessWidget {
     home: Scaffold(
       body: DestinationCard(
         level: _level,
-        destinationLabel: _stop.label,
         verse: verse,
         hasMore: hasMore,
         onReveal: onReveal,
@@ -143,6 +156,29 @@ void main() {
     expect(find.text('الآية الأولى'), findsNothing);
     expect(find.text('الآية الثانية'), findsOneWidget);
   });
+
+  testWidgets(
+    "the sign shows the letter's name, not the stop it stands at",
+    (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: DestinationCard(
+              level: _prisonLevel,
+              verse: null,
+              hasMore: false,
+              onReveal: _never,
+              onAdvance: _never,
+            ),
+          ),
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(find.text(_prisonLevel.signLabel), findsOneWidget);
+      expect(find.text(_prisonLevel.destination.label), findsNothing);
+    },
+  );
 }
 
 void _never() {

@@ -13,8 +13,14 @@ final class GameLevel extends Equatable {
   /// Stable identifier, used for lookups and as a widget key.
   final String id;
 
-  /// The letter's name, as the play script names it.
-  final String title;
+
+  /// The name shown on the destination card's لافتة.
+  ///
+  /// This is the *letter's* own name, which is not always the stop's: a
+  /// letter written from prison stands wherever بولس wrote it (رومية, for
+  /// فيلبي، فيلمون، كولوسي and أفسس), but the sign still names whom the
+  /// letter was written to, not the place it was written from.
+  final String signLabel;
 
   /// The place this level is about: where its letter is delivered, where
   /// the camera settles, and the next point on the party's route.
@@ -45,7 +51,7 @@ final class GameLevel extends Equatable {
   @override
   List<Object?> get props => [
     id,
-    title,
+    signLabel,
     destination,
     briefing,
     clearance,
@@ -56,7 +62,7 @@ final class GameLevel extends Equatable {
   /// Creates a level.
   const GameLevel({
     required this.id,
-    required this.title,
+    required this.signLabel,
     required this.destination,
     this.briefing = const [],
     this.clearance = const [],

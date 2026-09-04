@@ -63,7 +63,17 @@ FILES = (
 
 
 def entries(source: str) -> list[tuple[str, str]]:
-    return re.findall(r"'([^']*)\\n\(([^)]+)\)'", source)
+    """Every cited `verses:` string, paired with its citation.
+
+    A finale verse leads with the imperative the servants shout before the
+    quotation itself (`'لاحِظ!\\n"..."\\n(1 تي 4: 16)'`); strip anything
+    before the opening `"` so only the quoted text is compared.
+    """
+    matches = re.findall(r"'([^']*)\\n\(([^)]+)\)'", source)
+    return [
+        (shown[shown.index('"'):] if '"' in shown else shown, citation)
+        for shown, citation in matches
+    ]
 
 
 def all_verses(source: str) -> list[str]:

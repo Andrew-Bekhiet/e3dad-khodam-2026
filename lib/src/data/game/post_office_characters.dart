@@ -44,7 +44,7 @@ final class PostOfficeCharacters {
   /// The in-world voice of the game that explains each level.
   static const GameCharacter guide = GameCharacter(
     id: 'guide',
-    name: 'اللعبة',
+    name: 'الرحلة',
     portraitAsset: 'assets/characters/guide.jpg',
   );
 

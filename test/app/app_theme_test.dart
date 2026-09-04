@@ -7,11 +7,12 @@ import 'package:flutter_test/flutter_test.dart';
 /// one the projector scaling has to reach.
 const Locale _arabic = Locale('ar');
 
+const Key _probe = Key('probe');
+
 Future<TextTheme> _resolvedTextTheme(
   WidgetTester tester,
   ThemeData theme,
 ) async {
-  late TextTheme resolved;
   await tester.pumpWidget(
     MaterialApp(
       // A fresh key per pump. `MaterialApp.home` becomes a route the
@@ -26,30 +27,55 @@ Future<TextTheme> _resolvedTextTheme(
         GlobalCupertinoLocalizations.delegate,
       ],
       theme: theme,
-      home: Builder(
-        builder: (context) {
-          resolved = TextTheme.of(context);
-
-          return const SizedBox.shrink();
-        },
-      ),
+      home: const SizedBox.shrink(key: _probe),
     ),
   );
 
-  return resolved;
+  return TextTheme.of(tester.element(find.byKey(_probe)));
 }
 
 Future<TextTheme> _baseline(WidgetTester tester) =>
     _resolvedTextTheme(tester, ThemeData(useMaterial3: true));
+
+double _size(TextStyle? style) {
+  final size = style?.fontSize;
+  if (size == null) {
+    fail('a theme role reached the screen with no font size');
+  }
+
+  return size;
+}
+
+int _weight(TextStyle? style) {
+  final weight = style?.fontWeight;
+  if (weight == null) {
+    fail('a theme role reached the screen with no font weight');
+  }
+
+  return weight.value;
+}
+
+/// One role per band of the scale; enough to catch a `copyWith` that
+/// missed a row without restating all fifteen.
+const List<TextStyle? Function(TextTheme)> _sampledRoles = [
+  _displayLarge,
+  _headlineMedium,
+  _titleLarge,
+  _bodyLarge,
+  _labelSmall,
+];
+
+TextStyle? _displayLarge(TextTheme theme) => theme.displayLarge;
+TextStyle? _headlineMedium(TextTheme theme) => theme.headlineMedium;
+TextStyle? _titleLarge(TextTheme theme) => theme.titleLarge;
+TextStyle? _bodyLarge(TextTheme theme) => theme.bodyLarge;
+TextStyle? _labelSmall(TextTheme theme) => theme.labelSmall;
 
 void main() {
   // The scaling used to be applied to `ThemeData.textTheme`, whose sizes
   // are still null before `MaterialApp` localises the geometry in, and
   // `TextStyle.apply` asserts rather than scale a size it cannot see.
   testWidgets('AppTheme_built_doesNotAssertOnUnsizedStyles', (tester) async {
-    expect(AppTheme.light, returnsNormally);
-    expect(AppTheme.dark, returnsNormally);
-
     await _resolvedTextTheme(tester, AppTheme.light());
     await _resolvedTextTheme(tester, AppTheme.dark());
   });
@@ -59,17 +85,10 @@ void main() {
     final light = await _resolvedTextTheme(tester, AppTheme.light());
     final dark = await _resolvedTextTheme(tester, AppTheme.dark());
 
-    for (final roles in [
-      (base.displayLarge, light.displayLarge, dark.displayLarge),
-      (base.headlineMedium, light.headlineMedium, dark.headlineMedium),
-      (base.titleLarge, light.titleLarge, dark.titleLarge),
-      (base.bodyLarge, light.bodyLarge, dark.bodyLarge),
-      (base.labelSmall, light.labelSmall, dark.labelSmall),
-    ]) {
-      final (baseRole, lightRole, darkRole) = roles;
-      expect(baseRole?.fontSize, isNotNull);
-      expect(lightRole?.fontSize, closeTo(baseRole!.fontSize! * 1.5, 0.001));
-      expect(darkRole?.fontSize, closeTo(baseRole.fontSize! * 1.5, 0.001));
+    for (final role in _sampledRoles) {
+      final expected = _size(role(base)) * 1.5;
+      expect(_size(role(light)), closeTo(expected, 0.001));
+      expect(_size(role(dark)), closeTo(expected, 0.001));
     }
   });
 
@@ -77,21 +96,13 @@ void main() {
     tester,
   ) async {
     final base = await _baseline(tester);
-    final scaled = await _resolvedTextTheme(tester, AppTheme.light());
+    final light = await _resolvedTextTheme(tester, AppTheme.light());
+    final dark = await _resolvedTextTheme(tester, AppTheme.dark());
 
-    for (final roles in [
-      (base.displayLarge, scaled.displayLarge),
-      (base.headlineMedium, scaled.headlineMedium),
-      (base.titleLarge, scaled.titleLarge),
-      (base.bodyLarge, scaled.bodyLarge),
-      (base.labelSmall, scaled.labelSmall),
-    ]) {
-      final (baseRole, scaledRole) = roles;
-
-      expect(
-        scaledRole?.fontWeight?.value,
-        greaterThan(baseRole!.fontWeight!.value),
-      );
+    for (final role in _sampledRoles) {
+      final expected = greaterThan(_weight(role(base)));
+      expect(_weight(role(light)), expected);
+      expect(_weight(role(dark)), expected);
     }
   });
 }

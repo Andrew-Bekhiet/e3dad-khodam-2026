@@ -34,27 +34,14 @@ final class JourneyStops {
     position: StopPositions.galatia,
   );
 
-  /// رومية.
+  /// رومية — where five letters land: the letter to أهل رومية itself,
+  /// and, since فيلبي، فليمون، كولوسي and أفسس were all written from
+  /// بولس's first Roman imprisonment, every letter whose recipient never
+  /// received it in person.
   static const JourneyStop rome = JourneyStop(
     id: 'rome',
     label: 'رومية',
     position: StopPositions.rome,
-  );
-
-  /// فيلبي.
-  static const JourneyStop philippi = JourneyStop(
-    id: 'philippi',
-    label: 'فيلبي',
-    position: StopPositions.philippi,
-  );
-
-  /// كولوسي — where أهل كولوسي received their letter. فيلمون lived
-  /// here too, but his letter is addressed to him rather than to a
-  /// church, so its level stands where بولس wrote it.
-  static const JourneyStop colossae = JourneyStop(
-    id: 'colossae',
-    label: 'كولوسي',
-    position: StopPositions.colossae,
   );
 
   /// أفسس — the letter to أهل أفسس.

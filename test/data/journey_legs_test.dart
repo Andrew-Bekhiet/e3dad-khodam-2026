@@ -1,5 +1,7 @@
 import 'package:e3dad_khodam_2026/src/data/game/journey_legs.dart';
 import 'package:e3dad_khodam_2026/src/data/game/post_office_script.dart';
+import 'package:e3dad_khodam_2026/src/data/game/route_geometry.dart';
+import 'package:e3dad_khodam_2026/src/data/journey_stops.dart';
 import 'package:e3dad_khodam_2026/src/domain/game/journey_stop.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -74,11 +76,11 @@ void main() {
   });
 
   test('JourneyLegs_aLegTravelledBackwards_isTheSameWaterReversed', () {
-    // أورشليم is only ever left for رومية along the same water the party
+    // أورشليم is only ever left for أفسس along the same water the party
     // arrived on. The return trip must retrace the outward one exactly,
     // or the trail will show two different sea lanes between the stops.
-    final out = JourneyLegs.geometryBetween('rome', 'jerusalem');
-    final back = JourneyLegs.geometryBetween('jerusalem', 'rome');
+    final out = JourneyLegs.geometryBetween('ephesus', 'jerusalem');
+    final back = JourneyLegs.geometryBetween('jerusalem', 'ephesus');
 
     expect(out, isNotNull);
     expect(back, isNotNull);
@@ -93,5 +95,33 @@ void main() {
     for (final leg in JourneyLegs.all) {
       expect(leg.from.id, isNot(leg.to.id));
     }
+  });
+
+  test('JourneyLegs_creteToEphesus_resolvesForward', () {
+    // The chart runs كريت → أفسس now, so this must be a direct hit under
+    // `crete>ephesus` rather than a fallback through the reverse lookup.
+    expect(RouteGeometry.byLegId.containsKey('crete>ephesus'), isTrue);
+    expect(RouteGeometry.byLegId.containsKey('ephesus>crete'), isFalse);
+
+    final route = JourneyLegs.geometryBetween('crete', 'ephesus');
+    expect(route, isNotNull);
+    if (route == null) {
+      return;
+    }
+
+    expect(route.first, JourneyStops.crete.position);
+    expect(route.last, JourneyStops.ephesus.position);
+  });
+
+  test('JourneyLegs_romeToCrete_hasGeometry', () {
+    final route = JourneyLegs.geometryBetween('rome', 'crete');
+    expect(route, isNotNull);
+    if (route == null) {
+      return;
+    }
+
+    expect(route.first, JourneyStops.rome.position);
+    expect(route.last, JourneyStops.crete.position);
+    expect(route.length, greaterThan(1));
   });
 }

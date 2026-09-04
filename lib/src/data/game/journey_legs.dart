@@ -7,16 +7,15 @@ import 'package:e3dad_khodam_2026/src/domain/geo_position.dart';
 
 /// Every leg the post-office journey travels, and how each was travelled.
 ///
-/// Only two of them are land: تسالونيكي → كورنثوس inside Greece, and
-/// كولوسي → أفسس down the Meander valley. The rest are chiefly by ship,
-/// so asking a road service for them would draw the couriers on a motorway
-/// through the Balkans — plausible-looking and false. Their charts are
-/// picked by hand instead, tracing the coast and the islands.
+/// Only one of them is land: تسالونيكي → كورنثوس inside Greece. The rest
+/// are chiefly by ship, so asking a road service for them would draw the
+/// couriers on a motorway through the Balkans — plausible-looking and
+/// false. Their charts are picked by hand instead, tracing the coast and
+/// the islands.
 ///
-/// The three return journeys (فيلبي → رومية, كريت → أفسس, أورشليم → أفسس)
-/// are not listed: the same water read backwards is the same route, and
-/// [JourneyLegs.geometryBetween] reverses a known leg rather than
-/// duplicating its chart.
+/// The return journey أورشليم → أفسس is not listed: the same water read
+/// backwards is the same route, and [JourneyLegs.geometryBetween] reverses
+/// a known leg rather than duplicating its chart.
 final class JourneyLegs {
   /// تسالونيكي → كورنثوس, overland through Greece.
   static const JourneyLeg thessalonicaToCorinth = JourneyLeg(
@@ -86,98 +85,57 @@ final class JourneyLegs {
     ],
   );
 
-  /// رومية → فيلبي: the Via Appia south to Brundisium, across to
-  /// Dyrrachium, then the Via Egnatia east — the standard road between
-  /// Italy and Macedonia.
-  static const JourneyLeg romeToPhilippi = JourneyLeg(
+  /// رومية → كريت: out of the Tiber, south down the Tyrrhenian, through
+  /// the Strait of Messina, then east across the Ionian to Crete's north
+  /// coast.
+  static const JourneyLeg romeToCrete = JourneyLeg(
     from: JourneyStops.rome,
-    to: JourneyStops.philippi,
-    kind: LegKind.sea,
-    chart: [
-      // Via Appia: Terracina.
-      GeoPosition(latitude: 41.29, longitude: 13.25),
-      // Via Appia: Beneventum.
-      GeoPosition(latitude: 41.13, longitude: 14.78),
-      // Via Appia: Venusia.
-      GeoPosition(latitude: 40.96, longitude: 15.82),
-      // Via Appia: Tarentum.
-      GeoPosition(latitude: 40.47, longitude: 17.24),
-      // Brundisium, where the road meets the sea.
-      GeoPosition(latitude: 40.63, longitude: 17.94),
-      // The Adriatic crossing.
-      GeoPosition(latitude: 40.95, longitude: 18.8),
-      // Dyrrachium, where the Via Egnatia begins.
-      GeoPosition(latitude: 41.32, longitude: 19.45),
-      // Via Egnatia: Lychnidos, by Lake Ohrid.
-      GeoPosition(latitude: 41.12, longitude: 20.8),
-      // Via Egnatia: Heraclea Lyncestis.
-      GeoPosition(latitude: 41.03, longitude: 21.34),
-      // Via Egnatia: Edessa.
-      GeoPosition(latitude: 40.8, longitude: 22.05),
-      // Via Egnatia: تسالونيكي.
-      GeoPosition(latitude: 40.64, longitude: 22.94),
-      // Via Egnatia: Amphipolis.
-      GeoPosition(latitude: 40.82, longitude: 23.84),
-    ],
-  );
-
-  /// رومية → كولوسي: down the Via Appia to Brundisium, across the Ionian,
-  /// through the Aegean to أفسس, then inland along the Meander.
-  static const JourneyLeg romeToColossae = JourneyLeg(
-    from: JourneyStops.rome,
-    to: JourneyStops.colossae,
-    kind: LegKind.sea,
-    chart: [
-      // Via Appia: Terracina.
-      GeoPosition(latitude: 41.29, longitude: 13.25),
-      // Via Appia: Beneventum.
-      GeoPosition(latitude: 41.13, longitude: 14.78),
-      // Via Appia: Tarentum.
-      GeoPosition(latitude: 40.47, longitude: 17.24),
-      // Brundisium, where the road meets the sea.
-      GeoPosition(latitude: 40.63, longitude: 17.94),
-      // Corfu, at the mouth of the Adriatic.
-      GeoPosition(latitude: 39.62, longitude: 19.92),
-      // Cape Malea, rounding the Peloponnese.
-      GeoPosition(latitude: 36.45, longitude: 23.2),
-      // Naxos, in the Cyclades.
-      GeoPosition(latitude: 37.1, longitude: 25.38),
-      // Samos, off the Ionian coast.
-      GeoPosition(latitude: 37.7, longitude: 26.9),
-      // Ephesus, the port for the Meander valley.
-      GeoPosition(latitude: 37.94, longitude: 27.15),
-      // The Meander valley near Aydın.
-      GeoPosition(latitude: 37.85, longitude: 28.3),
-    ],
-  );
-
-  /// كولوسي → أفسس, overland down the Meander valley.
-  static const JourneyLeg colossaeToEphesus = JourneyLeg(
-    from: JourneyStops.colossae,
-    to: JourneyStops.ephesus,
-    kind: LegKind.land,
-  );
-
-  /// أفسس → كريت, through the southern Aegean to Crete's north coast.
-  static const JourneyLeg ephesusToCrete = JourneyLeg(
-    from: JourneyStops.ephesus,
     to: JourneyStops.crete,
     kind: LegKind.sea,
     chart: [
-      // The Cayster mouth, where the ship is met.
-      GeoPosition(latitude: 37.85, longitude: 27.05),
-      // The strait between Samos and Mycale.
-      GeoPosition(latitude: 37.7, longitude: 26.75),
-      // Off Patmos.
-      GeoPosition(latitude: 37.3, longitude: 26.55),
-      // Off Kos, in the Dodecanese.
-      GeoPosition(latitude: 36.9, longitude: 26.3),
-      // South of the Cyclades, off Astypalaia.
-      GeoPosition(latitude: 36.3, longitude: 25.9),
+      // Ostia, the Tiber mouth.
+      GeoPosition(latitude: 41.75, longitude: 12.28),
+      // Off Anzio.
+      GeoPosition(latitude: 41.35, longitude: 12.55),
+      // Off Ischia, clear of the bay.
+      GeoPosition(latitude: 40.7, longitude: 13.75),
+      // The Gulf of Salerno approach.
+      GeoPosition(latitude: 40.45, longitude: 14.6),
+      // The Strait of Messina.
+      GeoPosition(latitude: 38.2, longitude: 15.6),
+      // Off Cape Spartivento.
+      GeoPosition(latitude: 37.9, longitude: 16.1),
+      // The open Ionian.
+      GeoPosition(latitude: 36.6, longitude: 19.5),
+      // South-west of Cape Malea.
+      GeoPosition(latitude: 35.9, longitude: 22.0),
+      // Off Phalasarna, Crete's north-west.
+      GeoPosition(latitude: 35.55, longitude: 23.6),
+      // Off Chania.
+      GeoPosition(latitude: 35.52, longitude: 24.1),
+    ],
+  );
+
+  /// كريت → أفسس, through the southern Aegean from Crete's north coast.
+  static const JourneyLeg creteToEphesus = JourneyLeg(
+    from: JourneyStops.crete,
+    to: JourneyStops.ephesus,
+    kind: LegKind.sea,
+    chart: [
+      // Off Heraklion, before turning north.
+      GeoPosition(latitude: 35.35, longitude: 25.15),
       // The approach to Crete's north coast.
       GeoPosition(latitude: 35.75, longitude: 25.5),
-      // Off Heraklion, before turning inland.
-      GeoPosition(latitude: 35.35, longitude: 25.15),
+      // South of the Cyclades, off Astypalaia.
+      GeoPosition(latitude: 36.3, longitude: 25.9),
+      // Off Kos, in the Dodecanese.
+      GeoPosition(latitude: 36.9, longitude: 26.3),
+      // Off Patmos.
+      GeoPosition(latitude: 37.3, longitude: 26.55),
+      // The strait between Samos and Mycale.
+      GeoPosition(latitude: 37.7, longitude: 26.75),
+      // The Cayster mouth, where the ship is met.
+      GeoPosition(latitude: 37.85, longitude: 27.05),
     ],
   );
 
@@ -239,10 +197,8 @@ final class JourneyLegs {
     thessalonicaToCorinth,
     corinthToGalatia,
     galatiaToRome,
-    romeToPhilippi,
-    romeToColossae,
-    colossaeToEphesus,
-    ephesusToCrete,
+    romeToCrete,
+    creteToEphesus,
     ephesusToJerusalem,
     ephesusToRome,
   ];

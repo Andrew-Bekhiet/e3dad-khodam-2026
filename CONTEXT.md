@@ -82,10 +82,11 @@ is read. Positioned from the Gazetteer.
 _Avoid_: waypoint, station, node
 
 **Destination**:
-The Stop a given Level is about — where the Party ends up, and what the camera frames. It is the
-place the Letter was addressed to, not the place it was written. A Letter addressed to a person
-rather than to a church has no recipient city, so its Level stands where بولس wrote it: فيلمون،
-تيطس and both letters to تيموثاوس are all in رومية.
+The Stop a given Level is about — where the Party ends up, and what the camera frames. Usually the
+place the Letter was addressed to; a Letter written from captivity stands instead where بولس wrote
+it, because the play stages those scenes inside the cell rather than at the church that received
+them. فيلبي، فليمون، كولوسي and أفسس are therefore all in رومية, and the Sign is what still names
+the Letter.
 
 **Destination Card**:
 The panel shown over the map during a Level, in the middle of the screen. It opens one press at a
@@ -95,9 +96,12 @@ several Destinations are provinces, not cities.
 _Avoid_: city card, level card
 
 **Sign (لافتة)**:
-The Destination's name and the Letter's year, at the top of the Destination Card — `تسالونيكي ٥٢م`.
-The Play Script's own word for it, and the only place the game names where the player is. It
-replaced a panel that showed the Letter's title and a progress bar.
+The Letter's name and its year, at the top of the Destination Card — `تسالونيكي ٥٢م`. The Play
+Script's own word for it, and the only place the game names the Letter in play. It carries the
+Letter's number where there is more than one — `كورنثوس الأولى`، `تيموثاوس الثانية` — and it is
+named for the Letter rather than the Destination precisely because the four prison Letters all
+stand in رومية and would otherwise be indistinguishable. It replaced a panel that showed the
+Letter's title and a progress bar.
 
 **Reveal**:
 How far the Destination Card is open on the current Step: nothing, the Sign, then one rung per Verse.
@@ -120,9 +124,10 @@ A Character who carries the Letters and moves across the map. The only role with
 travel as one Party, never separately.
 _Avoid_: postman, traveller, player character
 
-**Guide (صوت اللعبة)**:
+**Guide (الرحلة)**:
 The in-world Character who explains each Level, hands out the next one, and confirms a Clearance.
-Speaks from a portrait and a speech panel.
+Her lines are performed live on stage, so her Story Beats are staged but never printed: the card
+shows her portrait and her name and waits. The lines stay in the Script as the record of the play.
 
 **Narrator (الراوي)**:
 The out-of-world voice that frames the Journey between Levels. Shown as a letterboxed band, never as
@@ -140,6 +145,8 @@ _Avoid_: group, squad, placement
 
 **Story Beat**:
 One line of story shown as an overlay over the map, spoken by either the Guide or the Narrator.
+Both get the same centred card, in their own colours; the Narrator's line is printed on it and the
+Guide's is not.
 _Avoid_: dialogue line, cue
 
 **Step**:
@@ -165,7 +172,7 @@ _Avoid_: route, path, track
 
 **Leg**:
 The stretch of the Journey between two consecutive Stops. Every Leg is either a **Land Leg** or a
-**Sea Leg** — a fact about how Paul travelled it, and the reason only two of the ten can be asked of
+**Sea Leg** — a fact about how Paul travelled it, and the reason only one of the seven can be asked of
 a road service. A Leg travelled the other way is the same Leg read backwards, not a second one.
 
 **Route Geometry**:

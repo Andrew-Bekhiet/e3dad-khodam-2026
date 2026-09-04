@@ -173,6 +173,16 @@ missing-token notice, which is a developer message that must render before any t
 The game's dialogue sits a full step up the scale from ordinary body text: it is read off a
 projector from the back of a hall, not from a phone in the hand.
 
+**The whole scale is then multiplied.** `AppTheme` scales every `TextTheme` role by
+`_projectorFontScale` (**×1.5**) and bumps every role's weight two Material steps, clamped at
+`w900`, in both the light and the dark theme. That is the one place the app's type size is decided,
+and it is decided for the projector rather than for a handset. The sizes above are the Material
+defaults this multiplies, not the sizes that reach the screen. The weights above are call-site
+`copyWith` overrides that still apply on top, so an element the table gives a weight to stays
+heavier than its neighbours. The marker labels are outside all of this — they are painted onto a
+canvas by `MarkerSprite` and sized in `MarkerStyles`/`GameMapStyles`, where growing them trades
+legibility for label collisions on the map.
+
 ---
 
 ## 5. Camera animation
@@ -300,8 +310,11 @@ Four separate movements, deliberately sequenced rather than overlapping:
 Centred, and it only ever grows: **sign → artwork → verses**, one press each, `AnimatedSize` over
 **260ms** on `easeOutBack`. Overshoot is deliberate and is the thing §5 forbids on the Cross Map.
 
-- Sign: destination name at `displaySmall`, year at `titleLarge` in accent. Verses at `titleLarge`,
-  and they scroll rather than clip once a city's two letters outgrow the height cap.
+- Sign: the **letter's** name at `displaySmall`, year at `titleLarge` in accent. It is the letter
+  that is named, not the stop — فيلبي، فليمون، كولوسي and أفسس all stand in رومية and the sign is
+  the only thing telling them apart — and it carries the letter's number where there is more than
+  one (`كورنثوس الأولى`). Verses at `titleLarge`, and they scroll rather than clip once a city's two
+  letters outgrow the height cap.
 - Open height **400px** (`DestinationCard._openHeight`). Set it to the viewport height and the card
   covers the whole map — that one number is the full-screen switch.
 - Artwork fills the card behind a scrim; a missing file draws a flat stand-in carrying the name, so

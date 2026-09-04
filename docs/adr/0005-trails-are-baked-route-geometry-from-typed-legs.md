@@ -10,8 +10,11 @@ The spline was wrong in a way that is easy to miss: it bowed the same amount whe
 between two stops was a Roman road or the Aegean, so it cut across Greece on a leg that was sailed
 and across open water on a leg that was walked.
 
-**Only two of the journey's ten legs are land.** تسالونيكي → كورنثوس, and كولوسي → أفسس. Paul made
-the other eight by ship.
+**Only one of the journey's seven legs is land.** تسالونيكي → كورنثوس. Paul made the other six by
+ship. The count fell from ten legs to seven when the four prison Letters stopped standing at the
+cities they were addressed to and started standing in رومية, where they were written: فيلبي،
+كولوسي and أفسس are no longer Stops, so the legs that reached them are gone and رومية → كريت is
+new.
 
 ## Consequences
 
@@ -32,8 +35,10 @@ between the islands because that is how first-century ships sailed, and because 
 reads better than one across empty blue at the sweep's widest zoom. Correcting a lane means editing
 one short list in `JourneyLegs` and re-running the generator — never editing the generated file.
 
-**A leg travelled backwards is the same leg reversed.** أفسس ↔ كريت and أفسس ↔ أورشليم are each
-charted once. Adding the reverse as its own entry would let the two copies drift apart.
+**A leg travelled backwards is the same leg reversed.** أفسس ↔ أورشليم is charted once and walked
+both ways. Adding the reverse as its own entry would let the two copies drift apart. A leg the
+journey only ever walks in one direction is declared in that direction, which is why كريت → أفسس
+is named for the way it is travelled rather than for the way it was first charted.
 
 **Land legs are pinned to the gazetteer at both ends.** The directions service snaps to the nearest
 road, landing a few metres off. Invisible, except that it would leave a courier standing just beside

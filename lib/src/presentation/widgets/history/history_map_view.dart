@@ -63,6 +63,7 @@ final class HistoryMapView extends StatelessWidget {
   static List<MapMarkerSpec> markersFor(
     HistoricalJourneyState state, {
     required bool beaconBright,
+    double walked = 1,
   }) {
     final beacon = state.beacon;
     final byPosition = <String, MapMarkerSpec>{};
@@ -71,7 +72,7 @@ final class HistoryMapView extends StatelessWidget {
       (state.origin, HistoryMapStyles.origin, true),
       for (final rest in state.visitedRests)
         (rest.stop, HistoryMapStyles.rest, true),
-      for (final via in state.revealedVia)
+      for (final via in _viaReached(state, walked))
         (via, HistoryMapStyles.waypoint, false),
       (state.currentStop, HistoryMapStyles.current, true),
       if (beacon != null)
@@ -92,6 +93,18 @@ final class HistoryMapView extends StatelessWidget {
 
     return byPosition.values.toList(growable: false);
   }
+
+  /// The via cities the trail has reached: every one behind an earlier
+  /// rest, then those the line has actually arrived at on the stretch
+  /// being drawn now. A city appears as the trail reaches it rather than
+  /// the whole run appearing the moment the journey sets off.
+  static List<JourneyStop> _viaReached(
+    HistoricalJourneyState state,
+    double walked,
+  ) => [
+    for (final rest in state.visitedRests) ...rest.via,
+    ...state.trace.viaReachedAt(walked),
+  ];
 
   /// Identifies a point, so what stands on it can be matched to it.
   static String _positionKey(GeoPosition position) =>
@@ -168,10 +181,16 @@ final class HistoryMapSpecBuilder {
   static const String _trailId = 'journey';
 
   /// How many positions the walk is rounded to over a whole stretch. See
-  /// `GameMapView._walkSteps` for why: smoother than any eye can see,
-  /// without flooding the platform channel with a fresh route on every
-  /// frame.
-  static const int _walkSteps = 40;
+  /// `GameMapView._walkSteps` for the mechanism: smoother than any eye
+  /// can see, without flooding the platform channel with a fresh route
+  /// on every frame.
+  ///
+  /// The hold this walk plays out over is six seconds, not the game's
+  /// second and a half, so 40 steps would land one update roughly every
+  /// 150ms — visibly steppy. 240 keeps the same ~40-updates-per-second
+  /// rate the original count was tuned for, now spread across the
+  /// longer hold.
+  static const int _walkSteps = 240;
 
   /// How far along the current stretch the trail has drawn, rounded to
   /// one of [_walkSteps] positions. Mirrors
@@ -194,6 +213,7 @@ final class HistoryMapSpecBuilder {
   List<MapMarkerSpec>? _markers;
   HistoricalJourneyState? _markersOf;
   bool? _markersBright;
+  double? _markersAt;
 
   /// The spec for [state] with the beacon in [beaconBright]'s state and
   /// the trail drawn as far as [sweepClock] has walked it.
@@ -204,7 +224,7 @@ final class HistoryMapSpecBuilder {
     required void Function(String stopId) onMarkerTap,
     required VoidCallback? onSurfaceTap,
   }) => MapSurfaceSpec(
-    markers: _markersFor(state, beaconBright),
+    markers: _markersFor(state, beaconBright, _walkProgress(sweepClock)),
     camera: state.camera,
     minZoom: minZoom,
     maxZoom: maxZoom,
@@ -230,7 +250,7 @@ final class HistoryMapSpecBuilder {
       MapTrailSpec(
         id: _trailId,
         points: trail.points,
-        style: MapTrailStyle.travelled,
+        style: MapTrailStyle.historicalTravelled,
       ),
     ];
     _trails = built;
@@ -245,17 +265,24 @@ final class HistoryMapSpecBuilder {
   List<MapMarkerSpec> _markersFor(
     HistoricalJourneyState state,
     bool beaconBright,
+    double walked,
   ) {
     final markers = _markers;
     if (markers != null &&
         identical(_markersOf, state) &&
-        _markersBright == beaconBright) {
+        _markersBright == beaconBright &&
+        _markersAt == walked) {
       return markers;
     }
-    final built = HistoryMapView.markersFor(state, beaconBright: beaconBright);
+    final built = HistoryMapView.markersFor(
+      state,
+      beaconBright: beaconBright,
+      walked: walked,
+    );
     _markers = built;
     _markersOf = state;
     _markersBright = beaconBright;
+    _markersAt = walked;
 
     return built;
   }

@@ -11,15 +11,19 @@ import 'package:flutter/material.dart';
 /// is a swap between two rasters, not a live-painted marker.
 final class HistoryMapStyles {
   /// The biggest marker on the map: the rest the journey stands at now.
+  ///
+  /// Sized for a TV projected across a hall, not a phone in the hand: an
+  /// audience standing up to 10 metres back needs the shape and its ring
+  /// to still read as a shape, not a smudge.
   static const MapMarkerStyle current = MapMarkerStyle(
     id: 'history-stop-current',
     shape: MapMarkerShapeStyle(
       shape: MapMarkerShape.circle,
-      diameter: 52,
+      diameter: 130,
       color: GamePalette.accent,
-      ringWidth: 3,
+      ringWidth: 7,
     ),
-    shadow: MapMarkerShadow(blur: 9, offsetDy: 2, opacity: 0.34),
+    shadow: MapMarkerShadow(blur: 22, offsetDy: 5, opacity: 0.36),
     glyph: null,
     label: _labelLarge,
   );
@@ -29,11 +33,11 @@ final class HistoryMapStyles {
     id: 'history-stop-rest',
     shape: MapMarkerShapeStyle(
       shape: MapMarkerShape.circle,
-      diameter: 28,
+      diameter: 70,
       color: GamePalette.cleared,
-      ringWidth: 2,
+      ringWidth: 5,
     ),
-    shadow: MapMarkerShadow(blur: 5, offsetDy: 1, opacity: 0.22),
+    shadow: MapMarkerShadow(blur: 13, offsetDy: 3, opacity: 0.24),
     glyph: null,
     label: _label,
   );
@@ -43,22 +47,23 @@ final class HistoryMapStyles {
     id: 'history-stop-origin',
     shape: const MapMarkerShapeStyle(
       shape: MapMarkerShape.diamond,
-      diameter: 34,
+      diameter: 80,
       color: GamePalette.ink,
-      ringWidth: 2,
+      ringWidth: 5,
     ),
-    shadow: const MapMarkerShadow(blur: 6, offsetDy: 1, opacity: 0.28),
-    glyph: iconGlyph(Icons.trip_origin, size: 14, color: GamePalette.white),
+    shadow: const MapMarkerShadow(blur: 15, offsetDy: 3, opacity: 0.3),
+    glyph: iconGlyph(Icons.trip_origin, size: 32, color: GamePalette.white),
     label: _label,
   );
 
-  /// A city the trail has passed through without stopping: a small dot
-  /// with a small label, well under [rest] in weight.
+  /// A city the trail has passed through without stopping: a dot and a
+  /// label well under [rest] in weight, but — at this scale — no longer
+  /// small enough to miss from across the room.
   static const MapMarkerStyle waypoint = MapMarkerStyle(
     id: 'history-stop-waypoint',
     shape: MapMarkerShapeStyle(
       shape: MapMarkerShape.circle,
-      diameter: 10,
+      diameter: 30,
       color: GamePalette.locked,
     ),
     shadow: null,
@@ -66,19 +71,23 @@ final class HistoryMapStyles {
     label: _labelSmall,
   );
 
-  /// The beacon, lit — the state the flash spends half its time in.
+  /// The beacon, lit — the state the flash spends half its time in. The
+  /// glyph is a mailed letter, not a bulb: the beacon means a letter was
+  /// sent to this city, and the flash is how that reads as "just
+  /// happened" from across the room.
+  ///
   /// Sized between [origin] and [current] so it catches the eye without
   /// competing with the rest the journey is actually standing at.
   static final MapMarkerStyle beaconBright = MapMarkerStyle(
     id: 'history-beacon-bright',
     shape: const MapMarkerShapeStyle(
       shape: MapMarkerShape.circle,
-      diameter: 34,
+      diameter: 100,
       color: HistoryPalette.beaconBright,
-      ringWidth: 3,
+      ringWidth: 7,
     ),
-    shadow: const MapMarkerShadow(blur: 14, offsetDy: 0, opacity: 0.55),
-    glyph: iconGlyph(Icons.lightbulb, size: 16, color: GamePalette.white),
+    shadow: const MapMarkerShadow(blur: 34, offsetDy: 0, opacity: 0.55),
+    glyph: iconGlyph(Icons.mail, size: 46, color: GamePalette.white),
     label: _label,
   );
 
@@ -88,9 +97,9 @@ final class HistoryMapStyles {
     id: 'history-beacon-dim',
     shape: MapMarkerShapeStyle(
       shape: MapMarkerShape.circle,
-      diameter: 34,
+      diameter: 100,
       color: HistoryPalette.beaconDim,
-      ringWidth: 2,
+      ringWidth: 5,
     ),
     shadow: null,
     glyph: null,
@@ -98,27 +107,27 @@ final class HistoryMapStyles {
   );
 
   static const MapMarkerLabelStyle _labelLarge = MapMarkerLabelStyle(
-    fontSize: 32,
+    fontSize: 80,
     color: GamePalette.ink,
     haloColor: GamePalette.white,
-    haloWidth: 2,
-    gap: 4,
+    haloWidth: 6,
+    gap: 10,
   );
 
   static const MapMarkerLabelStyle _label = MapMarkerLabelStyle(
-    fontSize: 24,
+    fontSize: 60,
     color: GamePalette.ink,
     haloColor: GamePalette.white,
-    haloWidth: 2,
-    gap: 4,
+    haloWidth: 5,
+    gap: 8,
   );
 
   static const MapMarkerLabelStyle _labelSmall = MapMarkerLabelStyle(
-    fontSize: 14,
+    fontSize: 40,
     color: GamePalette.ink,
     haloColor: GamePalette.white,
-    haloWidth: 1.5,
-    gap: 2,
+    haloWidth: 4,
+    gap: 6,
   );
 
   const HistoryMapStyles._();

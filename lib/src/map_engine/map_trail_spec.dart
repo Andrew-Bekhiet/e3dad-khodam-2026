@@ -44,6 +44,17 @@ final class MapTrailStyle extends Equatable {
     opacity: 1.0,
   );
 
+  /// The historical journeys' own line: heavier than [travelled] because
+  /// this map is projected on a TV and read from up to 10 metres across a
+  /// hall rather than held in the hand, and the six-second sweep hold
+  /// spends its whole span watching this exact line draw itself — it has
+  /// to carry as the content, not just mark the route underneath it.
+  static const MapTrailStyle historicalTravelled = MapTrailStyle(
+    color: Color(0xFFFFFFFF),
+    width: 10.0,
+    opacity: 1.0,
+  );
+
   /// Line colour.
   final Color color;
 

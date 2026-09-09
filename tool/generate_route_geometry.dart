@@ -19,6 +19,7 @@
 
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 
 import 'package:e3dad_khodam_2026/src/data/game/journey_legs.dart';
 import 'package:e3dad_khodam_2026/src/data/history/historical_legs.dart';
@@ -54,6 +55,13 @@ typedef _Target = ({
   // byte-identical to the one already committed.
   String subject,
   List<JourneyLeg> legs,
+
+  // Douglas-Peucker tolerance, in degrees, applied to every leg before
+  // writing. Zero leaves a leg's geometry untouched — the game's legs are
+  // short and stay at road fidelity, so its target keeps this at zero and
+  // its regenerated file stays byte-identical to the one already
+  // committed.
+  double simplifyToleranceDegrees,
 });
 
 const List<_Target> _targets = [
@@ -64,6 +72,7 @@ const List<_Target> _targets = [
     tracedDescription: 'journey',
     subject: 'game',
     legs: JourneyLegs.all,
+    simplifyToleranceDegrees: 0,
   ),
   (
     className: 'HistoricalRouteGeometry',
@@ -72,6 +81,16 @@ const List<_Target> _targets = [
     tracedDescription: 'historical journeys',
     subject: 'app',
     legs: HistoricalLegs.all,
+    // The historical stretches run through up to fifteen legs joined end
+    // to end and are swept over for a six-second hold, so their raw
+    // road/curve fidelity is real per-frame cost the game's short legs
+    // never pay. ~0.005 degrees (~500m at these latitudes) is the
+    // tolerance that halves the point count while keeping every
+    // headland and strait the sea charts were hand-routed around: it is
+    // an order of magnitude below the size of the land features the
+    // charted legs thread between. See CONTRACT.md / the bug report for
+    // the measurements this was picked from.
+    simplifyToleranceDegrees: 0.005,
   ),
 ];
 
@@ -90,10 +109,14 @@ Future<void> main() async {
       final geometries = <String, List<GeoPosition>>{};
       for (final leg in target.legs) {
         stdout.writeln('${leg.id} (${leg.kind.name})');
-        geometries[leg.id] = switch (leg.kind) {
+        final geometry = switch (leg.kind) {
           LegKind.land => await _fetchRoad(client, leg, token),
           LegKind.sea => _chartSea(leg),
         };
+        geometries[leg.id] = _simplify(
+          geometry,
+          target.simplifyToleranceDegrees,
+        );
       }
 
       File(
@@ -170,6 +193,88 @@ List<GeoPosition> _chartSea(JourneyLeg leg) => TrailCurve.through([
   ...leg.chart,
   leg.to.position,
 ]);
+
+/// Thins [points] by the Douglas-Peucker algorithm, dropping any point
+/// within [toleranceDegrees] of the straight line between its surviving
+/// neighbours. The two ends always survive.
+///
+/// Planar in degrees, like `TrailWalk`'s own distance metric: the error
+/// from skipping the latitude/longitude scale correction is far below
+/// the tolerances in play here.
+List<GeoPosition> _simplify(List<GeoPosition> points, double toleranceDegrees) {
+  if (toleranceDegrees <= 0 || points.length < 3) {
+    return points;
+  }
+  final keep = List<bool>.filled(points.length, false)
+    ..first = true
+    ..last = true;
+  _simplifySpan(points, 0, points.length - 1, toleranceDegrees, keep);
+
+  return [
+    for (var index = 0; index < points.length; index++)
+      if (keep[index]) points[index],
+  ];
+}
+
+/// Keeps whichever point between [start] and [end] strays furthest from
+/// the straight line joining them, then recurses either side of it — the
+/// classic Douglas-Peucker recursion, applied in place onto [keep].
+void _simplifySpan(
+  List<GeoPosition> points,
+  int start,
+  int end,
+  double toleranceDegrees,
+  List<bool> keep,
+) {
+  if (end <= start + 1) {
+    return;
+  }
+  var farthestDistance = 0.0;
+  var farthestIndex = -1;
+  for (var index = start + 1; index < end; index++) {
+    final distance = _perpendicularDistance(
+      points[index],
+      points[start],
+      points[end],
+    );
+    if (distance > farthestDistance) {
+      farthestDistance = distance;
+      farthestIndex = index;
+    }
+  }
+  if (farthestIndex == -1 || farthestDistance <= toleranceDegrees) {
+    return;
+  }
+  keep[farthestIndex] = true;
+  _simplifySpan(points, start, farthestIndex, toleranceDegrees, keep);
+  _simplifySpan(points, farthestIndex, end, toleranceDegrees, keep);
+}
+
+/// The perpendicular distance from [point] to the line through [lineStart]
+/// and [lineEnd], in degrees. Falls back to the straight-line distance to
+/// [lineStart] when the two ends coincide.
+double _perpendicularDistance(
+  GeoPosition point,
+  GeoPosition lineStart,
+  GeoPosition lineEnd,
+) {
+  final dx = lineEnd.longitude - lineStart.longitude;
+  final dy = lineEnd.latitude - lineStart.latitude;
+  if (dx == 0 && dy == 0) {
+    final ddx = point.longitude - lineStart.longitude;
+    final ddy = point.latitude - lineStart.latitude;
+
+    return sqrt(ddx * ddx + ddy * ddy);
+  }
+  final numerator =
+      (dy * point.longitude -
+              dx * point.latitude +
+              lineEnd.longitude * lineStart.latitude -
+              lineEnd.latitude * lineStart.longitude)
+          .abs();
+
+  return numerator / sqrt(dx * dx + dy * dy);
+}
 
 /// A coordinate as the Directions API wants it: longitude first.
 String _pair(GeoPosition position) =>

@@ -38,16 +38,16 @@ final class HistoricalJourneyCamera {
 
   /// How long the camera takes to pull out to the stretch about to be
   /// drawn.
-  static const Duration sweepOut = Duration(milliseconds: 900);
+  static const Duration sweepOut = Duration(milliseconds: 1100);
 
   /// How long the camera holds at the wide frame while the trail draws
-  /// itself. Materially longer than the game's 1000ms: these stretches
-  /// are the length of the Aegean, and the trail drawing itself is the
-  /// content.
-  static const Duration sweepHold = Duration(milliseconds: 2200);
+  /// itself. Many times the game's 1000ms: these stretches are the length
+  /// of the Aegean, the trail drawing itself is the content, and it is
+  /// watched from across a hall rather than held in the hand.
+  static const Duration sweepHold = Duration(milliseconds: 6000);
 
   /// How long the camera takes to come in to the arrival frame.
-  static const Duration sweepIn = Duration(milliseconds: 1100);
+  static const Duration sweepIn = Duration(milliseconds: 1400);
 
   /// How long a non-sweeping camera move takes.
   static const Duration stepDuration = Duration(milliseconds: 550);

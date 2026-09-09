@@ -23,6 +23,12 @@ final class TrailWalk extends Equatable {
       _distance(route[index], route[index + 1]),
   ];
 
+  /// The straight-line length of [route], in degrees — the same metric
+  /// [TrailWalk.along] measures progress by, so a fraction of this is a
+  /// fraction of the walk.
+  static double lengthOf(List<GeoPosition> route) =>
+      _spanLengths(route).fold<double>(0, (sum, span) => sum + span);
+
   static double _distance(GeoPosition from, GeoPosition to) {
     final dLatitude = to.latitude - from.latitude;
     final dLongitude = to.longitude - from.longitude;

@@ -46,6 +46,10 @@ final class JourneyTrace extends Equatable {
   /// previous rest, through [currentRest]'s via cities, to its stop.
   late final List<GeoPosition> _currentStretch = _stretch();
 
+  /// How far along the current stretch each of its via cities sits, as a
+  /// fraction of the stretch's length.
+  late final List<double> _viaAt = _viaFractions();
+
   /// The whole journey so far, which is what a trace that is not mid-walk
   /// shows — and what most frames ask for.
   late final WalkedTrail _arrived = WalkedTrail(
@@ -100,6 +104,49 @@ final class JourneyTrace extends Equatable {
       points: [..._behind, ...walk.travelled.skip(1)],
       position: walk.position,
     );
+  }
+
+  /// The via cities of the stretch under way that the trail has already
+  /// reached at [progress].
+  ///
+  /// The frame's truth, where `HistoricalJourneyState.revealedVia` is the
+  /// step's: a city appears as the line arrives at it rather than all of
+  /// them appearing the moment the journey sets off. The same distinction
+  /// [trailAt] makes against the settled trail.
+  List<JourneyStop> viaReachedAt(double progress) {
+    final rest = currentRest;
+    if (rest == null) {
+      return const [];
+    }
+    final walked = progress.clamp(0.0, 1.0);
+
+    return [
+      for (final (index, via) in rest.via.indexed)
+        if (_viaAt[index] <= walked) via,
+    ];
+  }
+
+  List<double> _viaFractions() {
+    final rest = currentRest;
+    if (rest == null || rest.via.isEmpty) {
+      return const [];
+    }
+    final total = TrailWalk.lengthOf(_currentStretch);
+    if (total == 0) {
+      return [for (final _ in rest.via) 0];
+    }
+
+    final path = [_previousStop, ...rest.via, rest.stop];
+    final fractions = <double>[];
+    var walked = 0.0;
+    for (var index = 1; index < path.length - 1; index++) {
+      walked += TrailWalk.lengthOf(
+        _route.through([path[index - 1], path[index]]),
+      );
+      fractions.add(walked / total);
+    }
+
+    return List.unmodifiable(fractions);
   }
 
   List<GeoPosition> _stretch() {

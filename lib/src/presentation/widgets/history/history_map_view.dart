@@ -188,12 +188,14 @@ final class HistoryMapSpecBuilder {
   /// can see, without flooding the platform channel with a fresh route
   /// on every frame.
   ///
-  /// The hold this walk plays out over is six seconds, not the game's
-  /// second and a half, so 40 steps would land one update roughly every
-  /// 150ms — visibly steppy. 240 keeps the same ~40-updates-per-second
-  /// rate the original count was tuned for, now spread across the
-  /// longer hold.
-  static const int _walkSteps = 240;
+  /// This trail is a line extending along its own path, not a token
+  /// moving across the screen, so it tolerates a coarser rate than the
+  /// game's couriers do. And unlike a token, every step here re-encodes
+  /// and re-pushes the whole polyline — the deep-equal, the JSON, the
+  /// GPU retessellation — so the rate is a cost paid per second, not a
+  /// free smoothness dial. 120 over the six-second hold is 20 updates a
+  /// second.
+  static const int _walkSteps = 120;
 
   /// How far along the current stretch the trail has drawn, rounded to
   /// one of [_walkSteps] positions. Mirrors

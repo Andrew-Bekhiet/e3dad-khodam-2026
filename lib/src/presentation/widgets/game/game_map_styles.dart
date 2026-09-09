@@ -1,6 +1,7 @@
 import 'package:e3dad_khodam_2026/src/domain/game/game_character.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/map_token_spec.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/markers/map_marker_style.dart';
+import 'package:e3dad_khodam_2026/src/presentation/stage/marker_glyph.dart';
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/game_palette.dart';
 import 'package:flutter/material.dart';
 
@@ -22,7 +23,7 @@ final class GameMapStyles {
       ringWidth: 3,
     ),
     shadow: const MapMarkerShadow(blur: 8, offsetDy: 2, opacity: 0.32),
-    glyph: _glyph(Icons.mail_outline, size: 24),
+    glyph: iconGlyph(Icons.mail_outline, size: 24, color: GamePalette.white),
     label: _label,
   );
 
@@ -36,7 +37,7 @@ final class GameMapStyles {
       ringWidth: 2,
     ),
     shadow: const MapMarkerShadow(blur: 5, offsetDy: 1, opacity: 0.22),
-    glyph: _glyph(Icons.check, size: 32),
+    glyph: iconGlyph(Icons.check, size: 32, color: GamePalette.white),
     label: _label,
   );
 
@@ -82,15 +83,6 @@ final class GameMapStyles {
     ringWidth: 2,
     fallbackColor: GamePalette.accent,
   );
-
-  static MapMarkerGlyph _glyph(IconData icon, {required double size}) =>
-      MapMarkerGlyph(
-        codePoint: icon.codePoint,
-        fontFamily: icon.fontFamily ?? 'MaterialIcons',
-        fontPackage: icon.fontPackage,
-        size: size,
-        color: GamePalette.white,
-      );
 
   const GameMapStyles._();
 }

@@ -23,9 +23,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 /// journey stands. That is the only thing that moves besides the
 /// beacon's flash, so the two share one surface but two clocks.
 final class HistoryMapView extends StatelessWidget {
-  static const double _minZoom = 4.0;
-  static const double _maxZoom = 18.0;
-
   /// The sweep's shared phase clock.
   final SweepClock sweepClock;
 
@@ -138,6 +135,35 @@ final class _WalkingHistoryMapSurface extends StatefulWidget {
 }
 
 class _WalkingHistoryMapSurfaceState extends State<_WalkingHistoryMapSurface> {
+  final HistoryMapSpecBuilder _specBuilder = HistoryMapSpecBuilder();
+
+  @override
+  Widget build(BuildContext context) => AnimatedBuilder(
+    animation: Listenable.merge([widget.sweepClock, widget.beaconClock]),
+    builder: (context, _) => widget.surfaceBuilder(
+      _specBuilder.build(
+        state: widget.state,
+        sweepClock: widget.sweepClock,
+        beaconBright: widget.beaconClock.isBright,
+        onMarkerTap: widget.onMarkerTap,
+        onSurfaceTap: widget.onSurfaceTap,
+      ),
+    ),
+  );
+}
+
+/// Builds the map spec for a historical journey's playthrough: the trail
+/// and markers, cached by identity so a still frame does not re-walk the
+/// route or rebuild markers on every animation tick.
+///
+/// Kept independent of any widget — rather than folded into
+/// `_WalkingHistoryMapSurfaceState` — so both [HistoryMapView] and the map
+/// stage's `HistoricalJourneyPresenter` can share one copy of the caching
+/// instead of each keeping its own.
+final class HistoryMapSpecBuilder {
+  static const double minZoom = 4.0;
+  static const double maxZoom = 18.0;
+
   /// The one trail on the map: the journey's own line.
   static const String _trailId = 'journey';
 
@@ -146,6 +172,17 @@ class _WalkingHistoryMapSurfaceState extends State<_WalkingHistoryMapSurface> {
   /// without flooding the platform channel with a fresh route on every
   /// frame.
   static const int _walkSteps = 40;
+
+  /// How far along the current stretch the trail has drawn, rounded to
+  /// one of [_walkSteps] positions. Mirrors
+  /// `GameMapView._WalkingMapSurfaceState._walkProgress`: the drawing
+  /// belongs to the hold, the stretch where the camera is out at the
+  /// sweep frame and the whole run is on screen.
+  static double _walkProgress(SweepClock clock) {
+    final walked = clock.holdProgress * _walkSteps;
+
+    return (walked.roundToDouble() / _walkSteps).clamp(0.0, 1.0);
+  }
 
   /// What was last drawn, and the trace/progress it was drawn for.
   List<MapTrailSpec>? _trails;
@@ -158,29 +195,27 @@ class _WalkingHistoryMapSurfaceState extends State<_WalkingHistoryMapSurface> {
   HistoricalJourneyState? _markersOf;
   bool? _markersBright;
 
-  @override
-  Widget build(BuildContext context) => AnimatedBuilder(
-    animation: Listenable.merge([widget.sweepClock, widget.beaconClock]),
-    builder: (context, _) {
-      final state = widget.state;
-
-      return widget.surfaceBuilder(
-        MapSurfaceSpec(
-          markers: _markersFor(state, widget.beaconClock.isBright),
-          camera: state.camera,
-          minZoom: HistoryMapView._minZoom,
-          maxZoom: HistoryMapView._maxZoom,
-          cameraAnimationDuration: state.cameraAnimationDuration,
-          onMarkerTap: widget.onMarkerTap,
-          onSurfaceTap: widget.onSurfaceTap,
-          trails: _trailsFor(state.trace, _walkProgress(widget.sweepClock)),
-          // Written out on purpose: this map has no couriers and no
-          // portraits, ever.
-          // ignore: avoid_redundant_argument_values
-          tokens: const [],
-        ),
-      );
-    },
+  /// The spec for [state] with the beacon in [beaconBright]'s state and
+  /// the trail drawn as far as [sweepClock] has walked it.
+  MapSurfaceSpec build({
+    required HistoricalJourneyState state,
+    required SweepClock sweepClock,
+    required bool beaconBright,
+    required void Function(String stopId) onMarkerTap,
+    required VoidCallback? onSurfaceTap,
+  }) => MapSurfaceSpec(
+    markers: _markersFor(state, beaconBright),
+    camera: state.camera,
+    minZoom: minZoom,
+    maxZoom: maxZoom,
+    cameraAnimationDuration: state.cameraAnimationDuration,
+    onMarkerTap: onMarkerTap,
+    onSurfaceTap: onSurfaceTap,
+    trails: _trailsFor(state.trace, _walkProgress(sweepClock)),
+    // Written out on purpose: this map has no couriers and no portraits,
+    // ever.
+    // ignore: avoid_redundant_argument_values
+    tokens: const [],
   );
 
   /// The trail for [trace] at [walked], rebuilt only when one of the two
@@ -223,16 +258,5 @@ class _WalkingHistoryMapSurfaceState extends State<_WalkingHistoryMapSurface> {
     _markersBright = beaconBright;
 
     return built;
-  }
-
-  /// How far along the current stretch the trail has drawn, rounded to
-  /// one of [_walkSteps] positions. Mirrors
-  /// `GameMapView._WalkingMapSurfaceState._walkProgress`: the drawing
-  /// belongs to the hold, the stretch where the camera is out at the
-  /// sweep frame and the whole run is on screen.
-  static double _walkProgress(SweepClock clock) {
-    final walked = clock.holdProgress * _walkSteps;
-
-    return (walked.roundToDouble() / _walkSteps).clamp(0.0, 1.0);
   }
 }

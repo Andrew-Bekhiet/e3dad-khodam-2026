@@ -4,7 +4,7 @@ import 'package:e3dad_khodam_2026/src/domain/game/game_sounds.dart';
 import 'package:e3dad_khodam_2026/src/domain/game/level_script_repository.dart';
 import 'package:e3dad_khodam_2026/src/domain/journey_map_repository.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/map_surface_builder.dart';
-import 'package:e3dad_khodam_2026/src/presentation/pages/journey_map_page.dart';
+import 'package:e3dad_khodam_2026/src/presentation/pages/map_stage_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -59,7 +59,7 @@ final class E3dadKhodamApp extends StatelessWidget {
       ],
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),
-      home: const JourneyMapPage(),
+      home: const MapStagePage(),
     ),
   );
 }

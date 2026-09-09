@@ -1,4 +1,5 @@
 import 'package:e3dad_khodam_2026/src/map_engine/markers/map_marker_style.dart';
+import 'package:e3dad_khodam_2026/src/presentation/stage/marker_glyph.dart';
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/game_palette.dart';
 import 'package:flutter/material.dart';
 
@@ -47,7 +48,7 @@ final class HistoryMapStyles {
       ringWidth: 2,
     ),
     shadow: const MapMarkerShadow(blur: 6, offsetDy: 1, opacity: 0.28),
-    glyph: _glyph(Icons.trip_origin, size: 14),
+    glyph: iconGlyph(Icons.trip_origin, size: 14, color: GamePalette.white),
     label: _label,
   );
 
@@ -77,7 +78,7 @@ final class HistoryMapStyles {
       ringWidth: 3,
     ),
     shadow: const MapMarkerShadow(blur: 14, offsetDy: 0, opacity: 0.55),
-    glyph: _glyph(Icons.lightbulb, size: 16),
+    glyph: iconGlyph(Icons.lightbulb, size: 16, color: GamePalette.white),
     label: _label,
   );
 
@@ -119,15 +120,6 @@ final class HistoryMapStyles {
     haloWidth: 1.5,
     gap: 2,
   );
-
-  static MapMarkerGlyph _glyph(IconData icon, {required double size}) =>
-      MapMarkerGlyph(
-        codePoint: icon.codePoint,
-        fontFamily: icon.fontFamily ?? 'MaterialIcons',
-        fontPackage: icon.fontPackage,
-        size: size,
-        color: GamePalette.white,
-      );
 
   const HistoryMapStyles._();
 }

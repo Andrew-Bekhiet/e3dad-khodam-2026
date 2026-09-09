@@ -20,6 +20,18 @@ final class AppStrings {
   /// action that opens it.
   static const String gameTitle = 'لعبة post office';
 
+  /// Label of the map stage's button for the Cross Map script.
+  static const String crossMapScriptLabel = 'الشرح المبدئي';
+
+  /// Label of the map stage's button for Paul's second journey.
+  static const String secondJourneyScriptLabel = 'الرحلة الثانية';
+
+  /// Label of the map stage's button for Paul's third journey.
+  static const String thirdJourneyScriptLabel = 'الرحلة الثالثة';
+
+  /// Label of the map stage's button for the voyage to رومية.
+  static const String romeJourneyScriptLabel = 'الرحلة إلى رومية';
+
   /// The word "level", prefixed to the level counter in the game HUD.
   static const String levelWord = 'المرحلة';
 

@@ -2,6 +2,7 @@ import 'package:e3dad_khodam_2026/src/map_engine/map_marker_spec.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/map_surface_builder.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/map_surface_spec.dart';
 import 'package:e3dad_khodam_2026/src/presentation/cubit/map_hierarchy_cubit.dart';
+import 'package:e3dad_khodam_2026/src/presentation/cubit/map_hierarchy_state.dart';
 import 'package:e3dad_khodam_2026/src/presentation/widgets/marker_styles.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -21,25 +22,33 @@ final class JourneyMapView extends StatelessWidget {
   Widget build(BuildContext context) {
     final cubit = context.watch<MapHierarchyCubit>();
     final surfaceBuilder = context.read<MapSurfaceBuilder>();
-    final state = cubit.state;
-    final spec = MapSurfaceSpec(
-      markers: [
-        for (final node in state.visibleNodes)
-          MapMarkerSpec(
-            id: node.id,
-            position: node.position,
-            label: node.label,
-            style: MarkerStyles.forNode(node),
-            isInteractive: node.isExpandable,
-          ),
-      ],
-      camera: state.camera,
-      minZoom: _minZoom,
-      maxZoom: _maxZoom,
-      cameraAnimationDuration: state.cameraAnimationDuration,
-      onMarkerTap: cubit.drillDown,
-    );
 
-    return surfaceBuilder(spec);
+    return surfaceBuilder(specFor(cubit.state, onMarkerTap: cubit.drillDown));
   }
+
+  /// The spec for [state], with marker taps routed to [onMarkerTap].
+  ///
+  /// Pulled out as a static method — rather than left inline in [build] —
+  /// so the map stage's `CrossMapPresenter` can build the same spec
+  /// without a `MapHierarchyCubit`-aware widget of its own.
+  static MapSurfaceSpec specFor(
+    MapHierarchyState state, {
+    required void Function(String nodeId) onMarkerTap,
+  }) => MapSurfaceSpec(
+    markers: [
+      for (final node in state.visibleNodes)
+        MapMarkerSpec(
+          id: node.id,
+          position: node.position,
+          label: node.label,
+          style: MarkerStyles.forNode(node),
+          isInteractive: node.isExpandable,
+        ),
+    ],
+    camera: state.camera,
+    minZoom: _minZoom,
+    maxZoom: _maxZoom,
+    cameraAnimationDuration: state.cameraAnimationDuration,
+    onMarkerTap: onMarkerTap,
+  );
 }

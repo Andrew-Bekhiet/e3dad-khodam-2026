@@ -4,18 +4,17 @@ import 'package:e3dad_khodam_2026/src/domain/game/level_script_repository.dart';
 import 'package:e3dad_khodam_2026/src/presentation/cubit/game_journey_cubit.dart';
 import 'package:e3dad_khodam_2026/src/presentation/cubit/game_journey_state.dart';
 import 'package:e3dad_khodam_2026/src/presentation/cubit/sweep_framing.dart';
+import 'package:e3dad_khodam_2026/src/presentation/stage/step_focus.dart';
+import 'package:e3dad_khodam_2026/src/presentation/stage/sweep_step_queue.dart';
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/destination_card.dart';
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/game_map_view.dart';
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/game_screen_size.dart';
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/game_step_controls.dart';
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/level_step_counter.dart';
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/story_overlay.dart';
-import 'package:e3dad_khodam_2026/src/presentation/widgets/game/sweep_clock.dart';
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/sweep_overlay.dart';
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/sweep_phase.dart';
-import 'package:e3dad_khodam_2026/src/presentation/widgets/game/sweep_press_queue.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 /// The game screen: the same pixel map, walked as fourteen levels, with
@@ -53,12 +52,15 @@ class _GameJourneyViewState extends State<_GameJourneyView>
     with SingleTickerProviderStateMixin {
   final FocusNode _focusNode = FocusNode(debugLabel: 'game-journey-keys');
 
-  /// Runs from 0 to 1 across a whole sweep. Drives the couriers walking,
-  /// their trail drawing itself behind them, and the streaks over the
-  /// map — all three are the same movement, so they share one clock.
-  late final AnimationController _sweep = AnimationController(vsync: this);
-  late final SweepClock _sweepClock = SweepClock(_sweep);
-  final SweepPressQueue _pressQueue = SweepPressQueue();
+  /// Times the couriers walking, their trail drawing itself behind them,
+  /// and the streaks over the map — all three are the same movement, so
+  /// they share one clock.
+  late final SweepStepQueue _stepQueue = SweepStepQueue(
+    vsync: this,
+    focusNode: _focusNode,
+    onForward: context.read<GameJourneyCubit>().forward,
+    onBackward: context.read<GameJourneyCubit>().backward,
+  );
   SweepPhase _lastSweepPhase = SweepPhase.landed;
 
   GameSounds get _sounds => widget.sounds;
@@ -66,11 +68,11 @@ class _GameJourneyViewState extends State<_GameJourneyView>
   @override
   void initState() {
     super.initState();
-    _sweepClock.addListener(_playSoundForSweepPhase);
+    _stepQueue.sweepClock.addListener(_playSoundForSweepPhase);
   }
 
   void _playSoundForSweepPhase() {
-    final phase = _sweepClock.phase;
+    final phase = _stepQueue.sweepClock.phase;
     if (phase == _lastSweepPhase) {
       return;
     }
@@ -99,21 +101,21 @@ class _GameJourneyViewState extends State<_GameJourneyView>
     );
     final state = cubit.state;
 
-    final body = Focus(
+    final body = StepFocus(
       focusNode: _focusNode,
-      autofocus: true,
-      onKeyEvent: (node, event) => _onKeyEvent(cubit, event),
+      onForward: _stepQueue.forward,
+      onBackward: _stepQueue.backward,
       child: Stack(
         fit: StackFit.expand,
         children: [
           GameMapView(
-            sweepClock: _sweepClock,
+            sweepClock: _stepQueue.sweepClock,
             // The map is the biggest target on a phone, so a tap on it
             // steps the script — the same thing the forward arrow does,
             // whether or not the tap landed on a city.
-            onTap: () => _step(cubit, forward: true),
+            onTap: _stepQueue.forward,
           ),
-          SweepOverlay(clock: _sweepClock),
+          SweepOverlay(clock: _stepQueue.sweepClock),
           // Mounted for as long as there is a level, and only faded on
           // `showsCard`: mounting on `showsCard` would tear the card out
           // of the tree before it could fade, so it would vanish and pop
@@ -153,14 +155,14 @@ class _GameJourneyViewState extends State<_GameJourneyView>
                   verseCount: level.verses.length,
                 ),
                 onReveal: cubit.revealNext,
-                onAdvance: () => _step(cubit, forward: true),
+                onAdvance: _stepQueue.forward,
               ),
             ),
           StoryOverlay(
             guide: cubit.guide,
             narrator: cubit.narrator,
             beat: state.beat,
-            onAdvance: () => _step(cubit, forward: true),
+            onAdvance: _stepQueue.forward,
           ),
           Positioned(
             bottom: screen.pick(compact: 16, large: 24),
@@ -173,8 +175,8 @@ class _GameJourneyViewState extends State<_GameJourneyView>
             bottom: 12,
             child: SafeArea(
               child: GameStepControls(
-                onBackward: () => _step(cubit, forward: false),
-                onForward: () => _step(cubit, forward: true),
+                onBackward: _stepQueue.backward,
+                onForward: _stepQueue.forward,
                 canGoBackward: !state.isAtStart,
                 canGoForward: !state.isAtEnd,
               ),
@@ -186,7 +188,10 @@ class _GameJourneyViewState extends State<_GameJourneyView>
 
     return BlocListener<GameJourneyCubit, GameJourneyState>(
       listenWhen: (previous, current) => previous.camera != current.camera,
-      listener: (context, state) => _onCameraChanged(state),
+      listener: (context, state) => _stepQueue.handleCameraChange(
+        state.sweep,
+        onLanded: _sounds.playLevelReached,
+      ),
       child: Scaffold(
         appBar: AppBar(
           centerTitle: false,
@@ -207,124 +212,10 @@ class _GameJourneyViewState extends State<_GameJourneyView>
   @override
   void dispose() {
     _sounds.stopWalking();
-    _sweepClock
-      ..removeListener(_playSoundForSweepPhase)
+    _stepQueue
+      ..sweepClock.removeListener(_playSoundForSweepPhase)
       ..dispose();
-    _sweep.dispose();
     _focusNode.dispose();
     super.dispose();
-  }
-
-  /// Starts the sweep clock when the camera is given one to fly, and
-  /// parks it otherwise so nothing is drawn over a still map.
-  ///
-  /// The travelling loop rides the same clock, so it starts and stops
-  /// exactly where the movement does — including the parked branch, which
-  /// is how a journey cut short still falls silent.
-  void _onCameraChanged(GameJourneyState state) {
-    final sweep = state.sweep;
-    if (sweep == null) {
-      _sweepClock.interrupt();
-
-      return;
-    }
-    _sweepClock.start(sweep).then((_) => _onSweepLanded());
-  }
-
-  /// The party has stopped moving. A `TickerFuture` only completes when
-  /// the animation runs its whole course, so an interrupted sweep never
-  /// gets here — which is the point: nothing was reached.
-  ///
-  /// Every sweep that runs is an arrival: the cubit only puts one on a
-  /// forward move to a city the camera is not already at, so there is no
-  /// re-flown sweep here to keep quiet for.
-  void _onSweepLanded() {
-    if (!mounted) {
-      return;
-    }
-    _sounds.playLevelReached();
-    _drainPressQueue();
-  }
-
-  /// Applies whatever was pressed while the camera was flying, one press
-  /// per frame.
-  ///
-  /// One at a time rather than all at once: a press can set off another
-  /// sweep, and applying the rest of the queue on top of it would stack
-  /// two flights on one clock — the second restarting the first from zero
-  /// over a map that is halfway to somewhere else. So each press waits
-  /// for the frame after the one before it, and a press that starts a
-  /// sweep leaves the remainder queued for when *it* lands.
-  void _drainPressQueue() {
-    if (!mounted ||
-        !_pressQueue.drainOne(context.read<GameJourneyCubit>().forward)) {
-      return;
-    }
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || _sweepClock.phase.isRunning) {
-        return;
-      }
-      _drainPressQueue();
-    });
-  }
-
-  /// Left and right walk the script, space and enter advance it, down and
-  /// up work the card, and escape leaves the game. Left/right are not
-  /// mirrored for RTL: they match the on-screen arrows, which are not
-  /// mirrored either.
-  KeyEventResult _onKeyEvent(GameJourneyCubit cubit, KeyEvent event) {
-    if (event is! KeyDownEvent && event is! KeyRepeatEvent) {
-      return KeyEventResult.ignored;
-    }
-
-    final key = event.logicalKey;
-    if (_isForwardKey(key)) {
-      _step(cubit, forward: true);
-
-      return KeyEventResult.handled;
-    }
-
-    if (_isBackwardKey(key)) {
-      _step(cubit, forward: false);
-
-      return KeyEventResult.handled;
-    }
-
-    return KeyEventResult.ignored;
-  }
-
-  bool _isForwardKey(LogicalKeyboardKey key) => switch (key) {
-    LogicalKeyboardKey.arrowLeft ||
-    LogicalKeyboardKey.space ||
-    LogicalKeyboardKey.enter ||
-    LogicalKeyboardKey.arrowDown => true,
-    _ => false,
-  };
-
-  bool _isBackwardKey(LogicalKeyboardKey key) => switch (key) {
-    LogicalKeyboardKey.arrowRight ||
-    LogicalKeyboardKey.backspace ||
-    LogicalKeyboardKey.arrowUp => true,
-    _ => false,
-  };
-
-  /// Steps the script and takes the keyboard focus back, so a tap on the
-  /// map or a button does not leave the arrow keys dead afterwards.
-  ///
-  /// A forward press made mid-sweep is queued rather than applied: the
-  /// sweep is one movement, and cutting it short leaves the camera
-  /// somewhere nobody asked for.
-  ///
-  /// A backward press mid-sweep is dropped, not queued. Queueing it
-  /// would land the camera and immediately fly it back out again, which
-  /// is worse than ignoring a key pressed during a second of animation.
-  void _step(GameJourneyCubit cubit, {required bool forward}) {
-    _focusNode.requestFocus();
-    _pressQueue.press(
-      forward: forward,
-      phase: _sweepClock.phase,
-      onForward: cubit.forward,
-      onBackward: cubit.backward,
-    );
   }
 }

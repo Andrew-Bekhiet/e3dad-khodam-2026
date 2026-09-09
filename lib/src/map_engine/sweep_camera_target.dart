@@ -17,7 +17,11 @@ final class SweepCameraTarget extends MapCameraTarget {
   final FitBoundsCameraTarget widest;
 
   /// Where the camera settles once it comes back in.
-  final CenterZoomCameraTarget arrival;
+  ///
+  /// A center/zoom point for the game's single destination, or a bounds
+  /// frame when arrival means holding two places on screen at once — a
+  /// rest and the beacon flashing beside it.
+  final CameraLeg arrival;
 
   /// How long the camera takes to reach [widest].
   final Duration outLeg;

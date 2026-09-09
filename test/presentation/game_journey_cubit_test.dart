@@ -371,9 +371,16 @@ void _sweepTests() {
     _pressUntil(cubit, () => cubit.state.levelNumber == 3);
     final sweep = _sweepFor(cubit.state);
 
+    final arrival = sweep.arrival;
     expect(sweep.widest.bounds, GameJourneyCamera.sweepFrame);
-    expect(sweep.arrival.center, JourneyStops.corinth.position);
-    expect(sweep.arrival.zoom, GameJourneyCamera.arrivalZoom);
+    // The game always arrives on one city, never on a frame holding two:
+    // that wider arrival belongs to the historical journeys' beacons.
+    expect(arrival, isA<CenterZoomCameraTarget>());
+    expect(
+      (arrival as CenterZoomCameraTarget).center,
+      JourneyStops.corinth.position,
+    );
+    expect(arrival.zoom, GameJourneyCamera.arrivalZoom);
     // Coming in is the part worth watching, so it takes longer.
     expect(sweep.inLeg, greaterThan(sweep.outLeg));
   });

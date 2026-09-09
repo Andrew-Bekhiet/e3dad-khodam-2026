@@ -4,6 +4,7 @@ import 'package:e3dad_khodam_2026/src/domain/game/journey_leg.dart';
 import 'package:e3dad_khodam_2026/src/domain/game/leg_kind.dart';
 import 'package:e3dad_khodam_2026/src/domain/game/leg_trail.dart';
 import 'package:e3dad_khodam_2026/src/domain/geo_position.dart';
+import 'package:e3dad_khodam_2026/src/domain/routing/charted_legs.dart';
 
 /// Every leg the post-office journey travels, and how each was travelled.
 ///
@@ -211,30 +212,20 @@ final class JourneyLegs {
   /// the map is a record of.
   static const Set<String> undrawnLegIds = {'ismailia>thessalonica'};
 
+  /// The atlas the journey's trails are joined out of.
+  static const ChartedLegs charted = ChartedLegs(
+    byLegId: RouteGeometry.byLegId,
+    undrawnLegIds: undrawnLegIds,
+  );
+
   /// Whether the leg between [fromId] and [toId] leaves a line behind it.
-  ///
-  /// Direction-insensitive, like [geometryBetween]: the same stretch read
-  /// backwards is the same stretch.
   static LegTrail trailOf(String fromId, String toId) =>
-      undrawnLegIds.contains('$fromId>$toId') ||
-          undrawnLegIds.contains('$toId>$fromId')
-      ? LegTrail.undrawn
-      : LegTrail.drawn;
+      charted.trailOf(fromId, toId);
 
   /// The line to draw between the stops [fromId] and [toId], or null
   /// when no leg joins them.
-  ///
-  /// A leg travelled the other way returns the same geometry reversed:
-  /// أفسس → أورشليم and أورشليم → أفسس are one stretch of water, and
-  /// charting it twice would only invite the two copies to drift apart.
-  static List<GeoPosition>? geometryBetween(String fromId, String toId) {
-    final forward = RouteGeometry.byLegId['$fromId>$toId'];
-    if (forward != null) {
-      return forward;
-    }
-
-    return RouteGeometry.byLegId['$toId>$fromId']?.reversed.toList();
-  }
+  static List<GeoPosition>? geometryBetween(String fromId, String toId) =>
+      charted.geometryBetween(fromId, toId);
 
   const JourneyLegs._();
 }

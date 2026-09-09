@@ -93,11 +93,10 @@ final class JourneyTrace extends Equatable {
   /// [destination] with the whole journey drawn behind it; anything
   /// outside that is clamped.
   WalkedTrail trailAt(double progress) {
-    final walked = progress.clamp(0.0, 1.0);
-    if (walked >= 1 || !isUnderway) {
+    if (hasArrivedAt(progress)) {
       return _arrived;
     }
-    final walk = TrailWalk.along(_currentStretch, walked);
+    final walk = TrailWalk.along(_currentStretch, progress.clamp(0.0, 1.0));
 
     return WalkedTrail(
       // `travelled` starts on the point `_behind` already ends on.
@@ -105,6 +104,13 @@ final class JourneyTrace extends Equatable {
       position: walk.position,
     );
   }
+
+  /// Whether the trail has reached [destination] by [progress]: the same
+  /// frame's-truth test [trailAt] and [viaReachedAt] already make, named
+  /// so a marker for the destination itself — the current rest and its
+  /// beacon — can be gated on it too.
+  bool hasArrivedAt(double progress) =>
+      progress.clamp(0.0, 1.0) >= 1 || !isUnderway;
 
   /// The via cities of the stretch under way that the trail has already
   /// reached at [progress].

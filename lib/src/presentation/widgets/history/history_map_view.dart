@@ -66,6 +66,9 @@ final class HistoryMapView extends StatelessWidget {
     double walked = 1,
   }) {
     final beacon = state.beacon;
+    // A beacon means a letter was sent from the rest, so it can't appear
+    // before the rest itself does.
+    final arrived = state.trace.hasArrivedAt(walked);
     final byPosition = <String, MapMarkerSpec>{};
 
     for (final (stop, style, isInteractive) in [
@@ -74,8 +77,8 @@ final class HistoryMapView extends StatelessWidget {
         (rest.stop, HistoryMapStyles.rest, true),
       for (final via in _viaReached(state, walked))
         (via, HistoryMapStyles.waypoint, false),
-      (state.currentStop, HistoryMapStyles.current, true),
-      if (beacon != null)
+      if (arrived) (state.currentStop, HistoryMapStyles.current, true),
+      if (arrived && beacon != null)
         (
           beacon,
           beaconBright

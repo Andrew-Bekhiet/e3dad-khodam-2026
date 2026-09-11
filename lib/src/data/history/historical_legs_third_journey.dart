@@ -50,10 +50,28 @@ final class HistoricalLegsThirdJourney {
   );
 
   /// Every leg unique to the 3rd journey, in order.
+  /// كورنثوس → ريغيون, west out of the Gulf of Corinth and across the
+  /// Ionian Sea to the Strait of Messina. From there the voyage to رومية's
+  /// own legs carry it on to بوطيولي and رومية.
+  static const JourneyLeg corinthToRhegium = JourneyLeg(
+    from: JourneyStops.corinth,
+    to: HistoricalStops.rhegium,
+    kind: LegKind.sea,
+    chart: [
+      // Out of the Gulf of Corinth, past Patras.
+      GeoPosition(latitude: 38.3, longitude: 21.5),
+      // Off Cephalonia, into the open Ionian Sea.
+      GeoPosition(latitude: 38.4, longitude: 20.2),
+      // Mid-Ionian, closing on the toe of Italy.
+      GeoPosition(latitude: 38.2, longitude: 17.5),
+    ],
+  );
+
   static const List<JourneyLeg> all = [
     pisidianAntiochToEphesus,
     ephesusToTroas,
     troasToNeapolis,
+    corinthToRhegium,
   ];
 
   const HistoricalLegsThirdJourney._();

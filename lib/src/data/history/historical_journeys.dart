@@ -37,7 +37,8 @@ final class HistoricalJourneys {
   );
 
   /// أنطاكية to أفسس, sending letters to غلاطية and كورنثوس from there,
-  /// then on to كورنثوس, sending a letter to رومية.
+  /// then on to كورنثوس, sending a letter to رومية, and finally to رومية
+  /// itself.
   static const HistoricalJourney thirdJourney = HistoricalJourney(
     id: 'thirdJourney',
     title: 'رحلة بولس الرسول الثالثة',
@@ -68,6 +69,10 @@ final class HistoricalJourneys {
         ],
         beacons: [JourneyStops.rome],
         arrivesDark: true,
+      ),
+      JourneyRest(
+        stop: JourneyStops.rome,
+        via: [HistoricalStops.rhegium, HistoricalStops.puteoli],
       ),
     ],
   );

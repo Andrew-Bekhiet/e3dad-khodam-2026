@@ -31,13 +31,13 @@ final class HistoricalJourneys {
           HistoricalStops.berea,
           HistoricalStops.athens,
         ],
-        beacon: JourneyStops.thessalonica,
+        beacons: [JourneyStops.thessalonica],
       ),
     ],
   );
 
-  /// أنطاكية to أفسس, then on to فيلبي, sending a letter to رومية from
-  /// there.
+  /// أنطاكية to أفسس, sending letters to غلاطية and كورنثوس from there,
+  /// then on to كورنثوس, sending a letter to رومية.
   static const HistoricalJourney thirdJourney = HistoricalJourney(
     id: 'thirdJourney',
     title: 'رحلة بولس الرسول الثالثة',
@@ -52,11 +52,22 @@ final class HistoricalJourneys {
           HistoricalStops.iconium,
           HistoricalStops.pisidianAntioch,
         ],
+        beacons: [JourneyStops.galatia, JourneyStops.corinth],
       ),
       JourneyRest(
-        stop: HistoricalStops.philippi,
-        via: [HistoricalStops.troas, HistoricalStops.neapolis],
-        beacon: JourneyStops.rome,
+        stop: JourneyStops.corinth,
+        via: [
+          HistoricalStops.troas,
+          HistoricalStops.neapolis,
+          HistoricalStops.philippi,
+          HistoricalStops.amphipolis,
+          HistoricalStops.apollonia,
+          JourneyStops.thessalonica,
+          HistoricalStops.berea,
+          HistoricalStops.athens,
+        ],
+        beacons: [JourneyStops.rome],
+        arrivesDark: true,
       ),
     ],
   );

@@ -14,12 +14,14 @@ final class JourneyOpeningStep extends HistoricalStep {
   const JourneyOpeningStep();
 }
 
-/// Arrived at `journey.rests[restIndex]`.
+/// Arrived at `journey.rests[restIndex]`, [phase] presses in: phase 0 is
+/// the arrival, each later phase lights the rest's next beacon.
 final class RestStep extends HistoricalStep {
   final int restIndex;
+  final int phase;
 
   @override
-  List<Object?> get props => [restIndex];
+  List<Object?> get props => [restIndex, phase];
 
-  const RestStep(this.restIndex);
+  const RestStep(this.restIndex, [this.phase = 0]);
 }

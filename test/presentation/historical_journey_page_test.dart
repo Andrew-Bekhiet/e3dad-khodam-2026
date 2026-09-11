@@ -125,7 +125,8 @@ void _beaconTests() {
       );
       await tester.pump();
       final cubit = _cubitOf(tester);
-      final beacon = HistoricalJourneys.thirdJourney.rests[1].beacon;
+      final beacon =
+          HistoricalJourneys.thirdJourney.rests[1].beacons.firstOrNull;
       if (beacon == null) {
         fail('the third journey should name رومية as its second beacon');
       }
@@ -172,7 +173,7 @@ void _precedenceTests() {
       await tester.pump();
       final cubit = _cubitOf(tester);
       final rest = HistoricalJourneys.secondJourney.rests.single;
-      final beacon = rest.beacon;
+      final beacon = rest.beacons.firstOrNull;
       if (beacon == null) {
         fail('the second journey should name تسالونيكي as its beacon');
       }

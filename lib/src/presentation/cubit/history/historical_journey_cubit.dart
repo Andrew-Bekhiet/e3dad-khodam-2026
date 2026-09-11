@@ -74,7 +74,7 @@ final class HistoricalJourneyProjection {
     required HistoricalJourneyState? from,
     required StepDirection direction,
   }) {
-    final step = _stepAt(index);
+    final step = _stepAt(journey, index);
     final visitedRests = _visitedRestsFor(journey, step);
     final currentRest = _currentRestFor(journey, step);
 
@@ -88,7 +88,10 @@ final class HistoricalJourneyProjection {
         origin: journey.origin,
         visitedRests: visitedRests,
         currentStop: currentRest?.stop ?? journey.origin,
-        beacon: currentRest?.beacon,
+        beacon: switch (step) {
+          JourneyOpeningStep() => null,
+          RestStep(:final phase) => currentRest?.beaconAt(phase),
+        },
         revealedVia: _revealedVia(visitedRests, currentRest),
         trace: JourneyTrace(
           origin: journey.origin,
@@ -106,11 +109,18 @@ final class HistoricalJourneyProjection {
     );
   }
 
-  /// How many steps [journey] has: the opening shot, plus one per rest.
-  int stepCount(HistoricalJourney journey) => 1 + journey.rests.length;
+  /// How many steps [journey] has: the opening shot, plus each rest's
+  /// phases.
+  int stepCount(HistoricalJourney journey) => _stepsOf(journey).length;
 
-  HistoricalStep _stepAt(int index) =>
-      index == 0 ? const JourneyOpeningStep() : RestStep(index - 1);
+  HistoricalStep _stepAt(HistoricalJourney journey, int index) =>
+      _stepsOf(journey)[index];
+
+  List<HistoricalStep> _stepsOf(HistoricalJourney journey) => [
+    const JourneyOpeningStep(),
+    for (final (i, rest) in journey.rests.indexed)
+      for (var phase = 0; phase < rest.phaseCount; phase++) RestStep(i, phase),
+  ];
 
   List<JourneyRest> _visitedRestsFor(
     HistoricalJourney journey,

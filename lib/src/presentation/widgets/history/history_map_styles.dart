@@ -1,9 +1,10 @@
 import 'package:e3dad_khodam_2026/src/map_engine/markers/map_marker_style.dart';
 import 'package:e3dad_khodam_2026/src/presentation/stage/marker_glyph.dart';
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/game_palette.dart';
+import 'package:e3dad_khodam_2026/src/presentation/widgets/marker_styles.dart';
 import 'package:flutter/material.dart';
 
-/// The six states a stop can be in on the historical map.
+/// The five states a stop can be in on the historical map.
 ///
 /// Kept to a closed set for the same reason `GameMapStyles` is: one style
 /// id is one rasterised image. `beaconBright`/`beaconDim` is two styles
@@ -25,7 +26,7 @@ final class HistoryMapStyles {
     ),
     shadow: MapMarkerShadow(blur: 22, offsetDy: 5, opacity: 0.36),
     glyph: null,
-    label: _labelLarge,
+    label: _label,
   );
 
   /// A rest already arrived at and left behind.
@@ -54,21 +55,6 @@ final class HistoryMapStyles {
     shadow: const MapMarkerShadow(blur: 15, offsetDy: 3, opacity: 0.3),
     glyph: iconGlyph(Icons.trip_origin, size: 32, color: GamePalette.white),
     label: _label,
-  );
-
-  /// A city the trail has passed through without stopping: a dot and a
-  /// label well under [rest] in weight, but — at this scale — no longer
-  /// small enough to miss from across the room.
-  static const MapMarkerStyle waypoint = MapMarkerStyle(
-    id: 'history-stop-waypoint',
-    shape: MapMarkerShapeStyle(
-      shape: MapMarkerShape.circle,
-      diameter: 30,
-      color: GamePalette.locked,
-    ),
-    shadow: null,
-    glyph: null,
-    label: _labelSmall,
   );
 
   /// The beacon, lit — the state the flash spends half its time in. The
@@ -106,29 +92,9 @@ final class HistoryMapStyles {
     label: _label,
   );
 
-  static const MapMarkerLabelStyle _labelLarge = MapMarkerLabelStyle(
-    fontSize: 80,
-    color: GamePalette.ink,
-    haloColor: GamePalette.white,
-    haloWidth: 6,
-    gap: 10,
-  );
-
-  static const MapMarkerLabelStyle _label = MapMarkerLabelStyle(
-    fontSize: 60,
-    color: GamePalette.ink,
-    haloColor: GamePalette.white,
-    haloWidth: 5,
-    gap: 8,
-  );
-
-  static const MapMarkerLabelStyle _labelSmall = MapMarkerLabelStyle(
-    fontSize: 40,
-    color: GamePalette.ink,
-    haloColor: GamePalette.white,
-    haloWidth: 4,
-    gap: 6,
-  );
+  /// Labels read the same as the intro map's, so the two maps feel like
+  /// one atlas.
+  static const MapMarkerLabelStyle _label = MarkerStyles.placeLabel;
 
   const HistoryMapStyles._();
 }

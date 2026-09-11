@@ -1,4 +1,5 @@
 import 'package:e3dad_khodam_2026/src/domain/geo_bounds.dart';
+import 'package:e3dad_khodam_2026/src/domain/game/journey_stop.dart';
 import 'package:e3dad_khodam_2026/src/domain/geo_position.dart';
 import 'package:e3dad_khodam_2026/src/domain/history/historical_journey.dart';
 import 'package:e3dad_khodam_2026/src/map_engine/map_camera_target.dart';
@@ -68,9 +69,10 @@ final class HistoricalJourneyCamera {
       ),
       padding: _openingPadding,
     ),
-    RestStep(:final restIndex) => _arrivalOrSweep(
+    RestStep(:final restIndex, :final phase) => _arrivalOrSweep(
       journey,
       restIndex,
+      phase,
       departure,
       direction,
     ),
@@ -79,6 +81,7 @@ final class HistoricalJourneyCamera {
   MapCameraTarget _arrivalOrSweep(
     HistoricalJourney journey,
     int restIndex,
+    int phase,
     HistoricalStep? departure,
     StepDirection direction,
   ) {
@@ -86,9 +89,10 @@ final class HistoricalJourneyCamera {
     final previousStop = restIndex == 0
         ? journey.origin
         : journey.rests[restIndex - 1].stop;
-    final arrival = _arrivalFrame(rest);
+    final arrival = _arrivalFrame(rest, rest.beaconAt(phase));
     if (direction == StepDirection.backward ||
         departure == null ||
+        phase > 0 ||
         previousStop.id == rest.stop.id) {
       return arrival;
     }
@@ -112,8 +116,7 @@ final class HistoricalJourneyCamera {
   /// The frame to arrive on: both the rest and its beacon, comfortably —
   /// a frame that clips the beacon defeats the whole point of it — or
   /// just the rest when it sends none.
-  CameraLeg _arrivalFrame(JourneyRest rest) {
-    final beacon = rest.beacon;
+  CameraLeg _arrivalFrame(JourneyRest rest, JourneyStop? beacon) {
     if (beacon == null) {
       return CenterZoomCameraTarget(
         center: rest.stop.position,
@@ -137,8 +140,7 @@ final class HistoricalJourneyCamera {
         yield via.position;
       }
       yield rest.stop.position;
-      final beacon = rest.beacon;
-      if (beacon != null) {
+      for (final beacon in rest.beacons) {
         yield beacon.position;
       }
     }

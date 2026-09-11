@@ -16,8 +16,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 /// Bridges a historical journey's playthrough state to the
 /// provider-agnostic map seam: the trail becomes one line along real
-/// route geometry, and the origin, rests, via cities and beacon become
-/// markers. No tokens — this map has nobody standing on it.
+/// route geometry, and the origin, rests and beacon become markers; via
+/// cities shape the line but get no marker of their own. No tokens — this map has nobody standing on it.
 ///
 /// While a sweep is flying, the trail draws itself up to where the
 /// journey stands. That is the only thing that moves besides the
@@ -75,8 +75,6 @@ final class HistoryMapView extends StatelessWidget {
       (state.origin, HistoryMapStyles.origin, true),
       for (final rest in state.visitedRests)
         (rest.stop, HistoryMapStyles.rest, true),
-      for (final via in _viaReached(state, walked))
-        (via, HistoryMapStyles.waypoint, false),
       if (arrived) (state.currentStop, HistoryMapStyles.current, true),
       if (arrived && beacon != null)
         (
@@ -96,18 +94,6 @@ final class HistoryMapView extends StatelessWidget {
 
     return byPosition.values.toList(growable: false);
   }
-
-  /// The via cities the trail has reached: every one behind an earlier
-  /// rest, then those the line has actually arrived at on the stretch
-  /// being drawn now. A city appears as the trail reaches it rather than
-  /// the whole run appearing the moment the journey sets off.
-  static List<JourneyStop> _viaReached(
-    HistoricalJourneyState state,
-    double walked,
-  ) => [
-    for (final rest in state.visitedRests) ...rest.via,
-    ...state.trace.viaReachedAt(walked),
-  ];
 
   /// Identifies a point, so what stands on it can be matched to it.
   static String _positionKey(GeoPosition position) =>

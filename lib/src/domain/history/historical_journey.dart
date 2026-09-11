@@ -41,14 +41,35 @@ final class JourneyRest extends Equatable {
   /// stopping at any of them.
   final List<JourneyStop> via;
 
-  /// The city that flashes like a bulb while the journey rests at [stop],
-  /// meaning a letter was sent to it from here — or null when this rest
-  /// sends none.
-  final JourneyStop? beacon;
+  /// The cities that flash like a bulb, one after another, while the
+  /// journey rests at [stop] — a letter sent to each from here. Empty when
+  /// this rest sends none.
+  final List<JourneyStop> beacons;
+
+  /// Whether the first press after arriving lights `beacons[0]`, rather
+  /// than it lighting the moment the journey arrives.
+  final bool arrivesDark;
+
+  /// How many presses the journey spends at this rest: one to arrive,
+  /// then one per beacon that does not light on arrival.
+  int get phaseCount =>
+      beacons.isEmpty ? 1 : beacons.length + (arrivesDark ? 1 : 0);
 
   @override
-  List<Object?> get props => [stop, via, beacon];
+  List<Object?> get props => [stop, via, beacons, arrivesDark];
 
   /// Creates a rest.
-  const JourneyRest({required this.stop, this.via = const [], this.beacon});
+  const JourneyRest({
+    required this.stop,
+    this.via = const [],
+    this.beacons = const [],
+    this.arrivesDark = false,
+  });
+
+  /// The beacon lit at [phase], or null while the rest is dark.
+  JourneyStop? beaconAt(int phase) {
+    final index = arrivesDark ? phase - 1 : phase;
+
+    return index < 0 || index >= beacons.length ? null : beacons[index];
+  }
 }

@@ -75,7 +75,7 @@ void _openingTests() {
 
       final bounds = _fitBoundsOf(cubit.state).bounds;
       final rest = HistoricalJourneys.secondJourney.rests.single;
-      final beacon = rest.beacon;
+      final beacon = rest.beacons.firstOrNull;
       if (beacon == null) {
         fail('the second journey names a beacon');
       }

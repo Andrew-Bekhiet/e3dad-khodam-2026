@@ -21,7 +21,7 @@ final class MarkerStyles {
     ),
     shadow: MapMarkerShadow(blur: 6, offsetDy: 2, opacity: 0.7),
     glyph: null,
-    label: _placeLabel,
+    label: placeLabel,
   );
 
   /// Country marker.
@@ -34,7 +34,7 @@ final class MarkerStyles {
     ),
     shadow: MapMarkerShadow(blur: 6, offsetDy: 2, opacity: 0.7),
     glyph: null,
-    label: _placeLabel,
+    label: placeLabel,
   );
 
   /// Sea marker.
@@ -48,7 +48,7 @@ final class MarkerStyles {
     ),
     shadow: const MapMarkerShadow(blur: 5, offsetDy: 1, opacity: 0.7),
     glyph: _glyph(Icons.waves, size: _placeIconSize),
-    label: _placeLabel,
+    label: placeLabel,
   );
 
   /// Island marker.
@@ -61,7 +61,7 @@ final class MarkerStyles {
     ),
     shadow: const MapMarkerShadow(blur: 5, offsetDy: 1, opacity: 0.7),
     glyph: _glyph(Icons.terrain, size: _placeIconSize),
-    label: _placeLabel,
+    label: placeLabel,
   );
 
   /// City marker: a small dot with a bare label, the only leaf kind.
@@ -95,7 +95,9 @@ final class MarkerStyles {
     gap: 4,
   );
 
-  static const MapMarkerLabelStyle _placeLabel = MapMarkerLabelStyle(
+  /// The label under every place marker; the historical map borrows it
+  /// too.
+  static const MapMarkerLabelStyle placeLabel = MapMarkerLabelStyle(
     fontSize: _placeIconSize * 1.1,
     color: _white,
     haloWidth: 1,

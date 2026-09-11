@@ -54,7 +54,11 @@ class _MapStagePageState extends State<MapStagePage>
         presenter.onPopBlocked();
       },
       child: Scaffold(
-        appBar: AppBar(centerTitle: false, title: Text(_selected.label)),
+        appBar: AppBar(
+          centerTitle: false,
+          title: Text(_selected.label),
+          bottom: _ScriptButtons(selected: _selected, onSelect: _select),
+        ),
         body: StepFocus(
           focusNode: _focusNode,
           onForward: _forward,
@@ -68,16 +72,6 @@ class _MapStagePageState extends State<MapStagePage>
                     surfaceBuilder(presenter.buildSpec(context)),
               ),
               presenter.buildOverlay(context),
-              Positioned(
-                top: 0,
-                left: 0,
-                child: SafeArea(
-                  child: _ScriptButtons(
-                    selected: _selected,
-                    onSelect: _select,
-                  ),
-                ),
-              ),
               PositionedDirectional(
                 end: 12,
                 bottom: 12,
@@ -164,9 +158,13 @@ class _MapStagePageState extends State<MapStagePage>
 /// The five script buttons, pinned to the stage's physical top-left —
 /// `Positioned(top:, left:)`, not `PositionedDirectional`, so they hold
 /// their corner regardless of the app's RTL layout.
-final class _ScriptButtons extends StatelessWidget {
+final class _ScriptButtons extends StatelessWidget
+    implements PreferredSizeWidget {
   final MapScript selected;
   final void Function(MapScript script) onSelect;
+
+  @override
+  Size get preferredSize => const Size.fromHeight(48);
 
   const _ScriptButtons({required this.selected, required this.onSelect});
 
@@ -174,17 +172,20 @@ final class _ScriptButtons extends StatelessWidget {
   Widget build(BuildContext context) => PlatformViewInterceptor(
     child: PixelPanel(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
-      child: Wrap(
-        spacing: 6,
-        runSpacing: 6,
-        children: [
-          for (final script in MapScript.values)
-            _ScriptButton(
-              script: script,
-              isSelected: script == selected,
-              onPressed: () => onSelect(script),
-            ),
-        ],
+      child: Align(
+        alignment: AlignmentDirectional.centerStart,
+        child: Wrap(
+          spacing: 6,
+          runSpacing: 6,
+          children: [
+            for (final script in MapScript.values)
+              _ScriptButton(
+                script: script,
+                isSelected: script == selected,
+                onPressed: () => onSelect(script),
+              ),
+          ],
+        ),
       ),
     ),
   );

@@ -44,7 +44,7 @@ final class HistoricalJourneyCamera {
   /// itself. Many times the game's 1000ms: these stretches are the length
   /// of the Aegean, the trail drawing itself is the content, and it is
   /// watched from across a hall rather than held in the hand.
-  static const Duration sweepHold = Duration(milliseconds: 6000);
+  static const Duration sweepHold = Duration(milliseconds: 3000);
 
   /// How long the camera takes to come in to the arrival frame.
   static const Duration sweepIn = Duration(milliseconds: 1400);

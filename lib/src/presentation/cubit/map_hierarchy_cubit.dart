@@ -31,7 +31,7 @@ final class MapHierarchyCubit extends Cubit<MapHierarchyState> {
     top: 100,
     left: 144,
     right: 144,
-    bottom: 56,
+    bottom: 144,
   );
 
   /// Degrees a degenerate (zero-area) bounding box is padded by on every
@@ -80,7 +80,9 @@ final class MapHierarchyCubit extends Cubit<MapHierarchyState> {
     final isDegenerate =
         bounds.north == bounds.south || bounds.east == bounds.west;
 
-    return isDegenerate ? bounds.padded(_degenerateBoundsPadding) : bounds;
+    return isDegenerate
+        ? bounds.padded(_degenerateBoundsPadding)
+        : bounds.padded(1);
   }
 
   /// Loaded once at construction — this is data pulled from the
@@ -119,22 +121,24 @@ final class MapHierarchyCubit extends Cubit<MapHierarchyState> {
     _traverse(-1);
   }
 
-  /// Steps [step] positions through the depth-first walk of every node,
+  /// Steps [step] positions through the ~depth-first~ walk of every node,
   /// with the overview as one extra position at both ends of the cycle —
   /// so this composes with manual [drillDown]/[goBack]: it always
   /// continues from [MapHierarchyState.focusedNode], however that was
   /// reached. Only ever called with ±1 by [forward]/[backward], but the
   /// bounds check below keeps any step size correct.
   void _traverse(int step) {
-    final flat = _tree.depthFirstNodes;
+    final flat = _tree.roots;
     final current = state.focusedNode;
     final MapNode? target;
     if (current == null) {
       target = step > 0 ? flat.first : flat.last;
-    } else {
+    } else if (step > 0) {
       final index = flat.indexWhere((node) => node.id == current.id);
       final next = index + step;
       target = (next < 0 || next >= flat.length) ? null : flat[next];
+    } else {
+      target = null;
     }
 
     emit(

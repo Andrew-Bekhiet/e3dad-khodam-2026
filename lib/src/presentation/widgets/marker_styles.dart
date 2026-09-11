@@ -16,10 +16,10 @@ final class MarkerStyles {
     id: 'marker-continent',
     shape: MapMarkerShapeStyle(
       shape: MapMarkerShape.circle,
-      diameter: 44,
-      color: Color(0xFF2E7D32),
+      diameter: _placeIconSize,
+      color: Color(0xFFE23C13),
     ),
-    shadow: MapMarkerShadow(blur: 6, offsetDy: 2, opacity: 0.22),
+    shadow: MapMarkerShadow(blur: 6, offsetDy: 2, opacity: 0.7),
     glyph: null,
     label: _placeLabel,
   );
@@ -29,11 +29,10 @@ final class MarkerStyles {
     id: 'marker-country',
     shape: MapMarkerShapeStyle(
       shape: MapMarkerShape.roundedSquare,
-      diameter: 44,
-      color: Color(0xFFC77B00),
-      cornerRadius: 10,
+      diameter: _placeIconSize,
+      color: Color(0xFFE23C13),
     ),
-    shadow: MapMarkerShadow(blur: 6, offsetDy: 2, opacity: 0.22),
+    shadow: MapMarkerShadow(blur: 6, offsetDy: 2, opacity: 0.7),
     glyph: null,
     label: _placeLabel,
   );
@@ -43,11 +42,11 @@ final class MarkerStyles {
     id: 'marker-sea',
     shape: const MapMarkerShapeStyle(
       shape: MapMarkerShape.diamond,
-      diameter: 40,
-      color: Color(0xFF0288D1),
+      diameter: _placeIconSize,
+      color: Color(0xFFE8720F),
       cornerRadius: 6,
     ),
-    shadow: const MapMarkerShadow(blur: 5, offsetDy: 1, opacity: 0.18),
+    shadow: const MapMarkerShadow(blur: 5, offsetDy: 1, opacity: 0.7),
     glyph: _glyph(Icons.waves, size: _placeIconSize),
     label: _placeLabel,
   );
@@ -57,10 +56,10 @@ final class MarkerStyles {
     id: 'marker-island',
     shape: const MapMarkerShapeStyle(
       shape: MapMarkerShape.circle,
-      diameter: 40,
-      color: Color(0xFFC2703D),
+      diameter: _placeIconSize,
+      color: Color(0xFFE8720F),
     ),
-    shadow: const MapMarkerShadow(blur: 5, offsetDy: 1, opacity: 0.18),
+    shadow: const MapMarkerShadow(blur: 5, offsetDy: 1, opacity: 0.7),
     glyph: _glyph(Icons.terrain, size: _placeIconSize),
     label: _placeLabel,
   );
@@ -70,37 +69,37 @@ final class MarkerStyles {
     id: 'marker-city',
     shape: MapMarkerShapeStyle(
       shape: MapMarkerShape.circle,
-      diameter: 18,
-      color: Color(0xFF455A64),
+      diameter: _placeIconSize,
+      color: Color(0xFFE23C13),
     ),
-    shadow: null,
+    shadow: MapMarkerShadow(blur: 5, offsetDy: 1, opacity: 0.7),
     glyph: null,
     label: MapMarkerLabelStyle(
-      fontSize: 34,
-      color: Color(0xFF14243A),
-      haloColor: _white,
-      haloWidth: 1.5,
+      fontSize: _placeIconSize * 0.9,
+      haloColor: Colors.black,
+      color: _white,
+      haloWidth: 2,
       gap: 3,
     ),
   );
 
   static const Color _white = Color(0xFFFFFFFF);
-  static const double _placeIconSize = 18;
-  static const double _categoryIconSize = 28;
+  static const double _placeIconSize = 90;
+  static const double _categoryIconSize = 90;
 
   static const MapMarkerLabelStyle _categoryLabel = MapMarkerLabelStyle(
-    fontSize: 34,
-    color: Color(0xFF1A1A1A),
-    haloColor: _white,
+    fontSize: _categoryIconSize * 0.9,
+    haloColor: Colors.black,
+    color: _white,
     haloWidth: 2,
     gap: 4,
   );
 
   static const MapMarkerLabelStyle _placeLabel = MapMarkerLabelStyle(
-    fontSize: 34,
-    color: Color(0xFF1A1A1A),
-    haloColor: _white,
-    haloWidth: 2,
+    fontSize: _placeIconSize * 1.1,
+    color: _white,
+    haloWidth: 1,
+    haloColor: Colors.black,
     gap: 4,
   );
 
@@ -127,11 +126,11 @@ final class MarkerStyles {
     id: 'marker-category-${arm.name}',
     shape: const MapMarkerShapeStyle(
       shape: MapMarkerShape.circle,
-      diameter: 56,
+      diameter: _placeIconSize,
       color: Color(0xFF123C69),
       ringWidth: 2,
     ),
-    shadow: const MapMarkerShadow(blur: 8, offsetDy: 2, opacity: 0.3),
+    shadow: const MapMarkerShadow(blur: 8, offsetDy: 2, opacity: 07),
     glyph: _glyph(_iconForArm(arm), size: _categoryIconSize),
     label: _categoryLabel,
   );

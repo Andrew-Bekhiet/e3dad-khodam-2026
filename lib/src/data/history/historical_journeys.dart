@@ -70,14 +70,11 @@ final class HistoricalJourneys {
         beacons: [JourneyStops.rome],
         arrivesDark: true,
       ),
-      JourneyRest(
-        stop: JourneyStops.rome,
-        via: [HistoricalStops.rhegium, HistoricalStops.puteoli],
-      ),
     ],
   );
 
-  /// قيصرية to رومية: one continuous voyage, with no intermediate rest.
+  /// قيصرية to رومية: one continuous voyage, with no intermediate rest,
+  /// then letters sent to فيلبي، كولوسي and أفسس from there.
   static const HistoricalJourney romeJourney = HistoricalJourney(
     id: 'romeJourney',
     title: 'رحلة بولس الرسول إلى رومية',
@@ -95,6 +92,12 @@ final class HistoricalJourneys {
           HistoricalStops.rhegium,
           HistoricalStops.puteoli,
         ],
+        beacons: [
+          HistoricalStops.philippi,
+          HistoricalStops.colossae,
+          JourneyStops.ephesus,
+        ],
+        arrivesDark: true,
       ),
     ],
   );

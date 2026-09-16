@@ -37,6 +37,11 @@ final class HistoricalJourneyPresenter extends MapScriptPresenter {
   @override
   bool get canGoBackward => !_cubit.state.isAtStart;
 
+  /// Whether the beacon flashes or holds bright.
+  bool get isBeaconFlashing => _beaconClock.isFlashing;
+
+  set isBeaconFlashing(bool value) => _beaconClock.isFlashing = value;
+
   @override
   ScriptOverlayBuilder get buildOverlay =>
       (_) => const SizedBox.shrink();

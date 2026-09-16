@@ -12,6 +12,7 @@ import 'package:e3dad_khodam_2026/src/presentation/widgets/game/game_step_contro
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/pixel_panel.dart';
 import 'package:e3dad_khodam_2026/src/presentation/widgets/game/platform_view_interceptor.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 /// The app's home screen: one Mapbox surface shared by five scripts —
@@ -37,6 +38,8 @@ class _MapStagePageState extends State<MapStagePage>
   final FocusNode _focusNode = FocusNode(debugLabel: 'map-stage-keys');
   final Map<MapScript, MapScriptPresenter> _presenters = {};
   MapScript _selected = MapScript.crossMap;
+  bool _blackedOut = false;
+  bool _beaconFlashing = true;
 
   MapScriptPresenter get _current => _presenterFor(_selected);
 
@@ -53,42 +56,103 @@ class _MapStagePageState extends State<MapStagePage>
         }
         presenter.onPopBlocked();
       },
-      child: Scaffold(
-        appBar: AppBar(
-          centerTitle: false,
-          title: Text(_selected.label),
-          bottom: _ScriptButtons(selected: _selected, onSelect: _select),
-        ),
-        body: StepFocus(
-          focusNode: _focusNode,
-          onForward: _forward,
-          onBackward: _backward,
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              ListenableBuilder(
-                listenable: presenter,
-                builder: (context, _) =>
-                    surfaceBuilder(presenter.buildSpec(context)),
+      child: Focus(
+        canRequestFocus: false,
+        skipTraversal: true,
+        onKeyEvent: _onStageKey,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            Scaffold(
+              appBar: AppBar(
+                centerTitle: false,
+                title: Text(_selected.label),
+                bottom: _ScriptButtons(selected: _selected, onSelect: _select),
               ),
-              presenter.buildOverlay(context),
-              PositionedDirectional(
-                end: 12,
-                bottom: 12,
-                child: SafeArea(
-                  child: GameStepControls(
-                    onBackward: _backward,
-                    onForward: _forward,
-                    canGoBackward: presenter.canGoBackward,
-                    canGoForward: presenter.canGoForward,
-                  ),
+              body: StepFocus(
+                focusNode: _focusNode,
+                onForward: _forward,
+                onBackward: _backward,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    ListenableBuilder(
+                      listenable: presenter,
+                      builder: (context, _) =>
+                          surfaceBuilder(presenter.buildSpec(context)),
+                    ),
+                    presenter.buildOverlay(context),
+                    PositionedDirectional(
+                      end: 12,
+                      bottom: 12,
+                      child: SafeArea(
+                        child: GameStepControls(
+                          onBackward: _backward,
+                          onForward: _forward,
+                          canGoBackward: presenter.canGoBackward,
+                          canGoForward: presenter.canGoForward,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ],
-          ),
+            ),
+            if (_blackedOut)
+              const PlatformViewInterceptor(
+                child: SizedBox.expand(child: ColoredBox(color: Colors.black)),
+              ),
+          ],
         ),
       ),
     );
+  }
+
+  /// Stage-wide keys, reached only after `StepFocus` ignores an event:
+  /// `.`/`b` blackout, `f` beacon flash, `1`–`4` pick a script.
+  KeyEventResult _onStageKey(FocusNode node, KeyEvent event) {
+    if (event is! KeyDownEvent) {
+      return KeyEventResult.ignored;
+    }
+    final key = event.logicalKey;
+    if (key == LogicalKeyboardKey.period || key == LogicalKeyboardKey.keyB) {
+      setState(() => _blackedOut = !_blackedOut);
+
+      return KeyEventResult.handled;
+    }
+    if (key == LogicalKeyboardKey.keyF) {
+      _setBeaconFlashing(!_beaconFlashing);
+
+      return KeyEventResult.handled;
+    }
+    final script = _scriptForKey(key);
+    if (script == null) {
+      return KeyEventResult.ignored;
+    }
+    _select(script);
+
+    return KeyEventResult.handled;
+  }
+
+  MapScript? _scriptForKey(LogicalKeyboardKey key) => switch (key) {
+    LogicalKeyboardKey.digit1 ||
+    LogicalKeyboardKey.numpad1 => MapScript.crossMap,
+    LogicalKeyboardKey.digit2 ||
+    LogicalKeyboardKey.numpad2 => MapScript.secondJourney,
+    LogicalKeyboardKey.digit3 ||
+    LogicalKeyboardKey.numpad3 => MapScript.thirdJourney,
+    LogicalKeyboardKey.digit4 ||
+    LogicalKeyboardKey.numpad4 => MapScript.romeJourney,
+    _ => null,
+  };
+
+  void _setBeaconFlashing(bool value) {
+    _beaconFlashing = value;
+    for (final presenter in _presenters.values) {
+      if (presenter is HistoricalJourneyPresenter) {
+        presenter.isBeaconFlashing = value;
+      }
+    }
   }
 
   @override
@@ -152,7 +216,7 @@ class _MapStagePageState extends State<MapStagePage>
     journey: journey,
     vsync: this,
     focusNode: _focusNode,
-  );
+  )..isBeaconFlashing = _beaconFlashing;
 }
 
 /// The five script buttons, pinned to the stage's physical top-left —
@@ -212,7 +276,7 @@ final class _ScriptButton extends StatelessWidget {
         backgroundColor: isSelected ? colors.primary : colors.surface,
         foregroundColor: isSelected ? colors.onPrimary : colors.onSurface,
       ),
-      child: Text(script.label, style: TextTheme.of(context).labelMedium),
+      child: Text(script.shortLabel, style: TextTheme.of(context).labelMedium),
     );
   }
 }

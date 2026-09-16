@@ -79,6 +79,13 @@ final class HistoricalStops {
     position: StopPositions.philippi,
   );
 
+  /// كولوسي.
+  static const JourneyStop colossae = JourneyStop(
+    id: 'colossae',
+    label: 'كولوسي',
+    position: StopPositions.colossae,
+  );
+
   /// أمفيبوليس.
   static const JourneyStop amphipolis = JourneyStop(
     id: 'amphipolis',

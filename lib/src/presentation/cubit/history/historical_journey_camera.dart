@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:e3dad_khodam_2026/src/domain/geo_bounds.dart';
 import 'package:e3dad_khodam_2026/src/domain/game/journey_stop.dart';
 import 'package:e3dad_khodam_2026/src/domain/geo_position.dart';
@@ -19,12 +21,15 @@ final class HistoricalJourneyCamera {
   static const double arrivalZoom = 6.0;
 
   static const double _beaconMargin = 0.5;
+  static const double _beaconMarginRatio = 0.2;
   static const double _stretchMargin = 0.6;
   static const double _openingMargin = 1.0;
 
-  static const EdgeInsets _beaconPadding = EdgeInsets.symmetric(
-    horizontal: 48,
-    vertical: 96,
+  static const EdgeInsets _beaconPadding = EdgeInsets.only(
+    top: 120,
+    left: 96,
+    right: 96,
+    bottom: 160,
   );
   static const EdgeInsets _stretchPadding = EdgeInsets.symmetric(
     horizontal: 32,
@@ -124,11 +129,19 @@ final class HistoricalJourneyCamera {
       );
     }
 
+    final bounds = GeoBounds.containing([
+      rest.stop.position,
+      beacon.position,
+    ]);
+    final span = math.max(
+      bounds.north - bounds.south,
+      bounds.east - bounds.west,
+    );
+
     return FitBoundsCameraTarget(
-      bounds: GeoBounds.containing([
-        rest.stop.position,
-        beacon.position,
-      ]).padded(_beaconMargin),
+      bounds: bounds.padded(
+        math.max(_beaconMargin, span * _beaconMarginRatio),
+      ),
       padding: _beaconPadding,
     );
   }

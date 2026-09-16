@@ -20,9 +20,17 @@ enum MapScript {
   /// The button label the stage shows for this script.
   String get label => switch (this) {
     MapScript.crossMap => AppStrings.crossMapScriptLabel,
-    MapScript.secondJourney => AppStrings.secondJourneyScriptLabel,
-    MapScript.thirdJourney => AppStrings.thirdJourneyScriptLabel,
-    MapScript.romeJourney => AppStrings.romeJourneyScriptLabel,
+    MapScript.secondJourney => 'الرحلة التبشيرية الثانية',
+    MapScript.thirdJourney => 'الرحلة التبشيرية الثالثة',
+    MapScript.romeJourney => 'الرحلة إلى رومية',
     MapScript.postOfficeGame => AppStrings.gameTitle,
+  };
+
+  String get shortLabel => switch (this) {
+    MapScript.crossMap => AppStrings.crossMapScriptLabel,
+    MapScript.secondJourney => 'الرحلة ٢',
+    MapScript.thirdJourney => 'الرحلة ٣',
+    MapScript.romeJourney => 'إلى رومية',
+    MapScript.postOfficeGame => '',
   };
 }

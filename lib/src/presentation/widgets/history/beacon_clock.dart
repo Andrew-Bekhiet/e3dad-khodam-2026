@@ -20,6 +20,23 @@ final class BeaconClock extends ChangeNotifier {
   /// `HistoryMapStyles.beaconBright`, as opposed to `beaconDim`.
   bool get isBright => _isBright;
 
+  /// Whether the flash is running. Off, the beacon holds bright.
+  bool get isFlashing => _controller.isAnimating;
+
+  set isFlashing(bool value) {
+    if (value == isFlashing) {
+      return;
+    }
+    if (value) {
+      _controller.repeat();
+
+      return;
+    }
+    _controller.stop();
+    _isBright = true;
+    notifyListeners();
+  }
+
   /// Creates a beacon clock over a repeating [AnimationController] and
   /// starts it immediately.
   ///

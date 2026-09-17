@@ -53,7 +53,7 @@ final class HistoricalJourneys {
           HistoricalStops.iconium,
           HistoricalStops.pisidianAntioch,
         ],
-        beacons: [JourneyStops.galatia, JourneyStops.corinth],
+        beacons: [JourneyStops.corinth, JourneyStops.galatia],
       ),
       JourneyRest(
         stop: JourneyStops.corinth,

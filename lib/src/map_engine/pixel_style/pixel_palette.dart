@@ -14,24 +14,24 @@ import 'package:e3dad_khodam_2026/src/map_engine/pixel_style/pixel_tuning.dart';
 /// green is layered on top of it.
 final class PixelPalette {
   static const PixelMaterial _baseWater = PixelMaterial(
-    base: PixelRgb(133, 160, 170),
-    accent: PixelRgb(98, 126, 140),
+    base: PixelRgb(104, 132, 142),
+    accent: PixelRgb(62, 88, 102),
   );
   static const PixelMaterial _baseGrass = PixelMaterial(
-    base: PixelRgb(156, 152, 100),
-    accent: PixelRgb(126, 122, 76),
+    base: PixelRgb(138, 130, 74),
+    accent: PixelRgb(96, 88, 46),
   );
   static const PixelMaterial _baseForest = PixelMaterial(
-    base: PixelRgb(112, 112, 72),
-    accent: PixelRgb(82, 82, 50),
+    base: PixelRgb(92, 88, 50),
+    accent: PixelRgb(56, 54, 28),
   );
   static const PixelMaterial _baseSand = PixelMaterial(
-    base: PixelRgb(205, 152, 82),
-    accent: PixelRgb(176, 126, 64),
+    base: PixelRgb(184, 128, 58),
+    accent: PixelRgb(132, 84, 36),
   );
   static const PixelMaterial _baseSnow = PixelMaterial(
-    base: PixelRgb(232, 218, 184),
-    accent: PixelRgb(206, 190, 154),
+    base: PixelRgb(218, 198, 156),
+    accent: PixelRgb(180, 158, 116),
   );
 
   /// Sea, lakes and rivers.

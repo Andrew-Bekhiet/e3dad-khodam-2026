@@ -15,7 +15,7 @@ final class PixelTuning {
 
   /// How far the accent colour travels from the base colour, `0`–`1`.
   /// At `0` a tile is flat; at `1` the accent is used undiluted.
-  static const double shadingContrast = 0.52;
+  static const double shadingContrast = 0.72;
 
   /// HSL saturation multiplier applied to every base colour.
   static const double saturation = 1;
@@ -37,7 +37,7 @@ final class PixelTuning {
   /// Colour of the coastline: a dark sepia ink rather than black, so
   /// the line reads as drawn on the parchment instead of printed over
   /// it.
-  static const String coastLineColor = '#5a3a1e';
+  static const String coastLineColor = '#3e2612';
 
   /// Only basemap place labels with `symbolrank <= labelRank` survive.
   /// `1` keeps just the highest-rank handful, since this app draws its

@@ -417,10 +417,10 @@ for review, not a second source of truth.
 |---|---|---|
 | art scale | 4× | 16×16 art pixels upscaled nearest-neighbour to a 64px pattern |
 | texture | 1.0 | motifs draw their full pixel count |
-| shading | 0.52 | accent colour pulled halfway back toward the base |
+| shading | 0.72 | accent colour kept strong, so the grain reads as aged paper |
 | saturation / lightness | 1 / 1 | base palette used as written |
 | greenness | 2 | `wood`+`scrub` painted forest, `grass`+`crop` painted grass; `landuse` hidden |
-| coast line | 2px `#5a3a1e` | sepia-ink outline on every water polygon — the signature element |
+| coast line | 2px `#3e2612` | sepia-ink outline on every water polygon — the signature element |
 | depth / national-park washes | hidden | the stock cyan bathymetry and green park tints fight the parchment |
 | rivers | water accent | `waterway` lines inked in the sea's accent colour |
 | labels | symbolrank ≤ 1 | basemap labels all but gone; the app draws its own Arabic ones |
@@ -435,11 +435,11 @@ parchment does the work, not saturation.
 
 | Material | Base | Accent | Motif |
 |---|---|---|---|
-| water | `#85a0aa` | `#627e8c` | 3px horizontal dashes |
-| grass | `#9c9864` | `#7e7a4c` | single-pixel speckle |
-| forest | `#707048` | `#525232` | five canopy blobs |
-| sand | `#cd9852` | `#b07e40` | single-pixel speckle |
-| snow | `#e8dab8` | `#cebe9a` | single-pixel speckle |
+| water | `#68848e` | `#3e5866` | 3px horizontal dashes |
+| grass | `#8a824a` | `#60582e` | single-pixel speckle |
+| forest | `#5c5832` | `#38361c` | five canopy blobs |
+| sand | `#b8803a` | `#845424` | single-pixel speckle |
+| snow | `#dac69c` | `#b49e74` | single-pixel speckle |
 
 Mapbox's `landcover` data has no desert class, so bare land is *sand painted as the map
 background* and every green material is layered over it.

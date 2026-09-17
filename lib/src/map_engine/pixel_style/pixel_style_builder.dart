@@ -37,6 +37,11 @@ final class PixelStyleBuilder {
   static const String _waterSourceLayer = 'water';
   static const String _landuseSourceLayer = 'landuse';
   static const String _placeLabelSourceLayer = 'place_label';
+  static const String _waterwaySourceLayer = 'waterway';
+
+  /// Stock tints that fight the parchment: the bathymetric depth wash
+  /// and the national-park green.
+  static const Set<String> _washSourceLayers = {'depth', 'landuse_overlay'};
 
   /// Source layers carrying road-like geometry, hidden together.
   static const Set<String> _roadSourceLayers = {
@@ -70,7 +75,6 @@ final class PixelStyleBuilder {
   ];
 
   static const List<String> _snowClasses = ['snow'];
-  static const String _coastColor = '#000000';
   static const int _landuseGreenLevel = 3;
 
   /// Returns [baseStyle] rewritten into the pixel-art style.
@@ -158,29 +162,45 @@ final class PixelStyleBuilder {
     if (sourceLayer is! String) {
       return;
     }
-    if (sourceLayer == _landcoverSourceLayer) {
-      // Replaced wholesale by the three px-lc-* layers below.
-      _setVisible(layer, false);
+    final visible = _visibilityOf(sourceLayer);
+    if (visible != null) {
+      _setVisible(layer, visible);
 
       return;
+    }
+    _applyToSourceLayer(layer, sourceLayer, palette);
+  }
+
+  /// The visibility a source layer is forced to, or null when it stays
+  /// as the stock style has it.
+  static bool? _visibilityOf(String sourceLayer) {
+    // Landcover is replaced wholesale by the three px-lc-* layers.
+    if (sourceLayer == _landcoverSourceLayer ||
+        _washSourceLayers.contains(sourceLayer)) {
+      return false;
     }
     if (_roadSourceLayers.contains(sourceLayer)) {
-      _setVisible(layer, !PixelTuning.hideRoads);
-
-      return;
+      return !PixelTuning.hideRoads;
     }
     if (_adminSourceLayers.contains(sourceLayer)) {
-      _setVisible(layer, !PixelTuning.hideBoundaries);
-
-      return;
+      return !PixelTuning.hideBoundaries;
     }
-    if (layer['type'] == 'symbol') {
-      _applyToSymbolLayer(layer, sourceLayer);
 
-      return;
-    }
-    if (layer['type'] == 'fill') {
-      _applyToFillLayer(layer, sourceLayer, palette);
+    return null;
+  }
+
+  static void _applyToSourceLayer(
+    JsonMap layer,
+    String sourceLayer,
+    PixelPalette palette,
+  ) {
+    switch (layer['type']) {
+      case 'line' when sourceLayer == _waterwaySourceLayer:
+        _setPaint(layer, {'line-color': palette.water.accent.hex});
+      case 'symbol':
+        _applyToSymbolLayer(layer, sourceLayer);
+      case 'fill':
+        _applyToFillLayer(layer, sourceLayer, palette);
     }
   }
 
@@ -295,7 +315,7 @@ final class PixelStyleBuilder {
     'source-layer': _waterSourceLayer,
     'layout': <String, Object?>{'line-join': 'miter', 'line-cap': 'butt'},
     'paint': <String, Object?>{
-      'line-color': _coastColor,
+      'line-color': PixelTuning.coastLineColor,
       'line-width': PixelTuning.coastLineWidth,
     },
   };

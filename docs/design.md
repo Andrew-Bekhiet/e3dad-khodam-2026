@@ -417,23 +417,29 @@ for review, not a second source of truth.
 |---|---|---|
 | art scale | 4× | 16×16 art pixels upscaled nearest-neighbour to a 64px pattern |
 | texture | 1.0 | motifs draw their full pixel count |
-| shading | 1.0 | accent colour used undiluted |
-| saturation / lightness | 0.83 / 0.76 | HSL multipliers over the base palette |
+| shading | 0.52 | accent colour pulled halfway back toward the base |
+| saturation / lightness | 1 / 1 | base palette used as written |
 | greenness | 2 | `wood`+`scrub` painted forest, `grass`+`crop` painted grass; `landuse` hidden |
-| coast line | 1px | black outline on every water polygon — the signature element |
+| coast line | 2px `#5a3a1e` | sepia-ink outline on every water polygon — the signature element |
+| depth / national-park washes | hidden | the stock cyan bathymetry and green park tints fight the parchment |
+| rivers | water accent | `waterway` lines inked in the sea's accent colour |
 | labels | symbolrank ≤ 1 | basemap labels all but gone; the app draws its own Arabic ones |
 | roads / boundaries | hidden | including road shields, oneway arrows and ferry labels |
-| zoom snap | 1.0 | camera settles on whole zoom levels, so patterns stay pixel-aligned |
+| zoom snap | 0.05 | camera settles near whole zoom levels, so patterns stay pixel-aligned |
 
 ### Palette
 
+An aged-parchment scheme, sampled from the reference map the look was matched to: tan land, a
+dusty grey-blue sea, olive greens. The colours are deliberately muted — the warmth of the
+parchment does the work, not saturation.
+
 | Material | Base | Accent | Motif |
 |---|---|---|---|
-| water | `#34608f` | `#3586d1` | 3px horizontal dashes |
-| grass | `#52853e` | `#3a6830` | single-pixel speckle |
-| forest | `#295129` | `#17341d` | five canopy blobs |
-| sand | `#bfa05c` | `#a28650` | single-pixel speckle |
-| snow | `#87aff4` | `#7ea3d1` | single-pixel speckle |
+| water | `#85a0aa` | `#627e8c` | 3px horizontal dashes |
+| grass | `#9c9864` | `#7e7a4c` | single-pixel speckle |
+| forest | `#707048` | `#525232` | five canopy blobs |
+| sand | `#cd9852` | `#b07e40` | single-pixel speckle |
+| snow | `#e8dab8` | `#cebe9a` | single-pixel speckle |
 
 Mapbox's `landcover` data has no desert class, so bare land is *sand painted as the map
 background* and every green material is layered over it.

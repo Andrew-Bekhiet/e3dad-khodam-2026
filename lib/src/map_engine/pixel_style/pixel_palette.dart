@@ -4,30 +4,34 @@ import 'package:e3dad_khodam_2026/src/map_engine/pixel_style/pixel_tuning.dart';
 /// The five terrain materials of the pixel basemap, after the
 /// saturation/lightness knobs have been applied.
 ///
+/// The colours are an aged-parchment palette: tan land, a dusty
+/// grey-blue sea and olive greens, sampled from the reference map the
+/// look was matched to rather than from any natural-colour scheme.
+///
 /// Note what is *missing*: there is no desert material. Mapbox's
 /// `landcover` data only knows wood/scrub/grass/crop/snow, so bare land
 /// is the sand colour painted as the map background, and everything
 /// green is layered on top of it.
 final class PixelPalette {
   static const PixelMaterial _baseWater = PixelMaterial(
-    base: PixelRgb(58, 126, 199),
-    accent: PixelRgb(110, 175, 235),
+    base: PixelRgb(133, 160, 170),
+    accent: PixelRgb(98, 126, 140),
   );
   static const PixelMaterial _baseGrass = PixelMaterial(
-    base: PixelRgb(104, 184, 72),
-    accent: PixelRgb(72, 144, 56),
+    base: PixelRgb(156, 152, 100),
+    accent: PixelRgb(126, 122, 76),
   );
   static const PixelMaterial _baseForest = PixelMaterial(
-    base: PixelRgb(48, 112, 48),
-    accent: PixelRgb(26, 72, 36),
+    base: PixelRgb(112, 112, 72),
+    accent: PixelRgb(82, 82, 50),
   );
   static const PixelMaterial _baseSand = PixelMaterial(
-    base: PixelRgb(222, 200, 150),
-    accent: PixelRgb(198, 172, 120),
+    base: PixelRgb(205, 152, 82),
+    accent: PixelRgb(176, 126, 64),
   );
   static const PixelMaterial _baseSnow = PixelMaterial(
-    base: PixelRgb(244, 248, 255),
-    accent: PixelRgb(200, 218, 240),
+    base: PixelRgb(232, 218, 184),
+    accent: PixelRgb(206, 190, 154),
   );
 
   /// Sea, lakes and rivers.

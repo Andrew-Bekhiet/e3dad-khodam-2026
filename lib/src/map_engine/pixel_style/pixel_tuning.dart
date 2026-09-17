@@ -29,10 +29,15 @@ final class PixelTuning {
   /// mostly adds noise, hence `2`.
   static const int greenness = 2;
 
-  /// Width, in pixels, of the black coastline drawn around every water
+  /// Width, in pixels, of the inked coastline drawn around every water
   /// polygon — the single most recognisable element of the look. `0`
   /// hides it.
-  static const double coastLineWidth = 1.5;
+  static const double coastLineWidth = 2;
+
+  /// Colour of the coastline: a dark sepia ink rather than black, so
+  /// the line reads as drawn on the parchment instead of printed over
+  /// it.
+  static const String coastLineColor = '#5a3a1e';
 
   /// Only basemap place labels with `symbolrank <= labelRank` survive.
   /// `1` keeps just the highest-rank handful, since this app draws its

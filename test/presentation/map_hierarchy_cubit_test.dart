@@ -17,7 +17,7 @@ const _repository = StaticJourneyMapRepository();
 // `_rootBounds`/`_fitPadding` constants.
 const _rootCamera = FitBoundsCameraTarget(
   bounds: GeoBounds(south: 28.5, west: 15.0, north: 46.5, east: 37.0),
-  padding: EdgeInsets.only(top: 100, left: 144, right: 144, bottom: 56),
+  padding: EdgeInsets.only(top: 100, left: 144, right: 144, bottom: 144),
 );
 
 /// Matches a [MapHierarchyState] back at the root cross — shared by the
@@ -189,18 +189,49 @@ void _goBackAndResetTests() {
   );
 }
 
+/// The ids [MapHierarchyCubit.forward] focuses in turn from the root
+/// cross, `null` being the cross itself.
+const List<String?> _slideshow = [
+  'continents',
+  null,
+  'countries',
+  null,
+  'seas',
+  null,
+  'islands',
+  null,
+  'asia_minor',
+  'greece',
+  'italy',
+  null,
+];
+
+Matcher _focuses(String? id) => id == null
+    ? _isRootState()
+    : isA<MapHierarchyState>().having(
+        (state) => state.focusedNode?.id,
+        'focused node id',
+        id,
+      );
+
 void _traversalTests() {
   blocTest<MapHierarchyCubit, MapHierarchyState>(
-    'MapHierarchyCubit_forwardFromOverview_focusesFirstDfsNode',
+    'MapHierarchyCubit_forwardFromOverview_walksSlideshowAndWraps',
+    build: () => MapHierarchyCubit(_repository),
+    act: (cubit) {
+      for (var i = 0; i < _slideshow.length; i++) {
+        cubit.forward();
+      }
+    },
+    expect: () => _slideshow.map(_focuses).toList(),
+  );
+
+  blocTest<MapHierarchyCubit, MapHierarchyState>(
+    'MapHierarchyCubit_forwardIntoContinents_showsItsChildren',
     build: () => MapHierarchyCubit(_repository),
     act: (cubit) => cubit.forward(),
     expect: () => [
       isA<MapHierarchyState>()
-          .having(
-            (state) => state.focusedNode?.id,
-            'focused node id',
-            'continents',
-          )
           .having(
             (state) => state.visibleNodes.map((node) => node.id).toList(),
             'visible node ids',
@@ -215,7 +246,31 @@ void _traversalTests() {
   );
 
   blocTest<MapHierarchyCubit, MapHierarchyState>(
-    'MapHierarchyCubit_forwardFromExpandedParent_stepsIntoFirstLeafChild',
+    'MapHierarchyCubit_backwardFromOverview_walksSlideshowReversed',
+    build: () => MapHierarchyCubit(_repository),
+    act: (cubit) {
+      for (var i = 0; i < _slideshow.length; i++) {
+        cubit.backward();
+      }
+    },
+    expect: () => _slideshow.reversed.skip(1).map(_focuses).toList()
+      ..add(_isRootState()),
+  );
+
+  blocTest<MapHierarchyCubit, MapHierarchyState>(
+    'MapHierarchyCubit_forwardAfterDrillDown_continuesFromThatSlide',
+    build: () => MapHierarchyCubit(_repository),
+    act: (cubit) {
+      cubit.drillDown('seas');
+      cubit.forward();
+      cubit.forward();
+    },
+    skip: 1,
+    expect: () => [_isRootState(), _focuses('islands')],
+  );
+
+  blocTest<MapHierarchyCubit, MapHierarchyState>(
+    'MapHierarchyCubit_forwardFromNodeOffSlideshow_continuesFromAncestor',
     build: () => MapHierarchyCubit(_repository),
     act: (cubit) {
       cubit.drillDown('countries');
@@ -223,45 +278,7 @@ void _traversalTests() {
       cubit.forward();
     },
     skip: 2,
-    expect: () => [
-      isA<MapHierarchyState>()
-          .having(
-            (state) => state.visibleNodes.map((node) => node.id).toList(),
-            'visible node ids',
-            ['galatia'],
-          )
-          .having(
-            (state) => state.breadcrumb.map((node) => node.id).toList(),
-            'breadcrumb ids',
-            ['countries', 'asia_minor', 'galatia'],
-          ),
-    ],
-  );
-
-  blocTest<MapHierarchyCubit, MapHierarchyState>(
-    'MapHierarchyCubit_backwardFromOverview_focusesLastDfsNode',
-    build: () => MapHierarchyCubit(_repository),
-    act: (cubit) => cubit.backward(),
-    expect: () => [
-      isA<MapHierarchyState>()
-          .having((state) => state.focusedNode?.id, 'focused node id', 'malta')
-          .having(
-            (state) => state.visibleNodes.map((node) => node.id).toList(),
-            'visible node ids',
-            ['malta'],
-          ),
-    ],
-  );
-
-  blocTest<MapHierarchyCubit, MapHierarchyState>(
-    'MapHierarchyCubit_backwardFromFirstDfsNode_wrapsToOverview',
-    build: () => MapHierarchyCubit(_repository),
-    act: (cubit) {
-      cubit.drillDown('continents');
-      cubit.backward();
-    },
-    skip: 1,
-    expect: () => [_isRootState()],
+    expect: () => [_focuses('greece')],
   );
 
   blocTest<MapHierarchyCubit, MapHierarchyState>(

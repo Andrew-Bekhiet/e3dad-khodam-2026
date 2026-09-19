@@ -21,6 +21,12 @@ final class MapHierarchyState extends Equatable {
   /// doesn't have to infer direction itself.
   final Duration cameraAnimationDuration;
 
+  /// The slideshow position `forward`/`backward` continue from. The root cross appears
+  /// several times in the slideshow, so this cannot be read off
+  /// [breadcrumb]; a node outside the slideshow resolves to its nearest
+  /// ancestor's slide.
+  final int slideIndex;
+
   /// Whether the root cross (not a drilled-into node) is showing.
   bool get isAtRoot => breadcrumb.isEmpty;
 
@@ -36,6 +42,7 @@ final class MapHierarchyState extends Equatable {
     breadcrumb,
     camera,
     cameraAnimationDuration,
+    slideIndex,
   ];
 
   /// Creates a hierarchy state.
@@ -44,5 +51,6 @@ final class MapHierarchyState extends Equatable {
     required this.breadcrumb,
     required this.camera,
     required this.cameraAnimationDuration,
+    required this.slideIndex,
   });
 }

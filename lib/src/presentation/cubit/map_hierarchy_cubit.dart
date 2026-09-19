@@ -59,13 +59,17 @@ final class MapHierarchyCubit extends Cubit<MapHierarchyState> {
     padding: _fitPadding,
   );
 
-  static MapHierarchyState _rootState(JourneyMapTree tree, Duration duration) =>
-      MapHierarchyState(
-        visibleNodes: tree.roots,
-        breadcrumb: const [],
-        camera: _rootCamera,
-        cameraAnimationDuration: duration,
-      );
+  static MapHierarchyState _rootState(
+    JourneyMapTree tree,
+    Duration duration, {
+    int slideIndex = 0,
+  }) => MapHierarchyState(
+    visibleNodes: tree.roots,
+    breadcrumb: const [],
+    camera: _rootCamera,
+    cameraAnimationDuration: duration,
+    slideIndex: slideIndex,
+  );
 
   static MapCameraTarget _cameraFor(List<MapNode> nodes) =>
       FitBoundsCameraTarget(
@@ -89,11 +93,17 @@ final class MapHierarchyCubit extends Cubit<MapHierarchyState> {
   /// repository, not view state, so it is kept off [MapHierarchyState].
   final JourneyMapTree _tree;
 
+  /// Node ids in the order [forward] visits them, `null` being the root
+  /// cross; the root recurs, so a position here is not recoverable from
+  /// the focused node alone.
+  final List<String?> _slideshow;
+
   /// Loads the tree from [repository] once and starts at the root cross.
   MapHierarchyCubit(JourneyMapRepository repository)
-    : this._(repository.loadTree());
+    : this._(repository.loadTree(), repository.loadSlideshow());
 
-  MapHierarchyCubit._(this._tree) : super(_rootState(_tree, _goBackDuration));
+  MapHierarchyCubit._(this._tree, this._slideshow)
+    : super(_rootState(_tree, _goBackDuration));
 
   /// Shows the children of [nodeId] and extends the breadcrumb to it.
   /// Does nothing at all — not even a re-emit — if [nodeId] is unknown or
@@ -107,44 +117,30 @@ final class MapHierarchyCubit extends Cubit<MapHierarchyState> {
     emit(_focusState(node, _drillDownDuration));
   }
 
-  /// Goes to next sibling node, or to next parent node if at the end of the
-  /// current level.
-  /// Goes back to original overview if at the end of the hierarchy.
+  /// Advances one slide, wrapping from the last back to the root cross.
   void forward() {
     _traverse(1);
   }
 
-  /// Moves to previous sibling node, or to previous parent node if at the
-  /// start of the current level.
-  /// Goes back to original overview if at the start of the hierarchy.
+  /// Retreats one slide, wrapping from the root cross to the last slide.
   void backward() {
     _traverse(-1);
   }
 
-  /// Steps [step] positions through the ~depth-first~ walk of every node,
-  /// with the overview as one extra position at both ends of the cycle —
-  /// so this composes with manual [drillDown]/[goBack]: it always
-  /// continues from [MapHierarchyState.focusedNode], however that was
-  /// reached. Only ever called with ±1 by [forward]/[backward], but the
-  /// bounds check below keeps any step size correct.
+  /// Steps [step] slides through [_slideshow] from
+  /// [MapHierarchyState.slideIndex], so this composes with manual
+  /// [drillDown]/[goBack]: they land on the slide of whatever they focus.
   void _traverse(int step) {
-    final flat = _tree.roots;
-    final current = state.focusedNode;
-    final MapNode? target;
-    if (current == null) {
-      target = step > 0 ? flat.first : flat.last;
-    } else if (step > 0) {
-      final index = flat.indexWhere((node) => node.id == current.id);
-      final next = index + step;
-      target = (next < 0 || next >= flat.length) ? null : flat[next];
-    } else {
-      target = null;
-    }
+    final index = (state.slideIndex + step) % _slideshow.length;
+    final target = switch (_slideshow[index]) {
+      null => null,
+      final id => _tree.findById(id),
+    };
 
     emit(
       switch (target) {
-        null => _rootState(_tree, _traverseDuration),
-        final node => _focusState(node, _traverseDuration),
+        null => _rootState(_tree, _traverseDuration, slideIndex: index),
+        final node => _focusState(node, _traverseDuration, slideIndex: index),
       },
     );
   }
@@ -160,12 +156,7 @@ final class MapHierarchyCubit extends Cubit<MapHierarchyState> {
     emit(
       switch (ancestors) {
         [] => _rootState(_tree, _goBackDuration),
-        [..., final parent] => MapHierarchyState(
-          visibleNodes: parent.children,
-          breadcrumb: ancestors,
-          camera: _cameraFor(parent.children),
-          cameraAnimationDuration: _goBackDuration,
-        ),
+        [..., final parent] => _focusState(parent, _goBackDuration),
       },
     );
   }
@@ -176,16 +167,37 @@ final class MapHierarchyCubit extends Cubit<MapHierarchyState> {
   /// The state produced by focusing directly on [node]: its children when
   /// [node] is expandable (what drilling into it means), or just [node]
   /// itself when it's a leaf city — so the slideshow can stop on a leaf
-  /// without a parent already showing it. Shared by [drillDown] and
-  /// [_traverse].
-  MapHierarchyState _focusState(MapNode node, Duration duration) {
+  /// without a parent already showing it. Shared by [drillDown],
+  /// [goBack] and [_traverse]; the latter passes the [slideIndex] it
+  /// stepped to, the others take the slide of [node] or its nearest
+  /// ancestor in the slideshow.
+  MapHierarchyState _focusState(
+    MapNode node,
+    Duration duration, {
+    int? slideIndex,
+  }) {
     final visibleNodes = node.isExpandable ? node.children : [node];
+    final breadcrumb = _tree.pathTo(node.id);
 
     return MapHierarchyState(
       visibleNodes: visibleNodes,
-      breadcrumb: _tree.pathTo(node.id),
+      breadcrumb: breadcrumb,
       camera: _cameraFor(visibleNodes),
       cameraAnimationDuration: duration,
+      slideIndex: slideIndex ?? _slideIndexAlong(breadcrumb),
     );
+  }
+
+  /// The slide of the deepest node in [breadcrumb] that has one; the
+  /// root cross's first slide when none does.
+  int _slideIndexAlong(List<MapNode> breadcrumb) {
+    for (final node in breadcrumb.reversed) {
+      final index = _slideshow.indexOf(node.id);
+      if (index >= 0) {
+        return index;
+      }
+    }
+
+    return 0;
   }
 }

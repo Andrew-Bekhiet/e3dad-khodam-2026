@@ -18,6 +18,25 @@ final class StPaulMapDataset {
     IslandsBranch.node,
   ];
 
+  /// The order the arrow keys walk the map in: each category is shown and
+  /// then the cross comes back, so every arm is read against the whole,
+  /// before the three countries' cities close the tour. `null` is the
+  /// root cross.
+  static const List<String?> slideshow = [
+    null,
+    'continents',
+    null,
+    'countries',
+    null,
+    'seas',
+    null,
+    'islands',
+    null,
+    'asia_minor',
+    'greece',
+    'italy',
+  ];
+
   /// Epistle recipients addressed as people or ethnic groups rather than
   /// places, shown outside the map.
   static const List<NonGeographicGroup> nonGeographicGroups = [

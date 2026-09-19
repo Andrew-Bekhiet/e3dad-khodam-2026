@@ -14,6 +14,9 @@ final class StaticJourneyMapRepository implements JourneyMapRepository {
   JourneyMapTree loadTree() => JourneyMapTree(StPaulMapDataset.roots);
 
   @override
+  List<String?> loadSlideshow() => StPaulMapDataset.slideshow;
+
+  @override
   List<NonGeographicGroup> loadNonGeographicGroups() =>
       StPaulMapDataset.nonGeographicGroups;
 }

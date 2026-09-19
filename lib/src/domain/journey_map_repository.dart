@@ -8,6 +8,10 @@ abstract interface class JourneyMapRepository {
   /// Loads the full three-level hierarchy of categories and places.
   JourneyMapTree loadTree();
 
+  /// Loads the slideshow order: node ids to focus in turn, with `null`
+  /// standing for the root cross.
+  List<String?> loadSlideshow();
+
   /// Loads the recipient groups that never appear on the map.
   List<NonGeographicGroup> loadNonGeographicGroups();
 }

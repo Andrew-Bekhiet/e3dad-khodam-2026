@@ -65,8 +65,14 @@ void main() {
     await tester.sendKeyRepeatEvent(LogicalKeyboardKey.arrowLeft);
     await tester.pump();
     await tester.sendKeyUpEvent(LogicalKeyboardKey.arrowLeft);
+    await tester.pump();
 
-    expect(cubit.state.focusedNode?.id, 'asia');
+    expect(cubit.state.isAtRoot, isTrue);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowLeft);
+    await tester.pump();
+
+    expect(cubit.state.focusedNode?.id, 'countries');
   });
 
   testWidgets('JourneyMapPage_usesTheProjectorLabelScale', (tester) async {

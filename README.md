@@ -1,28 +1,106 @@
-# e3dad_khodam_2026
+<div dir="rtl">
 
-An interactive Arabic map of the cities of St Paul's journeys, drawn over a
-pixel-art Mapbox basemap.
+# خريطة رحلات بولس الرسول
 
-## Running
+**Note:** This is a vibe-coded app with Claude
 
-### 1. Access token (all platforms)
+خريطة عربية تفاعلية لمدن رحلات بولس الرسول ورسائله، مرسومة فوق خريطة Mapbox بأسلوب البكسل.
+صُمّم التطبيق للعرض على شاشة القاعة في **إعداد خدام ٢٠٢٦**: يقف الخادم أمام الشاشة ويتنقّل
+بين المشاهد ضغطةً ضغطة، والخريطة تتحرك بالكاميرا والخطوط والعلامات لتخدم الشرح.
 
-The basemap needs a Mapbox **public** token (`pk.…`). It is never committed —
-pass it at build time:
+![الخريطة الصليبية](docs/screenshots/01-cross-map.jpg)
+
+## ما الذي يعرضه التطبيق؟
+
+شاشة واحدة، وخريطة واحدة، وأربعة «سيناريوهات» تتبدّل عليها بالأزرار أعلى الشاشة (أو بمفاتيح
+الأرقام ١–٤):
+
+| الزر          | السيناريو                    | ما يحدث                                                                            |
+| ------------- | ---------------------------- | ---------------------------------------------------------------------------------- |
+| الشرح المبدئي | **الخريطة الصليبية**         | جولة في المصطلحات الجغرافية للرسائل: قارات، بلاد، بحار، جزر، ثم مدن الرسائل        |
+| الرحلة ٢      | **الرحلة التبشيرية الثانية** | من أنطاكية إلى كورنثوس، ورسالة تُرسَل إلى تسالونيكي                                |
+| الرحلة ٣      | **الرحلة التبشيرية الثالثة** | من أنطاكية إلى أفسس (رسالتان إلى غلاطية وكورنثوس)، ثم إلى كورنثوس ورسالة إلى رومية |
+| إلى رومية     | **الرحلة إلى رومية**         | من قيصرية إلى رومية بحرًا عبر مالطة، ثم رسائل السجن إلى فيلبي وكولوسي وأفسس        |
+
+### ١. الشرح المبدئي — الخريطة الصليبية
+
+أربع فئات مرتّبة على شكل صليب متساوي الأذرع فوق البحر المتوسط: **قارات** في الأعلى، **بلاد** في
+الأسفل، **بحار** على اليسار، **جزر** على اليمين. وهي أداة للحفظ لا خط سير: كل ضغطة «التالي»
+تفتح فئة وتُقرّب الكاميرا على عناصرها، ثم تعود إلى الصليب كاملًا حتى تُقرأ كل ذراع في سياق الكل،
+وتُختَم الجولة بمدن الرسائل داخل البلاد الثلاثة.
+
+| القارات                                        | البلاد                                       |
+| ---------------------------------------------- | -------------------------------------------- |
+| ![القارات](docs/screenshots/02-continents.jpg) | ![البلاد](docs/screenshots/03-countries.jpg) |
+
+| البحار                                  | الجزر                                     |
+| --------------------------------------- | ----------------------------------------- |
+| ![البحار](docs/screenshots/04-seas.jpg) | ![الجزر](docs/screenshots/05-islands.jpg) |
+
+ثم مدن كل بلد على حدة — آسيا الصغرى (غلاطية، أفسس، كولوسي)، اليونان (فيلبي، تسالونيكي،
+كورنثوس)، إيطاليا (رومية):
+
+![مدن اليونان](docs/screenshots/06-cities-greece.jpg)
+
+الترتيب كاملًا موجود في [`st_paul_map_dataset.dart`](lib/src/data/st_paul_map_dataset.dart)،
+والشجرة المختصرة في [`overview.md`](overview.md).
+
+### ٢ و٣ و٤. الرحلات التاريخية
+
+كل رحلة تبدأ بلقطة على نقطة الانطلاق، ثم مع كل ضغطة يُرسَم خط الرحلة على الخريطة ببطء، وتظهر
+المدن الكبرى حين يصل إليها الخط، وتُضاء «منارة» عند كل مدينة أُرسلت إليها رسالة من هذه المحطة —
+منارة واحدة مع كل ضغطة.
+
+| بداية الرحلة الثانية (أنطاكية)                                        | الوصول إلى كورنثوس ورسالة إلى تسالونيكي                   |
+| --------------------------------------------------------------------- | --------------------------------------------------------- |
+| ![بداية الرحلة الثانية](docs/screenshots/07-second-journey-start.jpg) | ![الرحلة الثانية](docs/screenshots/08-second-journey.jpg) |
+
+| الرحلة الثالثة: في أفسس ورسالة إلى غلاطية                        | الرحلة الثالثة: في كورنثوس ورسالة إلى رومية                        |
+| ---------------------------------------------------------------- | ------------------------------------------------------------------ |
+| ![الرحلة الثالثة](docs/screenshots/09-third-journey-ephesus.jpg) | ![نهاية الرحلة الثالثة](docs/screenshots/10-third-journey-end.jpg) |
+
+![الرحلة إلى رومية](docs/screenshots/11-rome-journey.jpg)
+
+## التحكّم أثناء العرض
+
+التطبيق مبني للتقديم بلوحة المفاتيح أو بمقدّم عروض (clicker)، والأسهم على الشاشة أسفل اليسار
+للاحتياط.
+
+| المفتاح                          | الفعل                                                          |
+| -------------------------------- | -------------------------------------------------------------- |
+| `←` أو `مسافة` أو `Enter` أو `↓` | الخطوة التالية                                                 |
+| `→` أو `Backspace` أو `↑`        | الخطوة السابقة                                                 |
+| `1` `2` `3` `4`                  | اختيار السيناريو: الشرح المبدئي، الرحلة ٢، الرحلة ٣، إلى رومية |
+| `.` أو `b`                       | إطفاء الشاشة (سواد كامل) والعودة                               |
+| `f`                              | تشغيل/إيقاف وميض المنارات                                      |
+
+أثناء تحريك الكاميرا أو رسم الخط، تُحفَظ الضغطات في طابور وتُنفَّذ بالترتيب بعد انتهاء الحركة،
+فلا تضيع ضغطة ولا تتداخل حركتان.
+
+## التشغيل
+
+### ١. مفتاح الوصول (كل المنصات)
+
+الخريطة تحتاج مفتاح Mapbox **عام** (`pk.…`). لا يُحفَظ في المستودع أبدًا، ويُمرَّر وقت البناء:
+
+<div dir="ltr">
 
 ```sh
 flutter run --dart-define=MAPBOX_ACCESS_TOKEN=pk.your_token_here
 ```
 
-Same flag for `flutter build`. Without it the app runs but paints a "missing
-access token" notice where the map would be, rather than a blank screen.
+</div>
 
-### 2. SDK download token (android/ios only)
+نفس الخيار مع `flutter build`. بدونه يعمل التطبيق لكنه يعرض تنبيه «مفتاح الوصول مفقود» مكان
+الخريطة بدلًا من شاشة فارغة.
 
-The Mapbox Maps SDK is served from Mapbox's private Maven/CocoaPods registry,
-which needs a **secret** token (`sk.…`) with the `DOWNLOADS:READ` scope —
-create one at <https://console.mapbox.com/account/access-tokens/>. This is a
-one-time machine setup, not part of the repo:
+### ٢. مفتاح تحميل الـ SDK (android و ios فقط)
+
+الـ Mapbox Maps SDK يُقدَّم من سجلّ Maven/CocoaPods خاص يحتاج مفتاحًا **سرّيًا** (`sk.…`) بصلاحية
+`DOWNLOADS:READ` — يُنشأ من <https://console.mapbox.com/account/access-tokens/>. إعداد يُجرى مرة
+واحدة على الجهاز وليس جزءًا من المستودع:
+
+<div dir="ltr">
 
 ```sh
 # Android
@@ -33,22 +111,57 @@ printf 'machine api.mapbox.com\n  login mapbox\n  password sk.your_secret_token\
 chmod 600 ~/.netrc
 ```
 
-Web needs none of this: Mapbox GL JS is loaded from a `<script>` tag in
-`web/index.html`.
+</div>
 
-## How the map is built
+الويب لا يحتاج شيئًا من هذا: يُحمَّل Mapbox GL JS من وسم `<script>` في `web/index.html`.
 
-| Layer | Where |
-|---|---|
-| Pixel-art recipe (palette, sprites, style rewriting) | [lib/src/map_engine/pixel_style/](lib/src/map_engine/pixel_style/) — pure Dart, shared |
-| Camera and marker projection | [lib/src/map_engine/camera/](lib/src/map_engine/camera/) |
-| Renderer, android/ios | [mapbox_map_surface_native.dart](lib/src/map_engine/mapbox/mapbox_map_surface_native.dart) — Mapbox Maps SDK |
-| Renderer, web | [mapbox_map_surface_web.dart](lib/src/map_engine/mapbox/mapbox_map_surface_web.dart) — Mapbox GL JS |
+### للعرض على الويب
 
-The basemap look is defined once, in Dart, and applied to both renderers as a
-single style document; see §10 of the design spec.
+<div dir="ltr">
 
-## Docs
+```sh
+flutter build web --release --dart-define=MAPBOX_ACCESS_TOKEN=pk.your_token_here
+python3 -m http.server 8080 --directory build/web
+```
 
-- [`docs/design.md`](docs/design.md) — normative design spec (coordinates,
-  marker visuals, palette, typography, pixel basemap).
+</div>
+
+ثم افتح `http://localhost:8080` في المتصفح بملء الشاشة.
+
+## كيف تُبنى الخريطة
+
+| الطبقة                                                        | المكان                                                                                                                  |
+| ------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| وصفة البكسل (اللوحة اللونية، الرسومات، إعادة كتابة الـ style) | [lib/src/map_engine/pixel_style/](lib/src/map_engine/pixel_style/) — Dart خالص، مشترك بين المنصات                       |
+| أهداف الكاميرا، العلامات، والخطوط                             | [lib/src/map_engine/](lib/src/map_engine/)                                                                              |
+| المُصيِّر على android/ios                                     | [mapbox_map_surface_native.dart](lib/src/map_engine/mapbox/mapbox_map_surface_native.dart) — Mapbox Maps SDK            |
+| المُصيِّر على الويب                                           | [mapbox_map_surface_web.dart](lib/src/map_engine/mapbox/mapbox_map_surface_web.dart) — Mapbox GL JS                     |
+| بيانات الخريطة الصليبية والرحلات                              | [lib/src/data/](lib/src/data/)                                                                                          |
+| السيناريوهات والتحكّم                                         | [lib/src/presentation/stage/](lib/src/presentation/stage/) و [lib/src/presentation/cubit/](lib/src/presentation/cubit/) |
+
+شكل الخريطة يُعرَّف مرة واحدة في Dart ويُطبَّق على المُصيِّرَين كوثيقة style واحدة؛ انظر §10 من
+مواصفات التصميم.
+
+## التوثيق
+
+- [`CONTEXT.md`](CONTEXT.md) — مصطلحات المجال (الخريطة الصليبية، الرحلة، المحطة، المنارة…) وهي المرجع
+  المعتمد للتسمية في الكود.
+- [`docs/design.md`](docs/design.md) — مواصفات التصميم المعتمدة (الإحداثيات، شكل العلامات،
+  اللوحة اللونية، الخطوط، خريطة البكسل).
+- [`docs/adr/`](docs/adr/) — سجلّ القرارات المعمارية.
+
+## التحقق
+
+<div dir="ltr">
+
+```sh
+dart analyze --plugins
+flutter test
+```
+
+</div>
+
+يجب تشغيل `dart analyze` مع `--plugins` ومن جذر المشروع بلا مسارات، وإلا تُهمَل تشخيصات
+`solid_lints` بصمت. التفاصيل في [`docs/agents/linting.md`](docs/agents/linting.md).
+
+</div>

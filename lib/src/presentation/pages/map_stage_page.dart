@@ -243,11 +243,12 @@ final class _ScriptButtons extends StatelessWidget
           runSpacing: 6,
           children: [
             for (final script in MapScript.values)
-              _ScriptButton(
-                script: script,
-                isSelected: script == selected,
-                onPressed: () => onSelect(script),
-              ),
+              if (script != MapScript.postOfficeGame)
+                _ScriptButton(
+                  script: script,
+                  isSelected: script == selected,
+                  onPressed: () => onSelect(script),
+                ),
           ],
         ),
       ),
